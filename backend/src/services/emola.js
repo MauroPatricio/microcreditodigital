@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 /**
  * Serviço de integração com e-Mola API
@@ -99,4 +99,4 @@ class EMolaService {
     }
 }
 
-module.exports = new EMolaService();
+export default new EMolaService();

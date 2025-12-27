@@ -1,8 +1,8 @@
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+import jwt from 'jsonwebtoken';
+import User from '../models/User.js';
 
 // Middleware para verificar JWT token
-exports.protect = async (req, res, next) => {
+export const protect = async (req, res, next) => {
     try {
         let token;
 
@@ -56,7 +56,7 @@ exports.protect = async (req, res, next) => {
 };
 
 // Middleware para verificar roles específicos
-exports.authorize = (...roles) => {
+export const authorize = (...roles) => {
     return (req, res, next) => {
         if (!roles.includes(req.user.role)) {
             return res.status(403).json({
@@ -69,21 +69,21 @@ exports.authorize = (...roles) => {
 };
 
 // Gerar JWT token
-exports.generateToken = (id) => {
+export const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE || '1h'
     });
 };
 
 // Gerar refresh token
-exports.generateRefreshToken = (id) => {
+export const generateRefreshToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_REFRESH_SECRET, {
         expiresIn: process.env.JWT_REFRESH_EXPIRE || '7d'
     });
 };
 
 // Verificar refresh token
-exports.verifyRefreshToken = (token) => {
+export const verifyRefreshToken = (token) => {
     try {
         return jwt.verify(token, process.env.JWT_REFRESH_SECRET);
     } catch (error) {

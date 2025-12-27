@@ -1,6 +1,6 @@
-const cron = require('node-cron');
-const Installment = require('../models/Installment');
-const Notification = require('../models/Notification');
+import cron from 'node-cron';
+import Installment from '../models/Installment.js';
+import Notification from '../models/Notification.js';
 
 // Job para enviar lembretes de pagamento
 // Executa diariamente às 10:00 AM
@@ -83,4 +83,4 @@ const paymentRemindersJob = cron.schedule('0 10 * * *', async () => {
     scheduled: false
 });
 
-module.exports = paymentRemindersJob;
+export default paymentRemindersJob;

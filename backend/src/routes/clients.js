@@ -1,11 +1,12 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js';
+import Document from '../models/Document.js';
+import Credit from '../models/Credit.js';
+import { protect, authorize } from '../middleware/auth.js';
+import multer from 'multer';
+import path from 'path';
+
 const router = express.Router();
-const User = require('../models/User');
-const Document = require('../models/Document');
-const Credit = require('../models/Credit');
-const { protect, authorize } = require('../middleware/auth');
-const multer = require('multer');
-const path = require('path');
 
 // Configurar multer para upload de documentos
 const storage = multer.diskStorage({
@@ -304,4 +305,4 @@ router.put('/:id/block', protect, authorize('admin', 'super_admin'), async (req,
     }
 });
 
-module.exports = router;
+export default router;

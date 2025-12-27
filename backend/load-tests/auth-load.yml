@@ -1,0 +1,47 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 120
+      arrivalRate: 50
+      name: "Ramp up load"
+    - duration: 180
+      arrivalRate: 100
+      name: "Sustained high load"
+  processor: "./load-tests/processors.js"
+  
+scenarios:
+  - name: "User Login Flow"
+    weight: 70
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@test.com"
+            password: "password123"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+          expect:
+            - statusCode: 200
+            - contentType: json
+            - hasProperty: data.token
+      
+  - name: "User Registration"
+    weight: 30
+    flow:
+      - function: "generateRandomUser"
+      - post:
+          url: "/api/auth/register"
+          json:
+            name: "{{ name }}"
+            email: "{{ email }}"
+            phone: "{{ phone }}"
+            password: "password123"
+            identityDocument: "{{ identityDocument }}"
+            dateOfBirth: "1990-01-01"
+            address: "Test Address"
+          expect:
+            - statusCode: [201, 400]

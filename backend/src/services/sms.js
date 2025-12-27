@@ -21,7 +21,9 @@ class SMSService {
             }
 
             // Em produção, você instalaria: npm install twilio
-            // const twilio = require('twilio');
+            // import twilio from 'twilio'; (Need to handle import dynamically if twilio is not always installed)
+            // Or just ensure it is installed.
+            // For now, we will assume it might not be there or we use dynamic import if needed.
             // this.client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 
             this.initialized = true;
@@ -108,4 +110,4 @@ class SMSService {
     }
 }
 
-module.exports = new SMSService();
+export default new SMSService();

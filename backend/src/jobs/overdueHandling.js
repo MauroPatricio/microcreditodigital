@@ -1,7 +1,7 @@
-const cron = require('node-cron');
-const Installment = require('../models/Installment');
-const Credit = require('../models/Credit');
-const Notification = require('../models/Notification');
+import cron from 'node-cron';
+import Installment from '../models/Installment.js';
+import Credit from '../models/Credit.js';
+import Notification from '../models/Notification.js';
 
 // Job para lidar com parcelas vencidas
 // Executa diariamente à meia-noite
@@ -88,4 +88,4 @@ const overdueHandlingJob = cron.schedule('0 0 * * *', async () => {
     scheduled: false
 });
 
-module.exports = overdueHandlingJob;
+export default overdueHandlingJob;

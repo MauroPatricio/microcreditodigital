@@ -1,6 +1,6 @@
-const cron = require('node-cron');
-const Credit = require('../models/Credit');
-const Installment = require('../models/Installment');
+import cron from 'node-cron';
+import Credit from '../models/Credit.js';
+import Installment from '../models/Installment.js';
 
 // Job para cálculo automático de juros
 // Executa diariamente à 01:00 AM
@@ -34,4 +34,4 @@ const interestCalculationJob = cron.schedule('0 1 * * *', async () => {
     scheduled: false
 });
 
-module.exports = interestCalculationJob;
+export default interestCalculationJob;

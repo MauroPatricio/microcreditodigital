@@ -1,4 +1,4 @@
-const admin = require('firebase-admin');
+import admin from 'firebase-admin';
 
 /**
  * Serviço de notificações push via Firebase Cloud Messaging
@@ -149,4 +149,4 @@ class PushNotificationService {
     }
 }
 
-module.exports = new PushNotificationService();
+export default new PushNotificationService();

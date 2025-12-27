@@ -1,11 +1,12 @@
-const express = require('express');
+import express from 'express';
+import Payment from '../models/Payment.js';
+import Installment from '../models/Installment.js';
+import Credit from '../models/Credit.js';
+import Notification from '../models/Notification.js';
+import { protect, authorize } from '../middleware/auth.js';
+import { paymentValidation, validate } from '../middleware/validation.js';
+
 const router = express.Router();
-const Payment = require('../models/Payment');
-const Installment = require('../models/Installment');
-const Credit = require('../models/Credit');
-const Notification = require('../models/Notification');
-const { protect, authorize } = require('../middleware/auth');
-const { paymentValidation, validate } = require('../middleware/validation');
 
 // @route   POST /api/payments
 // @desc    Registrar pagamento
@@ -255,4 +256,4 @@ router.post('/webhook/emola', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const connectDB = async () => {
   try {
@@ -10,12 +10,12 @@ const connectDB = async () => {
     console.log('✅ MongoDB conectado com sucesso!');
     console.log(`📊 Database: ${conn.connection.name}`);
     console.log(`🖥️  Host: ${conn.connection.host}`);
-    
+
     return conn;
   } catch (error) {
     console.error('❌ Erro ao conectar ao MongoDB:');
     console.error(`   Mensagem: ${error.message}`);
-    
+
     if (error.message.includes('ENOTFOUND')) {
       console.error('   💡 Verifique se o URI do MongoDB está correto no arquivo .env');
     } else if (error.message.includes('authentication failed')) {
@@ -23,7 +23,7 @@ const connectDB = async () => {
     } else if (error.message.includes('IP') || error.message.includes('whitelist')) {
       console.error('   💡 Adicione o IP do servidor à whitelist no MongoDB Atlas');
     }
-    
+
     // Não encerra o processo, permite que o servidor continue rodando
     console.log('⚠️  Servidor continuará rodando sem conexão ao MongoDB');
     return null;
@@ -45,4 +45,4 @@ process.on('SIGINT', async () => {
   process.exit(0);
 });
 
-module.exports = connectDB;
+export default connectDB;

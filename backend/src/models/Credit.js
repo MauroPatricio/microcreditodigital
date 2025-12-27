@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const creditSchema = new mongoose.Schema({
     client: {
@@ -105,6 +105,14 @@ creditSchema.pre('save', function (next) {
     next();
 });
 
+// Indexes para otimização de performance
+creditSchema.index({ client: 1 });
+creditSchema.index({ status: 1 });
+creditSchema.index({ requestedAt: -1 });
+creditSchema.index({ approvedAt: -1 });
+creditSchema.index({ client: 1, status: 1 }); // Compound index
+creditSchema.index({ status: 1, requestedAt: -1 }); // Compound index
+
 const Credit = mongoose.model('Credit', creditSchema);
 
-module.exports = Credit;
+export default Credit;

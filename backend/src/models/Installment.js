@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const installmentSchema = new mongoose.Schema({
     credit: {
@@ -85,6 +85,13 @@ installmentSchema.methods.calculateDaysPastDue = function () {
     return 0;
 };
 
+// Indexes para otimização de performance
+installmentSchema.index({ credit: 1 });
+installmentSchema.index({ dueDate: 1 });
+installmentSchema.index({ status: 1 });
+installmentSchema.index({ credit: 1, dueDate: 1 });
+installmentSchema.index({ status: 1, dueDate: 1 });
+
 const Installment = mongoose.model('Installment', installmentSchema);
 
-module.exports = Installment;
+export default Installment;

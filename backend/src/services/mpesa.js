@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 /**
  * Serviço de integração com M-Pesa API
@@ -103,4 +103,4 @@ class MPesaService {
     }
 }
 
-module.exports = new MPesaService();
+export default new MPesaService();

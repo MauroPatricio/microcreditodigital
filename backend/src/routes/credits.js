@@ -1,11 +1,12 @@
-const express = require('express');
+import express from 'express';
+import Credit from '../models/Credit.js';
+import Installment from '../models/Installment.js';
+import User from '../models/User.js';
+import { protect, authorize } from '../middleware/auth.js';
+import { creditRequestValidation, validate } from '../middleware/validation.js';
+import { addMonths } from 'date-fns';
+
 const router = express.Router();
-const Credit = require('../models/Credit');
-const Installment = require('../models/Installment');
-const User = require('../models/User');
-const { protect, authorize } = require('../middleware/auth');
-const { creditRequestValidation, validate } = require('../middleware/validation');
-const { addMonths } = require('date-fns');
 
 // @route   POST /api/credits/simulate
 // @desc    Simular crédito
@@ -357,4 +358,4 @@ router.put('/:id/disburse', protect, authorize('admin', 'super_admin'), async (r
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,8 +1,9 @@
-const express = require('express');
+import express from 'express';
+import User from '../models/User.js';
+import { protect, generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
+import { registerValidation, loginValidation, validate } from '../middleware/validation.js';
+
 const router = express.Router();
-const User = require('../models/User');
-const { protect, generateToken, generateRefreshToken, verifyRefreshToken } = require('../middleware/auth');
-const { registerValidation, loginValidation, validate } = require('../middleware/validation');
 
 // @route   POST /api/auth/register
 // @desc    Registrar novo cliente
@@ -199,4 +200,4 @@ router.post('/logout', protect, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

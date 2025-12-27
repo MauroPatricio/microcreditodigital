@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const bcrypt = require('bcryptjs');
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -104,6 +104,13 @@ userSchema.methods.toJSON = function () {
     return user;
 };
 
+// Indexes para otimização de performance
+userSchema.index({ email: 1 });
+userSchema.index({ phone: 1 });
+userSchema.index({ identityDocument: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ createdAt: -1 });
+
 const User = mongoose.model('User', userSchema);
 
-module.exports = User;
+export default User;

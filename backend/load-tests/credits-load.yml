@@ -1,0 +1,80 @@
+config:
+  target: "http://localhost:5000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      name: "Warm up"
+    - duration: 180
+      arrivalRate: 25
+      name: "Sustained load"
+    - duration: 120
+      arrivalRate: 50
+      name: "Peak load"
+  processor: "./load-tests/processors.js"
+
+scenarios:
+  - name: "List Credits"
+    weight: 40
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@test.com"
+            password: "password123"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - get:
+          url: "/api/credits?page=1&limit=20"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: 200
+            
+  - name: "Get Credit Details"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@test.com"
+            password: "password123"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - get:
+          url: "/api/credits"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          capture:
+            - json: "$.data.credits[0]._id"
+              as: "creditId"
+      - get:
+          url: "/api/credits/{{ creditId }}"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode: [200, 404]
+            
+  - name: "Create Credit Request"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@test.com"
+            password: "password123"
+          capture:
+            - json: "$.data.token"
+              as: "authToken"
+      - function: "generateCreditData"
+      - post:
+          url: "/api/credits"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            amount: "{{ amount }}"
+            term: "{{ term }}"
+            purpose: "{{ purpose }}"
+          expect:
+            - statusCode: [201, 400, 401]

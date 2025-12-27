@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const paymentSchema = new mongoose.Schema({
     credit: {
@@ -57,4 +57,4 @@ paymentSchema.index({ transactionId: 1 });
 
 const Payment = mongoose.model('Payment', paymentSchema);
 
-module.exports = Payment;
+export default Payment;

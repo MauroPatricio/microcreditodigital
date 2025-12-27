@@ -1,7 +1,8 @@
-const express = require('express');
+import express from 'express';
+import Notification from '../models/Notification.js';
+import { protect } from '../middleware/auth.js';
+
 const router = express.Router();
-const Notification = require('../models/Notification');
-const { protect } = require('../middleware/auth');
 
 // @route   GET /api/notifications
 // @desc    Listar notificações do usuário
@@ -106,4 +107,4 @@ router.put('/mark-all-read', protect, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

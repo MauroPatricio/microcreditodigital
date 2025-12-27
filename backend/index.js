@@ -1,27 +1,38 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const rateLimit = require('express-rate-limit');
-const connectDB = require('./config/database');
-const os = require('os');
+import dotenv from 'dotenv';
+import express from 'express';
+import cors from 'cors';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
+import os from 'os';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+import connectDB from './src/config/database.js';
 
 // Importar rotas
-const authRoutes = require('./routes/auth');
-const clientRoutes = require('./routes/clients');
-const creditRoutes = require('./routes/credits');
-const paymentRoutes = require('./routes/payments');
-const analyticsRoutes = require('./routes/analytics');
-const notificationRoutes = require('./routes/notifications');
+import authRoutes from './src/routes/auth.js';
+import clientRoutes from './src/routes/clients.js';
+import creditRoutes from './src/routes/credits.js';
+import paymentRoutes from './src/routes/payments.js';
+import analyticsRoutes from './src/routes/analytics.js';
+import notificationRoutes from './src/routes/notifications.js';
 
 // Importar jobs
-const paymentRemindersJob = require('./jobs/paymentReminders');
-const overdueHandlingJob = require('./jobs/overdueHandling');
-const interestCalculationJob = require('./jobs/interestCalculation');
+import paymentRemindersJob from './src/jobs/paymentReminders.js';
+import overdueHandlingJob from './src/jobs/overdueHandling.js';
+import interestCalculationJob from './src/jobs/interestCalculation.js';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middlewares
+app.use(compression()); // Enable gzip compression
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -39,7 +50,7 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Servir arquivos estáticos (uploads)
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Rotas
 app.use('/api/auth', authRoutes);
@@ -113,7 +124,6 @@ const startServer = async () => {
         await connectDB();
 
         // Criar diretório de uploads se não existir
-        const fs = require('fs');
         const uploadDir = process.env.UPLOAD_PATH || './uploads/documents';
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });

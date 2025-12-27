@@ -1,0 +1,9 @@
+{
+    "scripts": {
+        "test:load:auth": "artillery run load-tests/auth-load.yml --output reports/auth-baseline.json",
+        "test:load:credits": "artillery run load-tests/credits-load.yml --output reports/credits-baseline.json",
+        "test:load:mixed": "artillery run load-tests/mixed-load.yml --output reports/mixed-baseline.json",
+        "test:load:all": "npm run test:load:auth && npm run test:load:credits && npm run test:load:mixed",
+        "test:load:report": "artillery report reports/mixed-baseline.json"
+    }
+}

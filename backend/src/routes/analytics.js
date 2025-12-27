@@ -1,10 +1,11 @@
-const express = require('express');
+import express from 'express';
+import Credit from '../models/Credit.js';
+import Payment from '../models/Payment.js';
+import User from '../models/User.js';
+import Installment from '../models/Installment.js';
+import { protect, authorize } from '../middleware/auth.js';
+
 const router = express.Router();
-const Credit = require('../models/Credit');
-const Payment = require('../models/Payment');
-const User = require('../models/User');
-const Installment = require('../models/Installment');
-const { protect, authorize } = require('../middleware/auth');
 
 // @route   GET /api/analytics/dashboard
 // @desc    Métricas do dashboard
@@ -173,4 +174,4 @@ router.get('/revenue', protect, authorize('admin', 'super_admin'), async (req, r
     }
 });
 
-module.exports = router;
+export default router;
