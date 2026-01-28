@@ -1,16 +1,23 @@
 import express from 'express';
 import User from '../models/User.js';
+import Institution from '../models/Institution.js';
 import { protect, generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
 import { registerValidation, loginValidation, validate } from '../middleware/validation.js';
 
 const router = express.Router();
 
 // @route   POST /api/auth/register
-// @desc    Registrar novo cliente
+// @desc    Registrar novo usuário (Cliente ou Owner)
 // @access  Public
 router.post('/register', registerValidation, validate, async (req, res) => {
     try {
-        const { name, email, phone, password, identityDocument, dateOfBirth, address } = req.body;
+        const {
+            name, email, phone, password, identityDocument,
+            dateOfBirth, address, role,
+            institutionName, institutionNuit // Apenas para Owners
+        } = req.body;
+
+        const userRole = role === 'owner' ? 'owner' : 'client';
 
         // Verificar se usuário já existe
         const existingUser = await User.findOne({
@@ -24,8 +31,8 @@ router.post('/register', registerValidation, validate, async (req, res) => {
             });
         }
 
-        // Criar novo usuário
-        const user = await User.create({
+        // Criar usuário (sem instituição primeiro se for owner, ou com se for cliente de algum fluxo)
+        const user = new User({
             name,
             email,
             phone,
@@ -33,8 +40,29 @@ router.post('/register', registerValidation, validate, async (req, res) => {
             identityDocument,
             dateOfBirth,
             address,
-            role: 'client'
+            role: userRole
         });
+
+        // Se for Owner, criar instituição
+        if (userRole === 'owner') {
+            if (!institutionName || !institutionNuit) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Dados da instituição são obrigatórios para Owner'
+                });
+            }
+
+            const institution = await Institution.create({
+                name: institutionName,
+                nuit: institutionNuit,
+                email: email,
+                owner: user._id
+            });
+
+            user.institution = institution._id;
+        }
+
+        await user.save();
 
         // Gerar tokens
         const token = generateToken(user._id);
@@ -42,7 +70,7 @@ router.post('/register', registerValidation, validate, async (req, res) => {
 
         res.status(201).json({
             success: true,
-            message: 'Usuário registrado com sucesso',
+            message: userRole === 'owner' ? 'Instituição e Owner registrados com sucesso' : 'Usuário registrado com sucesso',
             data: {
                 user: user.toJSON(),
                 token,

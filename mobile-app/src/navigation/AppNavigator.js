@@ -10,6 +10,7 @@ import RegisterScreen from '../screens/Auth/RegisterScreen';
 
 // Main Screens
 import HomeScreen from '../screens/Home/HomeScreen';
+import CollectionsScreen from '../screens/Home/CollectionsScreen';
 import CreditSimulatorScreen from '../screens/Credit/CreditSimulatorScreen';
 import MyCreditsScreen from '../screens/Credit/MyCreditsScreen';
 
@@ -19,47 +20,65 @@ const Tab = createBottomTabNavigator();
 // Auth Stack
 function AuthNavigator() {
     return (
-        <Stack.Navigator
-            screenOptions={{
-                headerShown: false,
-            }}
-        >
+        <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="Login" component={LoginScreen} />
             <Stack.Screen name="Register" component={RegisterScreen} />
         </Stack.Navigator>
     );
 }
 
-// Main Tab Navigator
-function MainTabNavigator() {
+// Agent Navigator (Field Agents)
+function AgentNavigator() {
     return (
         <Tab.Navigator
             screenOptions={{
                 tabBarActiveTintColor: '#2563eb',
                 tabBarInactiveTintColor: '#94a3b8',
-                tabBarStyle: {
-                    backgroundColor: '#fff',
-                    borderTopWidth: 1,
-                    borderTopColor: '#e2e8f0',
-                    paddingBottom: 5,
-                    paddingTop: 5,
-                    height: 60,
-                },
-                tabBarLabelStyle: {
-                    fontSize: 12,
-                    fontWeight: '600',
-                },
-                headerStyle: {
-                    backgroundColor: '#fff',
-                    elevation: 0,
-                    shadowOpacity: 0,
-                    borderBottomWidth: 1,
-                    borderBottomColor: '#e2e8f0',
-                },
-                headerTitleStyle: {
-                    fontWeight: 'bold',
-                    color: '#1e293b',
-                },
+                tabBarStyle: { height: 60, paddingBottom: 5 },
+                headerShown: true,
+                headerStyle: { backgroundColor: '#fff', elevation: 0, shadowOpacity: 0 },
+                headerTitleStyle: { fontWeight: 'bold' },
+            }}
+        >
+            <Tab.Screen
+                name="AgentHome"
+                component={HomeScreen}
+                options={{
+                    title: 'Início',
+                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏢</Text>,
+                    headerTitle: 'Painel do Agente',
+                }}
+            />
+            <Tab.Screen
+                name="AddClient"
+                component={RegisterScreen}
+                options={{
+                    title: 'Novo Cliente',
+                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text>,
+                    headerTitle: 'Registar Cliente',
+                }}
+            />
+            <Tab.Screen
+                name="Payments"
+                component={CollectionsScreen}
+                options={{
+                    title: 'Cobranças',
+                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>💰</Text>,
+                    headerTitle: 'Minhas Cobranças',
+                }}
+            />
+        </Tab.Navigator>
+    );
+}
+
+// Client Tab Navigator
+function ClientTabNavigator() {
+    return (
+        <Tab.Navigator
+            screenOptions={{
+                tabBarActiveTintColor: '#2563eb',
+                tabBarInactiveTintColor: '#94a3b8',
+                tabBarStyle: { height: 60, paddingBottom: 5 },
             }}
         >
             <Tab.Screen
@@ -67,7 +86,7 @@ function MainTabNavigator() {
                 component={HomeScreen}
                 options={{
                     title: 'Início',
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>🏠</Text>,
+                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏠</Text>,
                     headerShown: false,
                 }}
             />
@@ -76,16 +95,16 @@ function MainTabNavigator() {
                 component={CreditSimulatorScreen}
                 options={{
                     title: 'Simular',
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>💰</Text>,
-                    headerTitle: 'Simulador de Crédito',
+                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>⚖️</Text>,
+                    headerTitle: 'Simulador',
                 }}
             />
             <Tab.Screen
                 name="MyCredits"
                 component={MyCreditsScreen}
                 options={{
-                    title: 'Meus Créditos',
-                    tabBarIcon: ({ color }) => <Text style={{ fontSize: 24 }}>📊</Text>,
+                    title: 'Créditos',
+                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>📊</Text>,
                     headerTitle: 'Meus Créditos',
                 }}
             />
@@ -95,15 +114,19 @@ function MainTabNavigator() {
 
 // Root Navigator
 export default function AppNavigator() {
-    const { isAuthenticated, loading } = useAuth();
+    const { isAuthenticated, user, loading } = useAuth();
 
-    if (loading) {
-        return null; // ou um componente de loading
-    }
+    if (loading) return null;
 
     return (
         <NavigationContainer>
-            {isAuthenticated ? <MainTabNavigator /> : <AuthNavigator />}
+            {!isAuthenticated ? (
+                <AuthNavigator />
+            ) : user?.role === 'agent' ? (
+                <AgentNavigator />
+            ) : (
+                <ClientTabNavigator />
+            )}
         </NavigationContainer>
     );
 }

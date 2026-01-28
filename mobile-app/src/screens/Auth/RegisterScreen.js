@@ -12,9 +12,12 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
+import { clientService } from '../../services';
 
 export default function RegisterScreen({ navigation }) {
-    const { register } = useAuth();
+    const { user, register } = useAuth();
+    const isAgent = user?.role === 'agent';
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -32,34 +35,42 @@ export default function RegisterScreen({ navigation }) {
 
     const handleRegister = async () => {
         // Validation
-        if (!formData.name || !formData.email || !formData.phone || !formData.password) {
+        if (!formData.name || !formData.phone || (!isAgent && !formData.password)) {
             Alert.alert('Erro', 'Por favor, preencha todos os campos obrigatórios');
             return;
         }
 
-        if (formData.password !== formData.confirmPassword) {
+        if (!isAgent && formData.password !== formData.confirmPassword) {
             Alert.alert('Erro', 'As senhas não coincidem');
             return;
         }
 
-        if (formData.password.length < 6) {
-            Alert.alert('Erro', 'A senha deve ter no mínimo 6 caracteres');
-            return;
-        }
-
         setLoading(true);
-        const result = await register({
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            password: formData.password,
-            identityDocument: formData.identityDocument,
-            dateOfBirth: formData.dateOfBirth || '1990-01-01',
-        });
-        setLoading(false);
+        try {
+            let result;
+            if (isAgent) {
+                result = await clientService.create({
+                    name: formData.name,
+                    email: formData.email,
+                    phone: formData.phone,
+                    identityDocument: formData.identityDocument,
+                    dateOfBirth: formData.dateOfBirth || '1990-01-01',
+                    password: formData.password || '123456' // Default password for agent-created clients
+                });
+            } else {
+                result = await register(formData);
+            }
 
-        if (!result.success) {
-            Alert.alert('Erro', result.message);
+            setLoading(false);
+            if (result.success) {
+                Alert.alert('Sucesso', 'Cliente registrado com sucesso');
+                if (isAgent) navigation.goBack();
+            } else {
+                Alert.alert('Erro', result.message);
+            }
+        } catch (error) {
+            setLoading(false);
+            Alert.alert('Erro', 'Falha na comunicação com o servidor');
         }
     };
 

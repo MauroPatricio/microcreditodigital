@@ -22,8 +22,8 @@ export const protect = async (req, res, next) => {
             // Verificar token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Buscar usuário
-            req.user = await User.findById(decoded.id);
+            // Buscar usuário e popular instituição
+            req.user = await User.findById(decoded.id).populate('institution');
 
             if (!req.user) {
                 return res.status(401).json({
@@ -37,6 +37,11 @@ export const protect = async (req, res, next) => {
                     success: false,
                     message: 'Usuário bloqueado. Contate o suporte.'
                 });
+            }
+
+            // Injetar ID da instituição no request para fácil acesso em outros controllers
+            if (req.user.institution) {
+                req.institutionId = req.user.institution._id;
             }
 
             next();

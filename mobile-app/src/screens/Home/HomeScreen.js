@@ -13,8 +13,7 @@ import { creditService, notificationService } from '../../services';
 
 export default function HomeScreen({ navigation }) {
     const { user } = useAuth();
-    const [credits, setCredits] = useState([]);
-    const [notifications, setNotifications] = useState([]);
+    const [data, setData] = useState({ credits: [], notifications: [], collections: [] });
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -24,13 +23,26 @@ export default function HomeScreen({ navigation }) {
 
     const loadData = async () => {
         try {
-            const [creditsResponse, notificationsResponse] = await Promise.all([
-                creditService.getMyCredits(),
-                notificationService.getNotifications(),
-            ]);
-
-            setCredits(creditsResponse.data.credits || []);
-            setNotifications(notificationsResponse.data.notifications || []);
+            if (user?.role === 'agent') {
+                const [creditsRes, notificationsRes] = await Promise.all([
+                    api.get('/credits'), // Endpoints I implemented are already scoped
+                    api.get('/notifications'),
+                ]);
+                setData({
+                    credits: creditsRes.data.data.credits || [],
+                    notifications: notificationsRes.data.data.notifications || [],
+                    collections: [] // In production, call /payments today
+                });
+            } else {
+                const [creditsRes, notificationsRes] = await Promise.all([
+                    api.get('/credits'),
+                    api.get('/notifications'),
+                ]);
+                setData({
+                    credits: creditsRes.data.data.credits || [],
+                    notifications: notificationsRes.data.data.notifications || []
+                });
+            }
         } catch (error) {
             console.error('Error loading data:', error);
         } finally {
@@ -44,9 +56,7 @@ export default function HomeScreen({ navigation }) {
         loadData();
     };
 
-    const activeCredit = credits.find((c) => c.status === 'active');
-    const pendingCredit = credits.find((c) => c.status === 'pending');
-    const unreadCount = notifications.filter((n) => !n.isRead).length;
+    const unreadCount = data.notifications.filter((n) => !n.isRead).length;
 
     if (loading) {
         return (
@@ -56,158 +66,95 @@ export default function HomeScreen({ navigation }) {
         );
     }
 
+    const renderAgentHome = () => (
+        <>
+            <View style={styles.header}>
+                <View>
+                    <Text style={styles.greeting}>Olá Agente,</Text>
+                    <Text style={styles.userName}>{user?.name.split(' ')[0]}</Text>
+                </View>
+                <TouchableOpacity style={styles.notificationButton}>
+                    <Text style={styles.notificationIcon}>🔔</Text>
+                    {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>}
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.quickActions}>
+                <TouchableOpacity style={styles.actionCard} onPress={() => navigation.navigate('AddClient')}>
+                    <Text style={styles.actionIcon}>👥</Text>
+                    <Text style={styles.actionTitle}>Novo Cliente</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionCard}>
+                    <Text style={styles.actionIcon}>💵</Text>
+                    <Text style={styles.actionTitle}>Registrar Cobrança</Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Métricas do Dia</Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 15 }}>
+                    <View style={styles.metricItem}>
+                        <Text style={styles.metricValue}>0</Text>
+                        <Text style={styles.metricLabel}>Visitas</Text>
+                    </View>
+                    <View style={styles.metricItem}>
+                        <Text style={styles.metricValue}>0,00 MT</Text>
+                        <Text style={styles.metricLabel}>Cobrado</Text>
+                    </View>
+                </View>
+            </View>
+        </>
+    );
+
+    const renderClientHome = () => {
+        const activeCredit = data.credits.find((c) => c.status === 'active');
+        const pendingCredit = data.credits.find((c) => c.status === 'pending');
+
+        return (
+            <>
+                <View style={styles.header}>
+                    <View>
+                        <Text style={styles.greeting}>Olá,</Text>
+                        <Text style={styles.userName}>{user?.name}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.notificationButton}>
+                        <Text style={styles.notificationIcon}>🔔</Text>
+                        {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>}
+                    </TouchableOpacity>
+                </View>
+
+                {activeCredit ? (
+                    <View style={[styles.statusCard, styles.activeCard]}>
+                        <Text style={styles.statusTitle}>Crédito Ativo</Text>
+                        <Text style={styles.statusText}>{activeCredit.amount.toLocaleString()} MT</Text>
+                        <TouchableOpacity style={styles.detailsButton}>
+                            <Text style={styles.detailsButtonText}>Ver Parcelas</Text>
+                        </TouchableOpacity>
+                    </View>
+                ) : pendingCredit ? (
+                    <View style={[styles.statusCard, styles.pendingCard]}>
+                        <Text style={styles.statusTitle}>Em Análise</Text>
+                        <Text style={styles.statusText}>Sua solicitação está sendo revisada.</Text>
+                    </View>
+                ) : (
+                    <View style={[styles.statusCard, styles.infoCard]}>
+                        <Text style={styles.statusTitle}>Novo Crédito</Text>
+                        <Text style={styles.statusText}>Simule e solicite agora.</Text>
+                        <TouchableOpacity style={styles.primaryButton} onPress={() => navigation.navigate('CreditSimulator')}>
+                            <Text style={styles.primaryButtonText}>Simular</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </>
+        );
+    };
+
     return (
         <ScrollView
             style={styles.container}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         >
-            {/* Header */}
-            <View style={styles.header}>
-                <View>
-                    <Text style={styles.greeting}>Olá,</Text>
-                    <Text style={styles.userName}>{user?.name}</Text>
-                </View>
-                <TouchableOpacity
-                    style={styles.notificationButton}
-                    onPress={() => navigation.navigate('Notifications')}
-                >
-                    <Text style={styles.notificationIcon}>🔔</Text>
-                    {unreadCount > 0 && (
-                        <View style={styles.badge}>
-                            <Text style={styles.badgeText}>{unreadCount}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-            </View>
-
-            {/* Quick Actions */}
-            <View style={styles.quickActions}>
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('CreditSimulator')}
-                >
-                    <Text style={styles.actionIcon}>💰</Text>
-                    <Text style={styles.actionTitle}>Simular Crédito</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('MyCredits')}
-                >
-                    <Text style={styles.actionIcon}>📊</Text>
-                    <Text style={styles.actionTitle}>Meus Créditos</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('Payments')}
-                >
-                    <Text style={styles.actionIcon}>💳</Text>
-                    <Text style={styles.actionTitle}>Pagamentos</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={styles.actionCard}
-                    onPress={() => navigation.navigate('Profile')}
-                >
-                    <Text style={styles.actionIcon}>👤</Text>
-                    <Text style={styles.actionTitle}>Perfil</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Status Cards */}
-            {pendingCredit && (
-                <View style={[styles.statusCard, styles.pendingCard]}>
-                    <Text style={styles.statusIcon}>⏳</Text>
-                    <View style={styles.statusContent}>
-                        <Text style={styles.statusTitle}>Crédito em Análise</Text>
-                        <Text style={styles.statusText}>
-                            Valor: {pendingCredit.amount.toFixed(2)} MT
-                        </Text>
-                        <Text style={styles.statusSubtext}>Aguardando aprovação</Text>
-                    </View>
-                </View>
-            )}
-
-            {activeCredit && (
-                <View style={[styles.statusCard, styles.activeCard]}>
-                    <Text style={styles.statusIcon}>✅</Text>
-                    <View style={styles.statusContent}>
-                        <Text style={styles.statusTitle}>Crédito Ativo</Text>
-                        <Text style={styles.statusText}>
-                            Total pago: {activeCredit.totalPaid?.toFixed(2) || '0.00'} MT
-                        </Text>
-                        <Text style={styles.statusSubtext}>
-                            de {activeCredit.totalPayable.toFixed(2)} MT
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.detailsButton}
-                        onPress={() => navigation.navigate('CreditDetails', { creditId: activeCredit._id })}
-                    >
-                        <Text style={styles.detailsButtonText}>Ver Detalhes</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {!activeCredit && !pendingCredit && user?.isVerified && (
-                <View style={[styles.statusCard, styles.infoCard]}>
-                    <Text style={styles.statusIcon}>🎉</Text>
-                    <View style={styles.statusContent}>
-                        <Text style={styles.statusTitle}>Pronto para Solicitar!</Text>
-                        <Text style={styles.statusText}>
-                            Você está verificado e pode solicitar um crédito
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={() => navigation.navigate('CreditSimulator')}
-                    >
-                        <Text style={styles.primaryButtonText}>Simular Agora</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {!user?.isVerified && (
-                <View style={[styles.statusCard, styles.warningCard]}>
-                    <Text style={styles.statusIcon}>⚠️</Text>
-                    <View style={styles.statusContent}>
-                        <Text style={styles.statusTitle}>Conta Não Verificada</Text>
-                        <Text style={styles.statusText}>
-                            Complete seu perfil e envie seus documentos
-                        </Text>
-                    </View>
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
-                        onPress={() => navigation.navigate('Profile')}
-                    >
-                        <Text style={styles.secondaryButtonText}>Completar Perfil</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
-
-            {/* Recent Notifications */}
-            {notifications.length > 0 && (
-                <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Notificações Recentes</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}>
-                            <Text style={styles.seeAllText}>Ver todas</Text>
-                        </TouchableOpacity>
-                    </View>
-                    {notifications.slice(0, 3).map((notification) => (
-                        <View key={notification._id} style={styles.notificationItem}>
-                            <View style={[styles.notificationDot, !notification.isRead && styles.unreadDot]} />
-                            <View style={styles.notificationContent}>
-                                <Text style={styles.notificationTitle}>{notification.title}</Text>
-                                <Text style={styles.notificationMessage} numberOfLines={2}>
-                                    {notification.message}
-                                </Text>
-                            </View>
-                        </View>
-                    ))}
-                </View>
-            )}
+            {user?.role === 'agent' ? renderAgentHome() : renderClientHome()}
         </ScrollView>
     );
 }

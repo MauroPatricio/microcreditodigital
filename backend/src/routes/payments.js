@@ -15,13 +15,20 @@ router.post('/', protect, paymentValidation, validate, async (req, res) => {
     try {
         const { creditId, installmentId, amount, paymentMethod, transactionId } = req.body;
 
-        // Verificar se crédito existe e pertence ao usuário
+        // Verificar se crédito existe e pertence ao usuário e à instituição
         const credit = await Credit.findById(creditId);
 
         if (!credit) {
             return res.status(404).json({
                 success: false,
                 message: 'Crédito não encontrado'
+            });
+        }
+
+        if (credit.institution.toString() !== req.user.institution._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Acesso negado'
             });
         }
 
@@ -48,6 +55,7 @@ router.post('/', protect, paymentValidation, validate, async (req, res) => {
         // Criar pagamento
         const payment = await Payment.create({
             credit: creditId,
+            institution: req.user.institution._id,
             installment: installmentId || null,
             client: req.user._id,
             amount,
@@ -85,6 +93,7 @@ router.post('/', protect, paymentValidation, validate, async (req, res) => {
         // Criar notificação
         await Notification.create({
             user: req.user._id,
+            institution: req.user.institution._id,
             type: 'payment_confirmed',
             title: 'Pagamento Confirmado',
             message: `Pagamento de ${amount.toFixed(2)} MT foi processado com sucesso.`,
@@ -117,7 +126,7 @@ router.get('/', protect, async (req, res) => {
     try {
         const { creditId, status, page = 1, limit = 20 } = req.query;
 
-        let query = {};
+        let query = { institution: req.user.institution._id };
 
         // Se for cliente, só pode ver seus próprios pagamentos
         if (req.user.role === 'client') {
@@ -182,7 +191,10 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        if (req.user.role === 'client' && payment.client._id.toString() !== req.user._id.toString()) {
+        const isSameInstitution = payment.institution?.toString() === req.user.institution?._id.toString();
+        const isOwnPayment = payment.client._id.toString() === req.user._id.toString();
+
+        if (!isSameInstitution || (req.user.role === 'client' && !isOwnPayment)) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado'

@@ -85,10 +85,11 @@ router.post('/request', protect, creditRequestValidation, validate, async (req, 
         // Criar solicitação de crédito
         const credit = await Credit.create({
             client: req.user._id,
+            institution: req.user.institution._id,
             amount,
             term,
             purpose,
-            interestRate: parseFloat(process.env.DEFAULT_INTEREST_RATE) || 15,
+            interestRate: req.user.institution.settings?.interestRates?.default || 15,
             status: 'pending'
         });
 
@@ -115,7 +116,7 @@ router.get('/', protect, async (req, res) => {
     try {
         const { status, page = 1, limit = 10 } = req.query;
 
-        let query = {};
+        let query = { institution: req.user.institution._id };
 
         // Se for cliente, só pode ver seus próprios créditos
         if (req.user.role === 'client') {
@@ -179,7 +180,11 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        if (req.user.role === 'client' && credit.client._id.toString() !== req.user._id.toString()) {
+        const isSameInstitution = credit.institution.toString() === req.user.institution._id.toString();
+        const isOwnCredit = req.user.role === 'client' && credit.client._id.toString() === req.user._id.toString();
+        const isAdminOrStaff = ['owner', 'manager', 'agent'].includes(req.user.role);
+
+        if (!isSameInstitution || (req.user.role === 'client' && !isOwnCredit)) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado'
@@ -203,8 +208,8 @@ router.get('/:id', protect, async (req, res) => {
 
 // @route   PUT /api/credits/:id/approve
 // @desc    Aprovar crédito
-// @access  Private (Admin)
-router.put('/:id/approve', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const { approvedAmount } = req.body;
 
@@ -238,6 +243,7 @@ router.put('/:id/approve', protect, authorize('admin', 'super_admin'), async (re
 
             const installment = await Installment.create({
                 credit: credit._id,
+                institution: credit.institution,
                 installmentNumber: i,
                 dueDate,
                 amount: credit.monthlyPayment,
@@ -271,8 +277,8 @@ router.put('/:id/approve', protect, authorize('admin', 'super_admin'), async (re
 
 // @route   PUT /api/credits/:id/reject
 // @desc    Rejeitar crédito
-// @access  Private (Admin)
-router.put('/:id/reject', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const { reason } = req.body;
 
@@ -316,8 +322,8 @@ router.put('/:id/reject', protect, authorize('admin', 'super_admin'), async (req
 
 // @route   PUT /api/credits/:id/disburse
 // @desc    Desembolsar crédito
-// @access  Private (Admin)
-router.put('/:id/disburse', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const { disbursementMethod } = req.body;
 

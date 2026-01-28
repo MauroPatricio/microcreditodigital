@@ -17,6 +17,7 @@ import creditRoutes from './src/routes/credits.js';
 import paymentRoutes from './src/routes/payments.js';
 import analyticsRoutes from './src/routes/analytics.js';
 import notificationRoutes from './src/routes/notifications.js';
+import institutionRoutes from './src/routes/institutions.js';
 
 // Importar jobs
 import paymentRemindersJob from './src/jobs/paymentReminders.js';
@@ -59,6 +60,7 @@ app.use('/api/credits', creditRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/institutions', institutionRoutes);
 
 // Rota raiz
 app.get('/', (req, res) => {

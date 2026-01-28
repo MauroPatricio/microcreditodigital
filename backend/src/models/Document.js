@@ -6,6 +6,11 @@ const documentSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    institution: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Institution',
+        required: true
+    },
     type: {
         type: String,
         enum: ['identity_card', 'proof_of_address', 'contract', 'income_proof', 'other'],

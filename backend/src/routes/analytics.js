@@ -9,35 +9,38 @@ const router = express.Router();
 
 // @route   GET /api/analytics/dashboard
 // @desc    Métricas do dashboard
-// @access  Private (Admin)
-router.get('/dashboard', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
+        const institutionId = req.user.institution._id;
+
         // Total de clientes
-        const totalClients = await User.countDocuments({ role: 'client' });
-        const verifiedClients = await User.countDocuments({ role: 'client', isVerified: true });
+        const totalClients = await User.countDocuments({ role: 'client', institution: institutionId });
+        const verifiedClients = await User.countDocuments({ role: 'client', isVerified: true, institution: institutionId });
 
         // Créditos ativos
-        const activeCredits = await Credit.find({ status: 'active' });
+        const activeCredits = await Credit.find({ status: 'active', institution: institutionId });
         const totalActiveAmount = activeCredits.reduce((sum, credit) => sum + credit.approvedAmount, 0);
 
         // Créditos em atraso
         const overdueInstallments = await Installment.find({
-            status: 'overdue'
+            status: 'overdue',
+            institution: institutionId
         }).populate('credit');
 
         const overdueAmount = overdueInstallments.reduce((sum, inst) => sum + (inst.totalAmount - inst.paidAmount), 0);
 
         // Taxa de incumprimento
-        const defaultedCredits = await Credit.countDocuments({ status: 'defaulted' });
-        const totalCredits = await Credit.countDocuments({ status: { $ne: 'pending' } });
+        const defaultedCredits = await Credit.countDocuments({ status: 'defaulted', institution: institutionId });
+        const totalCredits = await Credit.countDocuments({ status: { $ne: 'pending' }, institution: institutionId });
         const defaultRate = totalCredits > 0 ? (defaultedCredits / totalCredits) * 100 : 0;
 
         // Receita total (juros recebidos)
-        const allPayments = await Payment.find({ status: 'completed' });
+        const allPayments = await Payment.find({ status: 'completed', institution: institutionId });
         const totalRevenue = allPayments.reduce((sum, payment) => sum + payment.amount, 0);
 
         // Créditos pendentes de aprovação
-        const pendingCredits = await Credit.countDocuments({ status: 'pending' });
+        const pendingCredits = await Credit.countDocuments({ status: 'pending', institution: institutionId });
 
         // Créditos do mês
         const startOfMonth = new Date();
@@ -45,11 +48,13 @@ router.get('/dashboard', protect, authorize('admin', 'super_admin'), async (req,
         startOfMonth.setHours(0, 0, 0, 0);
 
         const creditsThisMonth = await Credit.countDocuments({
+            institution: institutionId,
             createdAt: { $gte: startOfMonth },
             status: { $ne: 'rejected' }
         });
 
         const paymentsThisMonth = await Payment.find({
+            institution: institutionId,
             createdAt: { $gte: startOfMonth },
             status: 'completed'
         });
@@ -91,10 +96,13 @@ router.get('/dashboard', protect, authorize('admin', 'super_admin'), async (req,
 
 // @route   GET /api/analytics/portfolio
 // @desc    Análise de carteira
-// @access  Private (Admin)
-router.get('/portfolio', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.get('/portfolio', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
-        const credits = await Credit.find({ status: { $in: ['active', 'paid', 'defaulted'] } });
+        const credits = await Credit.find({
+            institution: req.user.institution._id,
+            status: { $in: ['active', 'paid', 'defaulted'] }
+        });
 
         // Agrupar por status
         const byStatus = credits.reduce((acc, credit) => {
@@ -137,8 +145,8 @@ router.get('/portfolio', protect, authorize('admin', 'super_admin'), async (req,
 
 // @route   GET /api/analytics/revenue
 // @desc    Análise de receita
-// @access  Private (Admin)
-router.get('/revenue', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.get('/revenue', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const { months = 6 } = req.query;
 
@@ -146,6 +154,7 @@ router.get('/revenue', protect, authorize('admin', 'super_admin'), async (req, r
         monthsAgo.setMonth(monthsAgo.getMonth() - parseInt(months));
 
         const payments = await Payment.find({
+            institution: req.user.institution._id,
             status: 'completed',
             createdAt: { $gte: monthsAgo }
         });

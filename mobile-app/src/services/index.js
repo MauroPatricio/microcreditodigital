@@ -85,6 +85,11 @@ export const notificationService = {
 
 // Client Services
 export const clientService = {
+    create: async (clientData) => {
+        const response = await api.post('/clients', clientData);
+        return response.data;
+    },
+
     updateProfile: async (userId, profileData) => {
         const response = await api.put(`/clients/${userId}`, profileData);
         return response.data;

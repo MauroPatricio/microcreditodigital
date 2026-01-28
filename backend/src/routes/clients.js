@@ -37,14 +37,74 @@ const upload = multer({
     }
 });
 
+// @route   POST /api/clients
+// @desc    Registar novo cliente (pelo Agente/Manager)
+// @access  Private (Agent, Manager, Owner)
+router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), async (req, res) => {
+    try {
+        const {
+            name, email, phone, password, identityDocument,
+            dateOfBirth, address
+        } = req.body;
+
+        // Verificar se usuário já existe
+        const existingUser = await User.findOne({
+            $or: [
+                { email: email || 'never-match' },
+                { phone },
+                { identityDocument }
+            ]
+        });
+
+        if (existingUser) {
+            return res.status(400).json({
+                success: false,
+                message: 'Já existe um cliente com este telefone ou BI'
+            });
+        }
+
+        const client = new User({
+            name,
+            email,
+            phone,
+            password: password || '123456', // Senha padrão para ser alterada
+            identityDocument,
+            dateOfBirth,
+            address,
+            role: 'client',
+            institution: req.user.institution._id,
+            isVerified: false // Agentes registram, Managers verificam
+        });
+
+        await client.save();
+
+        res.status(201).json({
+            success: true,
+            message: 'Cliente registrado com sucesso',
+            data: {
+                client: client.toJSON()
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao registrar cliente',
+            error: error.message
+        });
+    }
+});
+
 // @route   GET /api/clients
 // @desc    Listar clientes
-// @access  Private (Admin)
-router.get('/', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Agent, Manager, Owner)
+router.get('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const { search, isVerified, isBlocked, page = 1, limit = 20 } = req.query;
 
-        let query = { role: 'client' };
+        let query = {
+            role: 'client',
+            institution: req.user.institution._id
+        };
 
         // Busca por nome, email ou telefone
         if (search) {
@@ -110,7 +170,11 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        if (req.user.role === 'client' && client._id.toString() !== req.user._id.toString()) {
+        const isSameInstitution = client.institution?.toString() === req.user.institution?._id.toString();
+        const isOwnProfile = client._id.toString() === req.user._id.toString();
+        const isStaff = ['owner', 'manager', 'agent'].includes(req.user.role);
+
+        if (!isSameInstitution && !isOwnProfile) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado'
@@ -155,7 +219,10 @@ router.put('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        if (req.user.role === 'client' && client._id.toString() !== req.user._id.toString()) {
+        const isSameInstitution = client.institution?.toString() === req.user.institution?._id.toString();
+        const isOwnProfile = client._id.toString() === req.user._id.toString();
+
+        if (!isSameInstitution || (req.user.role === 'client' && !isOwnProfile)) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado'
@@ -209,6 +276,7 @@ router.post('/:id/documents', protect, upload.single('document'), async (req, re
 
         const document = await Document.create({
             client: req.params.id,
+            institution: req.user.institution._id,
             type: type || 'other',
             fileUrl: req.file.path,
             fileName: req.file.originalname,
@@ -239,8 +307,8 @@ router.post('/:id/documents', protect, upload.single('document'), async (req, re
 
 // @route   PUT /api/clients/:id/verify
 // @desc    Verificar cliente
-// @access  Private (Admin)
-router.put('/:id/verify', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.put('/:id/verify', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const client = await User.findById(req.params.id);
 
@@ -272,8 +340,8 @@ router.put('/:id/verify', protect, authorize('admin', 'super_admin'), async (req
 
 // @route   PUT /api/clients/:id/block
 // @desc    Bloquear/Desbloquear cliente
-// @access  Private (Admin)
-router.put('/:id/block', protect, authorize('admin', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner)
+router.put('/:id/block', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const { isBlocked } = req.body;
 

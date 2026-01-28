@@ -29,8 +29,15 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['client', 'admin', 'super_admin'],
+        enum: ['client', 'agent', 'manager', 'owner', 'super_admin'],
         default: 'client'
+    },
+    institution: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Institution',
+        required: function () {
+            return this.role !== 'super_admin';
+        }
     },
     identityDocument: {
         type: String,

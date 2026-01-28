@@ -6,6 +6,11 @@ const installmentSchema = new mongoose.Schema({
         ref: 'Credit',
         required: true
     },
+    institution: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Institution',
+        required: true
+    },
     installmentNumber: {
         type: Number,
         required: true

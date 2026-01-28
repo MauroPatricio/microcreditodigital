@@ -6,6 +6,11 @@ const creditSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    institution: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Institution',
+        required: true
+    },
     amount: {
         type: Number,
         required: [true, 'Valor do crédito é obrigatório'],
