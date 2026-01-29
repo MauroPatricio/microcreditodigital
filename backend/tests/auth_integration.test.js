@@ -2,6 +2,7 @@ import { jest } from '@jest/globals';
 
 // Use real middleware variables but mock environment
 process.env.JWT_SECRET = 'test_secret_123';
+process.env.JWT_REFRESH_SECRET = 'test_refresh_secret_123';
 process.env.JWT_EXPIRE = '1h';
 
 // Explicit Mock for User model
@@ -59,12 +60,13 @@ describe('Auth Integration (Mocked DB)', () => {
         }));
 
         // Setup findById default (used by protect middleware)
-        User.findById.mockResolvedValue({
+        const mockPopulate = jest.fn().mockResolvedValue({
             ...userData,
             _id: 'integrationUserId',
             role: 'client',
             isBlocked: false
         });
+        User.findById.mockReturnValue({ populate: mockPopulate });
     });
 
     it('should allow access to protected route with valid token', async () => {

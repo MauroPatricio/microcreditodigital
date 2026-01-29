@@ -93,13 +93,24 @@ class MPesaService {
 
     /**
      * Validar webhook do M-Pesa
-     * @param {Object} webhookData - Dados do webhook
+     * @param {Object} headers - Headers da requisição (contendo assinatura)
+     * @param {Object} body - Corpo da requisição
      * @returns {boolean} - Validação bem-sucedida
      */
-    validateWebhook(webhookData) {
-        // Implementar validação de assinatura conforme documentação M-Pesa
-        // Por agora, retornamos true
-        return true;
+    validateWebhook(headers, body) {
+        // TODO: Implementar a validação real usando a chave pública do M-Pesa
+        // 1. Extrair a assinatura dos headers (ex: 'X-MPesa-Signature')
+        // 2. Reconstruir o payload original
+        // 3. Verificar a assinatura usando crypto.verify
+
+        console.log('Validando webhook M-Pesa...');
+
+        // Por agora, aceitamos se tiver os dados básicos
+        if (body && body.transactionId && body.amount) {
+            return true;
+        }
+
+        return false;
     }
 }
 

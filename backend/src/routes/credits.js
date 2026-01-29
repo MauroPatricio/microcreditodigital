@@ -229,11 +229,22 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
             });
         }
 
+        // Validar valor aprovado
+        const finalApprovedAmount = approvedAmount || credit.amount;
+        if (finalApprovedAmount > credit.amount) {
+            return res.status(400).json({
+                success: false,
+                message: 'O valor aprovado não pode ser superior ao solicitado'
+            });
+        }
+
         // Atualizar crédito
-        credit.approvedAmount = approvedAmount || credit.amount;
+        credit.approvedAmount = finalApprovedAmount;
         credit.status = 'approved';
         credit.approvedBy = req.user._id;
         credit.approvedAt = new Date();
+
+        // O pre-save hook do Mongoose calculará monthlyPayment e totalPayable automaticamente
         await credit.save();
 
         // Gerar parcelas

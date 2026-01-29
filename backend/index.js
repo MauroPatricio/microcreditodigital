@@ -30,11 +30,29 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 
 // Middlewares
 app.use(compression()); // Enable gzip compression
-app.use(cors());
+
+// Configuração dinâmica de CORS
+const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:5173'];
+
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permitir requisições sem origin (como apps mobile ou curl)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+            callback(null, true);
+        } else {
+            callback(new Error('Não permitido pelo CORS'));
+        }
+    },
+    credentials: true
+}));
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -51,7 +69,8 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Servir arquivos estáticos (uploads)
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+const uploadDir = process.env.UPLOAD_PATH || './uploads/documents';
+app.use('/uploads', express.static(path.join(__dirname, uploadDir)));
 
 // Rotas
 app.use('/api/auth', authRoutes);
