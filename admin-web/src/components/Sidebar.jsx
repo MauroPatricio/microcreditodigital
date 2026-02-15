@@ -2,8 +2,9 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-    FiHome, FiUsers, FiDollarSign, FiBarChart2,
-    FiSettings, FiLogOut, FiBriefcase, FiCreditCard
+    FiHome, FiUsers, FiDollarSign, FiBarChart2, FiActivity,
+    FiSettings, FiLogOut, FiBriefcase, FiCreditCard, FiTrendingUp,
+    FiSmartphone
 } from 'react-icons/fi';
 
 const Sidebar = () => {
@@ -15,6 +16,11 @@ const Sidebar = () => {
         { name: 'Empréstimos', icon: <FiBriefcase />, path: '/loans', roles: ['owner', 'manager', 'agent'] },
         { name: 'Cobranças', icon: <FiDollarSign />, path: '/payments', roles: ['owner', 'manager', 'agent'] },
         { name: 'Relatórios', icon: <FiBarChart2 />, path: '/reports', roles: ['owner', 'manager'] },
+        { name: 'Comissões', icon: <FiDollarSign />, path: '/commissions', roles: ['owner', 'manager'] },
+        { name: 'SMS Logs', icon: <FiSmartphone />, path: '/sms-logs', roles: ['owner', 'manager'] },
+        { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner'] },
+        { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager'] },
+        { name: 'Meus Ganhos', icon: <FiTrendingUp />, path: '/my-commissions', roles: ['agent'] },
         { name: 'Minha Instituição', icon: <FiSettings />, path: '/settings', roles: ['owner'] },
     ];
 

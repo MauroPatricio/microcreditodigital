@@ -3,7 +3,10 @@ import Payment from '../models/Payment.js';
 import Installment from '../models/Installment.js';
 import Credit from '../models/Credit.js';
 import Notification from '../models/Notification.js';
+import User from '../models/User.js';
+import smsService from '../services/sms.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { auditAction } from '../middleware/auditMiddleware.js';
 import { paymentValidation, validate } from '../middleware/validation.js';
 
 const router = express.Router();
@@ -11,7 +14,7 @@ const router = express.Router();
 // @route   POST /api/payments
 // @desc    Registrar pagamento
 // @access  Private (Client)
-router.post('/', protect, paymentValidation, validate, async (req, res) => {
+router.post('/', protect, auditAction('Payment', 'create', 'high'), paymentValidation, validate, async (req, res) => {
     try {
         const { creditId, installmentId, amount, paymentMethod, transactionId } = req.body;
 
@@ -102,6 +105,18 @@ router.post('/', protect, paymentValidation, validate, async (req, res) => {
                 creditId: credit._id
             }
         });
+
+        // Enviar SMS de confirmação
+        const client = await User.findById(req.user._id);
+        const remainingBalance = credit.totalPayable - credit.totalPaid;
+        await smsService.sendPaymentConfirmation(
+            client.phone,
+            amount,
+            remainingBalance,
+            req.user.institution,
+            req.user._id,
+            credit._id
+        );
 
         res.status(201).json({
             success: true,

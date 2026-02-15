@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 
-import { FiLock, FiMail, FiCreditCard } from 'react-icons/fi';
+import { FiLock, FiMail, FiCreditCard, FiEye, FiEyeOff } from 'react-icons/fi';
 
 const Login = () => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -81,14 +82,14 @@ const Login = () => {
                     <div style={{ position: 'relative' }}>
                         <FiLock style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             placeholder="Senha de acesso"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
                             style={{
                                 width: '100%',
-                                padding: '1rem 1rem 1rem 3rem',
+                                padding: '1rem 3rem 1rem 3rem',
                                 background: 'rgba(255,255,255,0.03)',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '12px',
@@ -96,7 +97,45 @@ const Login = () => {
                                 fontSize: '0.95rem'
                             }}
                         />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            style={{
+                                position: 'absolute',
+                                right: '1rem',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--text-muted)',
+                                cursor: 'pointer',
+                                padding: '0.5rem',
+                                display: 'flex',
+                                alignItems: 'center',
+                                transition: 'color 0.2s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--accent)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-muted)'}
+                        >
+                            {showPassword ? <FiEyeOff size={18} /> : <FiEye size={18} />}
+                        </button>
                     </div>
+
+                    <Link
+                        to="/forgot-password"
+                        style={{
+                            textAlign: 'right',
+                            color: 'var(--accent)',
+                            textDecoration: 'none',
+                            fontSize: '0.85rem',
+                            fontWeight: 500,
+                            transition: 'opacity 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                    >
+                        Esqueceu a senha?
+                    </Link>
 
                     <button
                         type="submit"
@@ -128,8 +167,33 @@ const Login = () => {
                     </div>
                 )}
 
+                <div style={{
+                    marginTop: '2rem',
+                    paddingTop: '1.5rem',
+                    borderTop: '1px solid rgba(255,255,255,0.1)',
+                    textAlign: 'center'
+                }}>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '0.75rem' }}>
+                        Ainda não tem conta?
+                    </p>
+                    <Link
+                        to="/register-owner"
+                        style={{
+                            color: 'var(--accent)',
+                            textDecoration: 'none',
+                            fontSize: '0.95rem',
+                            fontWeight: 600,
+                            transition: 'opacity 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.opacity = '0.8'}
+                        onMouseLeave={(e) => e.target.style.opacity = '1'}
+                    >
+                        Criar nova conta →
+                    </Link>
+                </div>
+
                 <div style={{ marginTop: '2.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Desenvolvido por <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>Nhiquela Tech</a>
+                    Desenvolvido por <a href="#" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 600 }}>Nhiquela Servicos e Consultoria, LDA</a>
                 </div>
             </div>
         </div>

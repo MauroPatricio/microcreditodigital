@@ -5,7 +5,7 @@ const getBaseURL = () => {
         return import.meta.env.VITE_API_URL;
     }
     // Fallback para o IP da rede local se estiver em desenvolvimento
-    return `http://${window.location.hostname}:5000/api`;
+    return `http://${window.location.hostname}:4000/api`;
 };
 
 const api = axios.create({

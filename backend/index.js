@@ -18,6 +18,11 @@ import paymentRoutes from './src/routes/payments.js';
 import analyticsRoutes from './src/routes/analytics.js';
 import notificationRoutes from './src/routes/notifications.js';
 import institutionRoutes from './src/routes/institutions.js';
+import reportsRoutes from './src/routes/reports.js';
+import commissionRoutes from './src/routes/commissions.js';
+import contractRoutes from './src/routes/contracts.js';
+import smsRoutes from './src/routes/sms.js';
+import auditRoutes from './src/routes/audit.js';
 
 // Importar jobs
 import paymentRemindersJob from './src/jobs/paymentReminders.js';
@@ -80,6 +85,11 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/institutions', institutionRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/commissions', commissionRoutes);
+app.use('/api/contracts', contractRoutes);
+app.use('/api/sms', smsRoutes);
+app.use('/api/audit', auditRoutes);
 
 // Rota raiz
 app.get('/', (req, res) => {
@@ -93,7 +103,8 @@ app.get('/', (req, res) => {
             credits: '/api/credits',
             payments: '/api/payments',
             analytics: '/api/analytics',
-            notifications: '/api/notifications'
+            notifications: '/api/notifications',
+            commissions: '/api/commissions'
         }
     });
 });

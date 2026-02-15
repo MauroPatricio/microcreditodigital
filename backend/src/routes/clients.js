@@ -2,7 +2,10 @@ import express from 'express';
 import User from '../models/User.js';
 import Document from '../models/Document.js';
 import Credit from '../models/Credit.js';
+import Notification from '../models/Notification.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { auditAction } from '../middleware/auditMiddleware.js';
+import { clientValidation, validate } from '../middleware/validation.js';
 import multer from 'multer';
 import path from 'path';
 
@@ -40,7 +43,7 @@ const upload = multer({
 // @route   POST /api/clients
 // @desc    Registar novo cliente (pelo Agente/Manager)
 // @access  Private (Agent, Manager, Owner)
-router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), async (req, res) => {
+router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), auditAction('User', 'create_client', 'medium'), clientValidation, validate, async (req, res) => {
     try {
         const {
             name, email, phone, password, identityDocument,
@@ -73,6 +76,7 @@ router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'),
             address,
             role: 'client',
             institution: req.user.institution._id,
+            registeredBy: req.user.role === 'agent' ? req.user._id : null, // Link com agente
             isVerified: false // Agentes registram, Managers verificam
         });
 

@@ -209,6 +209,112 @@ router.get('/me', protect, async (req, res) => {
     }
 });
 
+// @route   POST /api/auth/forgot-password
+// @desc    Request password reset
+// @access  Public
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: 'Email é obrigatório'
+            });
+        }
+
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            // Por segurança, não revelar se o usuário existe
+            return res.json({
+                success: true,
+                message: 'Se o email existir, você receberá instruções para redefinir a senha'
+            });
+        }
+
+        // Gerar token de reset (simples para desenvolvimento)
+        const crypto = await import('crypto');
+        const resetToken = crypto.default.randomBytes(32).toString('hex');
+
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
+        await user.save();
+
+        // Em produção, enviar email com o link
+        // Para desenvolvimento, retornar o token no console ou na resposta
+        console.log(`Password reset token for ${email}: ${resetToken}`);
+        console.log(`Reset link: http://localhost:5173/reset-password/${resetToken}`);
+
+        res.json({
+            success: true,
+            message: 'Se o email existir, você receberá instruções para redefinir a senha',
+            // Em desenvolvimento, incluir o token
+            ...(process.env.NODE_ENV === 'development' && { token: resetToken })
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao processar solicitação',
+            error: error.message
+        });
+    }
+});
+
+// @route   POST /api/auth/reset-password/:token
+// @desc    Reset password with token
+// @access  Public
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const { token } = req.params;
+        const { password } = req.body;
+
+        if (!password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Nova senha é obrigatória'
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                success: false,
+                message: 'A senha deve ter no mínimo 6 caracteres'
+            });
+        }
+
+        // Buscar usuário com token válido
+        const user = await User.findOne({
+            resetPasswordToken: token,
+            resetPasswordExpires: { $gt: Date.now() }
+        }).select('+password');
+
+        if (!user) {
+            return res.status(400).json({
+                success: false,
+                message: 'Token inválido ou expirado'
+            });
+        }
+
+        // Atualizar senha
+        user.password = password;
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Senha redefinida com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao redefinir senha',
+            error: error.message
+        });
+    }
+});
+
 // @route   POST /api/auth/logout
 // @desc    Logout (invalidar token)
 // @access  Private

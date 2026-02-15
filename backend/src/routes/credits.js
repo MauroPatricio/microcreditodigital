@@ -2,7 +2,12 @@ import express from 'express';
 import Credit from '../models/Credit.js';
 import Installment from '../models/Installment.js';
 import User from '../models/User.js';
+import Commission from '../models/Commission.js';
+import Contract from '../models/Contract.js';
+import contractService from '../services/contractService.js';
+import smsService from '../services/sms.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
 
@@ -56,8 +61,8 @@ router.post('/simulate', protect, async (req, res) => {
 
 // @route   POST /api/credits/request
 // @desc    Solicitar crédito
-// @access  Private (Client)
-router.post('/request', protect, creditRequestValidation, validate, async (req, res) => {
+// @access  Private (Agent/Client)
+router.post('/request', protect, auditAction('Credit', 'request', 'medium'), creditRequestValidation, validate, async (req, res) => {
     try {
         const { amount, term, purpose } = req.body;
 
@@ -209,7 +214,7 @@ router.get('/:id', protect, async (req, res) => {
 // @route   PUT /api/credits/:id/approve
 // @desc    Aprovar crédito
 // @access  Private (Manager/Owner)
-router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Credit', 'approve', 'high'), async (req, res) => {
     try {
         const { approvedAmount } = req.body;
 
@@ -270,9 +275,51 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
         credit.installments = installments;
         await credit.save();
 
+        // Calcular comissão do agente automaticamente
+        const client = await User.findById(credit.client);
+        if (client && client.registeredBy) {
+            const currentPeriod = new Date().toISOString().slice(0, 7);
+            const commissionRate = 2.5; // Pode ser configurável por instituição
+
+            await Commission.create({
+                agent: client.registeredBy,
+                institution: credit.institution,
+                credit: credit._id,
+                commissionType: 'approval',
+                baseAmount: credit.approvedAmount,
+                rate: commissionRate,
+                amount: Commission.calculateCommission(credit.approvedAmount, commissionRate),
+                status: 'pending',
+                period: currentPeriod
+            });
+        }
+
+        // Gerar contrato automaticamente
+        const pdfBuffer = await contractService.generateContractPDF(credit._id);
+        const fileName = `contract-${credit._id}-${Date.now()}.pdf`;
+        const fileUrl = await contractService.uploadToLocal(pdfBuffer, fileName);
+
+        await Contract.create({
+            credit: credit._id,
+            institution: credit.institution,
+            client: credit.client,
+            contractNumber: `CONT-${credit._id.toString().slice(-6).toUpperCase()}-${Date.now().toString().slice(-4)}`,
+            fileUrl,
+            status: 'draft'
+        });
+
+        // Enviar SMS de aprovação
+        await smsService.sendCreditApproved(
+            credit.client.phone,
+            credit.approvedAmount,
+            req.user.institution,
+            req.user._id,
+            credit._id
+        );
+
         res.json({
             success: true,
-            message: 'Crédito aprovado com sucesso',
+            message: 'Crédito aprovado e contrato gerado com sucesso',
             data: {
                 credit
             }
@@ -334,7 +381,7 @@ router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'),
 // @route   PUT /api/credits/:id/disburse
 // @desc    Desembolsar crédito
 // @access  Private (Manager/Owner)
-router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Credit', 'disburse', 'high'), async (req, res) => {
     try {
         const { disbursementMethod } = req.body;
 
@@ -359,9 +406,20 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
         credit.disbursementMethod = disbursementMethod || 'mpesa';
         await credit.save();
 
+        // Enviar SMS de desembolso
+        const client = await User.findById(credit.client);
+        await smsService.sendDisbursementNotice(
+            client.phone,
+            credit.approvedAmount,
+            disbursementMethod,
+            req.user.institution,
+            req.user._id,
+            credit._id
+        );
+
         res.json({
             success: true,
-            message: 'Crédito desembolsado com sucesso',
+            message: `Crédito desembolsado via ${disbursementMethod.toUpperCase()}`,
             data: {
                 credit
             }

@@ -1,15 +1,19 @@
+import SmsLog from '../models/SmsLog.js';
+
 /**
  * Serviço de envio de SMS
  * Pode ser configurado para usar Twilio ou outro provedor local
  */
-
 class SMSService {
     constructor() {
-        this.provider = process.env.SMS_PROVIDER || 'twilio';
+        this.provider = process.env.SMS_PROVIDER || 'local';
         this.initialized = false;
+        this.fromNumber = process.env.TWILIO_PHONE_NUMBER || 'CrediSmart';
 
         if (this.provider === 'twilio') {
             this.initializeTwilio();
+        } else {
+            console.log('✅ SMS em modo local/simulado');
         }
     }
 
@@ -19,13 +23,7 @@ class SMSService {
                 console.warn('⚠️  Twilio não configurado. SMS desabilitado.');
                 return;
             }
-
-            // Em produção, você instalaria: npm install twilio
-            // import twilio from 'twilio'; (Need to handle import dynamically if twilio is not always installed)
-            // Or just ensure it is installed.
-            // For now, we will assume it might not be there or we use dynamic import if needed.
-            // this.client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
-
+            // Em produção: this.client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
             this.initialized = true;
             console.log('✅ Twilio SMS configurado');
         } catch (error) {
@@ -35,78 +33,96 @@ class SMSService {
     }
 
     /**
-     * Enviar SMS
-     * @param {string} to - Número de telefone do destinatário
-     * @param {string} message - Mensagem
-     * @returns {Promise<Object>} - Resultado do envio
+     * Enviar SMS genérico e registrar no banco
      */
-    async sendSMS(to, message) {
-        if (!this.initialized) {
-            console.log('📱 SMS (simulado):', to, message);
-            return { success: true, simulated: true };
+    async sendSMS(to, message, type, institutionId, userId, creditId) {
+        let status = 'sent';
+        let error = null;
+
+        if (!this.initialized && this.provider === 'twilio') {
+            status = 'failed';
+            error = 'Provedor não inicializado';
         }
 
         try {
-            // Em produção com Twilio:
-            // const response = await this.client.messages.create({
-            //   body: message,
-            //   from: process.env.TWILIO_PHONE_NUMBER,
-            //   to: to
-            // });
+            if (this.initialized && this.provider === 'twilio') {
+                // await this.client.messages.create({ ... });
+                console.log(`📱 [TWILIO] SMS para ${to}: ${message}`);
+            } else {
+                console.log(`📱 [SIMULADO] SMS para ${to}: ${message}`);
+            }
 
-            // Por agora, apenas simulamos
-            console.log('📱 SMS enviado para:', to);
-            console.log('   Mensagem:', message);
-
-            return {
-                success: true,
-                to,
+            // Registrar log independentemente do sucesso (para rastrear falhas também)
+            await SmsLog.create({
+                institution: institutionId,
+                recipient: to,
+                user: userId,
+                credit: creditId,
+                type,
                 message,
-                simulated: true
-            };
-        } catch (error) {
-            console.error('Erro ao enviar SMS:', error.message);
-            return {
-                success: false,
-                error: error.message
-            };
+                status: status,
+                provider: this.provider,
+                error
+            });
+
+            return { success: status === 'sent', to, message };
+        } catch (err) {
+            console.error(`Erro ao enviar/logar SMS: ${err.message}`);
+
+            // Tentar logar a falha se ainda não logamos
+            try {
+                await SmsLog.create({
+                    institution: institutionId,
+                    recipient: to,
+                    user: userId,
+                    credit: creditId,
+                    type,
+                    message,
+                    status: 'failed',
+                    provider: this.provider,
+                    error: err.message
+                });
+            } catch (logErr) { }
+
+            return { success: false, error: err.message };
         }
     }
 
-    /**
-     * Enviar lembrete de pagamento via SMS
-     * @param {string} phone - Telefone do cliente
-     * @param {Object} installmentData - Dados da parcela
-     * @returns {Promise<Object>} - Resultado do envio
-     */
-    async sendPaymentReminder(phone, installmentData) {
-        const message = `CrediSmart+: Lembrete! Sua parcela ${installmentData.installmentNumber} de ${installmentData.amount.toFixed(2)} MT vence em ${installmentData.daysUntilDue} dias. Não se esqueça!`;
+    // --- TEMPLATES ---
 
-        return await this.sendSMS(phone, message);
+    async sendCreditApproved(to, amount, institution, userId, creditId) {
+        const message = `${institution.name}: Parabéns! Seu crédito de ${this.formatCurrency(amount)} foi aprovado. O contrato foi gerado e aguarda sua assinatura digital.`;
+        return this.sendSMS(to, message, 'approval', institution._id, userId, creditId);
     }
 
-    /**
-     * Enviar confirmação de pagamento via SMS
-     * @param {string} phone - Telefone do cliente
-     * @param {number} amount - Valor pago
-     * @returns {Promise<Object>} - Resultado do envio
-     */
-    async sendPaymentConfirmation(phone, amount) {
-        const message = `CrediSmart+: Pagamento de ${amount.toFixed(2)} MT confirmado com sucesso. Obrigado!`;
-
-        return await this.sendSMS(phone, message);
+    async sendCreditRejected(to, reason, institution, userId, creditId) {
+        const message = `${institution.name}: Informamos que seu pedido de crédito não foi aprovado nesta fase. Motivo: ${reason || 'Políticas internas'}.`;
+        return this.sendSMS(to, message, 'rejection', institution._id, userId, creditId);
     }
 
-    /**
-     * Enviar notificação de crédito aprovado via SMS
-     * @param {string} phone - Telefone do cliente
-     * @param {number} amount - Valor aprovado
-     * @returns {Promise<Object>} - Resultado do envio
-     */
-    async sendCreditApproved(phone, amount) {
-        const message = `CrediSmart+: Parabéns! Seu crédito de ${amount.toFixed(2)} MT foi aprovado. Aguarde o desembolso.`;
+    async sendDisbursementNotice(to, amount, method, institution, userId, creditId) {
+        const message = `${institution.name}: O valor de ${this.formatCurrency(amount)} foi desembolsado via ${method.toUpperCase()}. Verifique sua conta.`;
+        return this.sendSMS(to, message, 'disbursement', institution._id, userId, creditId);
+    }
 
-        return await this.sendSMS(phone, message);
+    async sendPaymentConfirmation(to, amount, balance, institution, userId, creditId) {
+        const message = `${institution.name}: Confirmamos o recebimento de ${this.formatCurrency(amount)}. Saldo devedor atual: ${this.formatCurrency(balance)}. Obrigado!`;
+        return this.sendSMS(to, message, 'payment', institution._id, userId, creditId);
+    }
+
+    async sendPaymentReminder(to, amount, dueDate, daysUntil, institution, userId, creditId) {
+        const msgType = daysUntil > 0 ? 'reminder' : 'overdue';
+        const message = `${institution.name}: Lembrete de pagamento. Sua parcela de ${this.formatCurrency(amount)} ${daysUntil > 0 ? `vence em ${daysUntil} dias (${dueDate})` : `está vencida desde ${dueDate}`}. Evite multas.`;
+        return this.sendSMS(to, message, msgType, institution._id, userId, creditId);
+    }
+
+    async sendOTP(to, otp, institution) {
+        const message = `${institution?.name || 'CrediSmart+'}: Seu código de verificação é ${otp}. Valido por 10 minutos.`;
+        return this.sendSMS(to, message, 'otp', institution?._id);
+    }
+
+    formatCurrency(value) {
+        return new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(value);
     }
 }
 

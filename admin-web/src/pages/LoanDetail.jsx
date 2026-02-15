@@ -7,6 +7,9 @@ import {
     FiArrowLeft, FiCheckCircle, FiXCircle, FiDollarSign,
     FiCalendar, FiClock, FiFileText, FiInfo
 } from 'react-icons/fi';
+import { Link } from 'react-router-dom';
+import ContractViewer from '../components/ContractViewer';
+import EntityHistory from '../components/EntityHistory';
 
 const LoanDetail = () => {
     const { id } = useParams();
@@ -108,6 +111,14 @@ const LoanDetail = () => {
                             }}>{loan.status}</span>
                         </div>
                     </div>
+
+                    {/* Contrato Digital */}
+                    {(loan.status === 'approved' || loan.status === 'active' || loan.status === 'paid') && (
+                        <ContractViewer creditId={loan._id} onUpdate={() => { }} />
+                    )}
+
+                    {/* Histórico de Auditoria */}
+                    <EntityHistory entityType="Credit" entityId={loan._id} />
 
                     {/* Parcelas */}
                     <div className="card">
