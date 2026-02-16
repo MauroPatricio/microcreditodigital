@@ -136,7 +136,7 @@ const SmsLogs = () => {
                     <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Destinatário</label>
                         <div className="glass" style={{ display: 'flex', alignItems: 'center', padding: '0.5rem 1rem', borderRadius: '8px' }}>
-                            <Fi Smartphone style={{ color: 'var(--accent)', marginRight: '0.5rem' }} />
+                            <FiSmartphone style={{ color: 'var(--accent)', marginRight: '0.5rem' }} />
                             <input
                                 type="text"
                                 name="recipient"

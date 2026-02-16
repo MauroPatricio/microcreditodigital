@@ -21,6 +21,7 @@ const notificationSchema = new mongoose.Schema({
             'credit_disbursed',
             'overdue_notice',
             'late_fee_applied',
+            'document_update',
             'general'
         ],
         required: true

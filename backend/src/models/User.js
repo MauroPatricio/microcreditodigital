@@ -9,8 +9,8 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        required: [true, 'Email é obrigatório'],
         unique: true,
+        sparse: true,
         lowercase: true,
         trim: true,
         match: [/^\S+@\S+\.\S+$/, 'Email inválido']
@@ -36,23 +36,62 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Institution',
         required: function () {
-            return this.role !== 'super_admin';
+            return this.role !== 'super_admin' && this.role !== 'owner';
         }
+    },
+    activeInstitution: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Institution'
     },
     identityDocument: {
         type: String,
-        required: [true, 'Número do BI é obrigatório'],
-        unique: true
+        required: [true, 'Número do BI é obrigatório']
+    },
+    nuit: {
+        type: String,
+        trim: true
+    },
+    dateOfBirth: {
+        type: Date,
+        required: [true, 'Data de nascimento é obrigatória']
     },
     address: {
         street: String,
         city: String,
         province: String,
-        country: { type: String, default: 'Moçambique' }
+        country: { type: String, default: 'Moçambique' },
+        coordinates: {
+            lat: Number,
+            lng: Number
+        }
     },
-    dateOfBirth: {
-        type: Date,
-        required: [true, 'Data de nascimento é obrigatória']
+    professionalInfo: {
+        employmentStatus: { type: String, enum: ['employed', 'self_employed', 'unemployed', 'retired', 'student'] },
+        employerName: String,
+        monthlyIncome: Number,
+        position: String,
+        workAddress: String
+    },
+    businessInfo: {
+        name: String,
+        type: String,
+        yearsInOperation: Number,
+        monthlyRevenue: Number
+    },
+    references: [{
+        name: String,
+        relationship: String,
+        phone: String
+    }],
+    selfieUrl: String,
+    onboardingStep: {
+        type: Number,
+        default: 1
+    },
+    onboardingStatus: {
+        type: String,
+        enum: ['incomplete', 'pending_verification', 'verified', 'rejected'],
+        default: 'incomplete'
     },
     creditScore: {
         type: Number,
@@ -127,8 +166,10 @@ userSchema.methods.toJSON = function () {
 // Indexes para otimização de performance
 userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
-userSchema.index({ identityDocument: 1 });
 userSchema.index({ role: 1 });
+userSchema.index({ identityDocument: 1, institution: 1 }, { unique: true, sparse: true });
+userSchema.index({ nuit: 1, institution: 1 }, { unique: true, sparse: true });
+userSchema.index({ 'address.coordinates': '2dsphere' });
 userSchema.index({ createdAt: -1 });
 
 const User = mongoose.model('User', userSchema);

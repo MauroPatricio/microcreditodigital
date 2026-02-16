@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
 import {
-    FiPercent, FiCalculator, FiCheckCircle,
+    FiPercent, FiTrendingUp, FiCheckCircle,
     FiCalendar, FiUser, FiDollarSign, FiFilter
 } from 'react-icons/fi';
 
@@ -114,7 +114,7 @@ const CommissionSettings = () => {
                         className="btn-primary"
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
                     >
-                        <FiCalculator /> {calculating ? 'Calculando...' : 'Calcular Período'}
+                        <FiTrendingUp /> {calculating ? 'Calculando...' : 'Calcular Período'}
                     </button>
                 </div>
             </div>

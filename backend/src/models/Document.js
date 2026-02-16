@@ -13,8 +13,12 @@ const documentSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['identity_card', 'proof_of_address', 'contract', 'income_proof', 'other'],
+        enum: ['identity_card', 'proof_of_address', 'contract', 'income_proof', 'nuit', 'residence_proof', 'selfie', 'other'],
         required: true
+    },
+    credit: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Credit'
     },
     fileUrl: {
         type: String,

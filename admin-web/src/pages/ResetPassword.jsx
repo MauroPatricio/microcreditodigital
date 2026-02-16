@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { FiLock, FiCreditCard, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiLock, FiTrendingUp, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../api';
 
 const ResetPassword = () => {
@@ -120,7 +120,7 @@ const ResetPassword = () => {
                     color: 'white',
                     margin: '0 auto 1.5rem'
                 }}>
-                    <FiCreditCard />
+                    <FiTrendingUp />
                 </div>
                 <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem' }}>Nova Senha</h1>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.95rem' }}>

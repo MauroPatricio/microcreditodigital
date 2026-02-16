@@ -4,12 +4,12 @@ const auditLogSchema = new mongoose.Schema({
     institution: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Institution',
-        required: true
+        required: false
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        required: false
     },
     action: {
         type: String,
@@ -21,7 +21,7 @@ const auditLogSchema = new mongoose.Schema({
     },
     entityId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true
+        required: false
     },
     changes: {
         before: mongoose.Schema.Types.Mixed,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FiMail, FiCreditCard, FiArrowLeft, FiCheck } from 'react-icons/fi';
+import { FiMail, FiTrendingUp, FiArrowLeft, FiCheck } from 'react-icons/fi';
 import api from '../api';
 
 const ForgotPassword = () => {
@@ -140,7 +140,7 @@ const ForgotPassword = () => {
                     color: 'white',
                     margin: '0 auto 1.5rem'
                 }}>
-                    <FiCreditCard />
+                    <FiTrendingUp />
                 </div>
                 <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem' }}>Esqueceu a Senha?</h1>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', fontSize: '0.95rem' }}>

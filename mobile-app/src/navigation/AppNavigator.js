@@ -14,6 +14,10 @@ import CollectionsScreen from '../screens/Home/CollectionsScreen';
 import CreditSimulatorScreen from '../screens/Credit/CreditSimulatorScreen';
 import MyCreditsScreen from '../screens/Credit/MyCreditsScreen';
 
+// Profile/Extra Screens
+import DocumentCenter from '../screens/Profile/DocumentCenter';
+import ContractSigner from '../screens/Profile/ContractSigner';
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -112,6 +116,17 @@ function ClientTabNavigator() {
     );
 }
 
+// Client Stack Navigator (for full screen screens)
+function ClientStack() {
+    return (
+        <Stack.Navigator>
+            <Stack.Screen name="MainTabs" component={ClientTabNavigator} options={{ headerShown: false }} />
+            <Stack.Screen name="DocumentCenter" component={DocumentCenter} options={{ title: 'Documentos' }} />
+            <Stack.Screen name="ContractSigner" component={ContractSigner} options={{ title: 'Assinar Contrato' }} />
+        </Stack.Navigator>
+    );
+}
+
 // Root Navigator
 export default function AppNavigator() {
     const { isAuthenticated, user, loading } = useAuth();
@@ -125,7 +140,7 @@ export default function AppNavigator() {
             ) : user?.role === 'agent' ? (
                 <AgentNavigator />
             ) : (
-                <ClientTabNavigator />
+                <ClientStack />
             )}
         </NavigationContainer>
     );

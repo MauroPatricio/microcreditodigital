@@ -4,6 +4,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../api';
+import Layout from '../components/Layout';
 
 const Reports = () => {
     const [activeReport, setActiveReport] = useState(null);
@@ -49,6 +50,20 @@ const Reports = () => {
             description: 'Taxa de aprovação e tempos',
             icon: FiCheckCircle,
             color: '#f59e0b'
+        },
+        {
+            id: 'onboarding-funnel',
+            title: 'Funil de Onboarding',
+            description: 'Conversão desde o cadastro ao desembolso',
+            icon: FiTrendingUp,
+            color: '#06b6d4'
+        },
+        {
+            id: 'agent-performance',
+            title: 'Performance de Agentes',
+            description: 'Ranking de onboardings e volume por agente',
+            icon: FiUsers,
+            color: '#ec4899'
         }
     ];
 
@@ -82,162 +97,164 @@ const Reports = () => {
     };
 
     return (
-        <div style={{
-            padding: '2rem',
-            maxWidth: '1400px',
-            margin: '0 auto'
-        }}>
-            <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>
-                    📊 Relatórios e Análises
-                </h1>
-                <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
-                    Insights e métricas premium para gestão de microcrédito
-                </p>
-            </div>
-
-            <div className="glass" style={{
-                padding: '1.5rem',
-                borderRadius: '16px',
-                marginBottom: '2rem',
-                display: 'flex',
-                gap: '1rem',
-                alignItems: 'center',
-                flexWrap: 'wrap'
+        <Layout>
+            <div style={{
+                padding: '2rem',
+                maxWidth: '1400px',
+                margin: '0 auto'
             }}>
-                <FiCalendar size={20} style={{ color: 'var(--accent)' }} />
-                <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                    Período:
-                </label>
-                <input
-                    type="date"
-                    value={dateRange.startDate}
-                    onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: 'white',
-                        fontSize: '0.9rem'
-                    }}
-                />
-                <span style={{ color: 'var(--text-muted)' }}>até</span>
-                <input
-                    type="date"
-                    value={dateRange.endDate}
-                    onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                    style={{
-                        padding: '0.5rem 1rem',
-                        borderRadius: '8px',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        background: 'rgba(255,255,255,0.05)',
-                        color: 'white',
-                        fontSize: '0.9rem'
-                    }}
-                />
-                {activeReport && (
-                    <button
-                        onClick={() => loadReport(activeReport)}
-                        className="btn-primary"
+                <div style={{ marginBottom: '2rem' }}>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                        📊 Relatórios e Análises
+                    </h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
+                        Insights e métricas premium para gestão de microcrédito
+                    </p>
+                </div>
+
+                <div className="glass" style={{
+                    padding: '1.5rem',
+                    borderRadius: '16px',
+                    marginBottom: '2rem',
+                    display: 'flex',
+                    gap: '1rem',
+                    alignItems: 'center',
+                    flexWrap: 'wrap'
+                }}>
+                    <FiCalendar size={20} style={{ color: 'var(--accent)' }} />
+                    <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                        Período:
+                    </label>
+                    <input
+                        type="date"
+                        value={dateRange.startDate}
+                        onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
                         style={{
-                            marginLeft: 'auto',
                             padding: '0.5rem 1rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: 'white',
                             fontSize: '0.9rem'
                         }}
-                    >
-                        Aplicar Filtro
-                    </button>
-                )}
-            </div>
-
-            {!activeReport && (
-                <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-                    gap: '1.5rem',
-                    marginBottom: '2rem'
-                }}>
-                    {reports.map((report) => (
-                        <div
-                            key={report.id}
-                            className="glass"
-                            onClick={() => loadReport(report.id)}
+                    />
+                    <span style={{ color: 'var(--text-muted)' }}>até</span>
+                    <input
+                        type="date"
+                        value={dateRange.endDate}
+                        onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                        style={{
+                            padding: '0.5rem 1rem',
+                            borderRadius: '8px',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            background: 'rgba(255,255,255,0.05)',
+                            color: 'white',
+                            fontSize: '0.9rem'
+                        }}
+                    />
+                    {activeReport && (
+                        <button
+                            onClick={() => loadReport(activeReport)}
+                            className="btn-primary"
                             style={{
-                                padding: '2rem',
-                                borderRadius: '16px',
-                                cursor: 'pointer',
-                                transition: 'transform 0.2s, box-shadow 0.2s',
-                                borderLeft: `4px solid ${report.color}`
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.transform = 'translateY(-4px)';
-                                e.currentTarget.style.boxShadow = `0 8px 24px ${report.color}33`;
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.transform = 'translateY(0)';
-                                e.currentTarget.style.boxShadow = 'none';
+                                marginLeft: 'auto',
+                                padding: '0.5rem 1rem',
+                                fontSize: '0.9rem'
                             }}
                         >
-                            <div style={{
-                                width: '48px',
-                                height: '48px',
-                                borderRadius: '12px',
-                                background: `${report.color}22`,
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginBottom: '1rem'
-                            }}>
-                                <report.icon size={24} style={{ color: report.color }} />
-                            </div>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-                                {report.title}
-                            </h3>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                {report.description}
-                            </p>
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {activeReport && (
-                <div>
-                    <button
-                        onClick={() => {
-                            setActiveReport(null);
-                            setReportData(null);
-                        }}
-                        className="btn-primary"
-                        style={{
-                            marginBottom: '1.5rem',
-                            background: 'rgba(255,255,255,0.05)',
-                            padding: '0.5rem 1rem'
-                        }}
-                    >
-                        ← Voltar aos Relatórios
-                    </button>
-
-                    {loading ? (
-                        <div className="glass" style={{
-                            padding: '4rem',
-                            borderRadius: '16px',
-                            textAlign: 'center'
-                        }}>
-                            <p style={{ color: 'var(--text-muted)' }}>Carregando relatório...</p>
-                        </div>
-                    ) : reportData && (
-                        <ReportContent
-                            reportId={activeReport}
-                            data={reportData}
-                            formatCurrency={formatCurrency}
-                            formatNumber={formatNumber}
-                        />
+                            Aplicar Filtro
+                        </button>
                     )}
                 </div>
-            )}
-        </div>
+
+                {!activeReport && (
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                        gap: '1.5rem',
+                        marginBottom: '2rem'
+                    }}>
+                        {reports.map((report) => (
+                            <div
+                                key={report.id}
+                                className="glass"
+                                onClick={() => loadReport(report.id)}
+                                style={{
+                                    padding: '2rem',
+                                    borderRadius: '16px',
+                                    cursor: 'pointer',
+                                    transition: 'transform 0.2s, box-shadow 0.2s',
+                                    borderLeft: `4px solid ${report.color}`
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                    e.currentTarget.style.boxShadow = `0 8px 24px ${report.color}33`;
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                    e.currentTarget.style.boxShadow = 'none';
+                                }}
+                            >
+                                <div style={{
+                                    width: '48px',
+                                    height: '48px',
+                                    borderRadius: '12px',
+                                    background: `${report.color}22`,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    marginBottom: '1rem'
+                                }}>
+                                    <report.icon size={24} style={{ color: report.color }} />
+                                </div>
+                                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+                                    {report.title}
+                                </h3>
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                    {report.description}
+                                </p>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {activeReport && (
+                    <div>
+                        <button
+                            onClick={() => {
+                                setActiveReport(null);
+                                setReportData(null);
+                            }}
+                            className="btn-primary"
+                            style={{
+                                marginBottom: '1.5rem',
+                                background: 'rgba(255,255,255,0.05)',
+                                padding: '0.5rem 1rem'
+                            }}
+                        >
+                            ← Voltar aos Relatórios
+                        </button>
+
+                        {loading ? (
+                            <div className="glass" style={{
+                                padding: '4rem',
+                                borderRadius: '16px',
+                                textAlign: 'center'
+                            }}>
+                                <p style={{ color: 'var(--text-muted)' }}>Carregando relatório...</p>
+                            </div>
+                        ) : reportData && (
+                            <ReportContent
+                                reportId={activeReport}
+                                data={reportData}
+                                formatCurrency={formatCurrency}
+                                formatNumber={formatNumber}
+                            />
+                        )}
+                    </div>
+                )}
+            </div>
+        </Layout>
     );
 };
 
@@ -264,6 +281,14 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
         'approval-metrics': {
             title: 'Métricas de Aprovação',
             color: '#f59e0b'
+        },
+        'onboarding-funnel': {
+            title: 'Funil de Conversão de Onboarding',
+            color: '#06b6d4'
+        },
+        'agent-performance': {
+            title: 'Performance de Agentes',
+            color: '#ec4899'
         }
     };
 
@@ -339,7 +364,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     </div>
 
                     {/* Line Chart */}
-                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Evolução ao Longo do Tempo
                         </h3>
@@ -367,7 +392,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     </div>
 
                     {/* Bar Chart por Status */}
-                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Distribuição por Status
                         </h3>
@@ -422,7 +447,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     </div>
 
                     {/* Bar Chart - Dias de Atraso */}
-                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Distribuição por Dias de Atraso
                         </h3>
@@ -475,7 +500,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     </div>
 
                     {/* Pie Chart - Métodos de Pagamento */}
-                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Métodos de Pagamento
                         </h3>
@@ -539,7 +564,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
 
                     {/* Bar Chart - Score Distribution */}
                     {data.scoreDistribution && data.scoreDistribution.length > 0 && (
-                        <div className="glass" style={{ padding: '2rem', borderRadius: '16px' }}>
+                        <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
                             <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                                 Distribuição por Score de Crédito
                             </h3>
@@ -564,6 +589,100 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                             </ResponsiveContainer>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Onboarding Funnel */}
+            {reportId === 'onboarding-funnel' && (
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                            Fluxo de Conversão
+                        </h3>
+                        <ResponsiveContainer width="100%" height={400}>
+                            <BarChart
+                                layout="vertical"
+                                data={data.steps}
+                                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                                <XAxis type="number" stroke="#fff" />
+                                <YAxis dataKey="name" type="category" stroke="#fff" width={100} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#1e293b',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: '8px'
+                                    }}
+                                />
+                                <Bar dataKey="count" fill={config.color} radius={[0, 4, 4, 0]} name="Volume" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                        gap: '1rem'
+                    }}>
+                        {data.steps.map((step, idx) => (
+                            <MetricCard
+                                key={idx}
+                                title={step.name}
+                                value={formatNumber(step.count)}
+                                color={config.color}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Agent Performance */}
+            {reportId === 'agent-performance' && (
+                <div style={{ display: 'grid', gap: '1.5rem' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', overflow: 'hidden' }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                            Ranking de Performance por Agente
+                        </h3>
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+                                <thead>
+                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Agente</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Cadastros</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Créditos</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Volume Total</th>
+                                        <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Conversão</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {data.map((agent, idx) => (
+                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                            <td style={{ padding: '1rem', fontWeight: 600 }}>{agent.name}</td>
+                                            <td style={{ padding: '1rem' }}>{formatNumber(agent.clientCount)}</td>
+                                            <td style={{ padding: '1rem' }}>{formatNumber(agent.creditCount)}</td>
+                                            <td style={{ padding: '1rem', color: 'var(--accent)' }}>{formatCurrency(agent.totalVolume)}</td>
+                                            <td style={{ padding: '1rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px' }}>
+                                                        <div style={{
+                                                            height: '100%',
+                                                            width: `${(agent.creditCount / (agent.clientCount || 1) * 100)}%`,
+                                                            background: config.color,
+                                                            borderRadius: '3px'
+                                                        }} />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.8rem' }}>
+                                                        {((agent.creditCount / (agent.clientCount || 1)) * 100).toFixed(1)}%
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -593,7 +712,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     </div>
 
                     {/* Pie Chart - Status Breakdown */}
-                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px' }}>
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Breakdown por Status
                         </h3>

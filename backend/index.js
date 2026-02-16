@@ -23,11 +23,15 @@ import commissionRoutes from './src/routes/commissions.js';
 import contractRoutes from './src/routes/contracts.js';
 import smsRoutes from './src/routes/sms.js';
 import auditRoutes from './src/routes/audit.js';
+import whatsappRoutes from './src/routes/whatsapp.js';
+import documentRoutes from './src/routes/documents.js';
+import contractTemplateRoutes from './src/routes/contractTemplates.js';
 
 // Importar jobs
 import paymentRemindersJob from './src/jobs/paymentReminders.js';
 import overdueHandlingJob from './src/jobs/overdueHandling.js';
 import interestCalculationJob from './src/jobs/interestCalculation.js';
+import whatsappJobs from './src/jobs/whatsappJobs.js';
 
 dotenv.config();
 
@@ -90,6 +94,9 @@ app.use('/api/commissions', commissionRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/audit', auditRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/documents', documentRoutes);
+app.use('/api/contract-templates', contractTemplateRoutes);
 
 // Rota raiz
 app.get('/', (req, res) => {
@@ -172,6 +179,9 @@ const startServer = async () => {
 
         interestCalculationJob.start();
         console.log('   ✓ Job de cálculo de juros ativado');
+
+        whatsappJobs.start();
+        console.log('   ✓ Job de notificações WhatsApp ativado');
 
         // Iniciar servidor
         app.listen(PORT, () => {

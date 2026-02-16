@@ -15,19 +15,30 @@ export const auditAction = (entityType, action, severity = 'medium') => {
             // Só logamos se a resposta for sucesso (2xx)
             if (res.statusCode >= 200 && res.statusCode < 300) {
                 try {
-                    // Tentar extrair o ID da entidade se não estiver nos params
                     let entityId = req.params.id;
-                    if (!entityId && typeof data === 'string') {
+                    let userId = req.user?._id;
+                    let institutionId = req.user?.institution?._id || req.user?.institution;
+
+                    let jsonData = null;
+                    if (typeof data === 'string') {
                         try {
-                            const jsonData = JSON.parse(data);
-                            entityId = jsonData.data?._id || jsonData.data?.id || jsonData._id;
+                            jsonData = JSON.parse(data);
+                            // Extrair entityId se não estiver nos params
+                            if (!entityId) {
+                                entityId = jsonData.data?._id || jsonData.data?.id || jsonData._id;
+                            }
+                            // Se não temos user/institution (ex: login/register), tentar extrair do corpo da resposta
+                            if (!userId && jsonData.data?.user) {
+                                userId = jsonData.data.user._id || jsonData.data.user.id;
+                                institutionId = jsonData.data.user.institution?._id || jsonData.data.user.institution?.id || jsonData.data.user.institution;
+                            }
                         } catch (e) { }
                     }
 
-                    // Gravar log de auditoria de forma assíncrona (não bloqueante)
+                    // Gravar log de auditoria de forma assíncrona
                     AuditLog.create({
-                        institution: req.user?.institution?._id || req.user?.institution,
-                        user: req.user?._id,
+                        institution: institutionId,
+                        user: userId,
                         action,
                         entityType,
                         entityId,

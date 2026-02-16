@@ -38,9 +38,11 @@ const ClientList = () => {
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Gestão de Clientes</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Visualize e gerencie todos os clientes da instituição.</p>
                 </div>
-                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FiUserPlus /> Novo Cliente
-                </button>
+                <Link to="/clients/new">
+                    <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <FiUserPlus /> Novo Cliente
+                    </button>
+                </Link>
             </div>
 
             <div className="card" style={{ padding: '0' }}>

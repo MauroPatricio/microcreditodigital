@@ -1,27 +1,32 @@
 import express from 'express';
 import User from '../models/User.js';
 import Institution from '../models/Institution.js';
-import { protect, generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
+import { protect, authorize, generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
 import { registerValidation, loginValidation, validate } from '../middleware/validation.js';
+import { auditAction } from '../middleware/auditMiddleware.js';
 
 const router = express.Router();
 
 // @route   POST /api/auth/register
 // @desc    Registrar novo usuário (Cliente ou Owner)
 // @access  Public
-router.post('/register', registerValidation, validate, async (req, res) => {
+router.post('/register', auditAction('User', 'register', 'high'), registerValidation, validate, async (req, res) => {
     try {
         const {
             name, email, phone, password, identityDocument,
             dateOfBirth, address, role,
-            institutionName, institutionNuit // Apenas para Owners
+            institutionName, institutionNuit, // Apenas para Owners
+            nuit, professionalInfo, businessInfo, references, onboardingStep
         } = req.body;
 
         const userRole = role === 'owner' ? 'owner' : 'client';
 
         // Verificar se usuário já existe
+        const matchCriteria = [{ phone }, { identityDocument }];
+        if (email) matchCriteria.push({ email });
+
         const existingUser = await User.findOne({
-            $or: [{ email }, { phone }, { identityDocument }]
+            $or: matchCriteria
         });
 
         if (existingUser) {
@@ -31,16 +36,21 @@ router.post('/register', registerValidation, validate, async (req, res) => {
             });
         }
 
-        // Criar usuário (sem instituição primeiro se for owner, ou com se for cliente de algum fluxo)
+        // Criar usuário
         const user = new User({
             name,
             email,
             phone,
             password,
             identityDocument,
+            nuit,
             dateOfBirth,
             address,
-            role: userRole
+            role: userRole,
+            professionalInfo,
+            businessInfo,
+            references,
+            onboardingStep: onboardingStep || 1
         });
 
         // Se for Owner, criar instituição
@@ -89,7 +99,7 @@ router.post('/register', registerValidation, validate, async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login de usuário
 // @access  Public
-router.post('/login', loginValidation, validate, async (req, res) => {
+router.post('/login', auditAction('User', 'login', 'medium'), loginValidation, validate, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -194,10 +204,15 @@ router.post('/refresh', async (req, res) => {
 // @access  Private
 router.get('/me', protect, async (req, res) => {
     try {
+        const user = await User.findById(req.user._id)
+            .populate('documents')
+            .populate('institution')
+            .populate('activeInstitution');
+
         res.json({
             success: true,
             data: {
-                user: req.user
+                user
             }
         });
     } catch (error) {
@@ -329,6 +344,33 @@ router.post('/logout', protect, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao fazer logout',
+            error: error.message
+        });
+    }
+});
+
+// @route   GET /api/auth/users
+// @desc    Obter usuários filtrados (ex: por role)
+// @access  Private (Manager/Owner)
+router.get('/users', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+    try {
+        const { role } = req.query;
+        let query = { institution: req.institutionId };
+
+        if (role) {
+            query.role = role;
+        }
+
+        const users = await User.find(query).select('-password');
+
+        res.json({
+            success: true,
+            data: users
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao buscar usuários',
             error: error.message
         });
     }

@@ -5,7 +5,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Layout from './components/Layout';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, roles }) => {
   const { user, loading } = useAuth();
 
   if (loading) return (
@@ -22,6 +22,10 @@ const ProtectedRoute = ({ children }) => {
   );
 
   if (!user) return <Navigate to="/login" />;
+
+  if (roles && !roles.includes(user.role)) {
+    return <Navigate to="/dashboard" />;
+  }
 
   return children;
 };
@@ -49,8 +53,15 @@ import Reports from './pages/Reports';
 import CommissionSettings from './pages/CommissionSettings';
 import AgentPerformance from './pages/AgentPerformance';
 import MyCommissions from './pages/MyCommissions';
-import SmsLogs from './pages/SmsLogs';
+import SMSLogs from './pages/SMSLogs';
 import AuditLogs from './pages/AuditLogs';
+import PendingDocuments from './pages/PendingDocuments';
+import WhatsAppSettings from './pages/WhatsAppSettings';
+import ContractTemplates from './pages/ContractTemplates';
+import GlobalDashboard from './pages/GlobalDashboard';
+import ClientOnboarding from './pages/ClientOnboarding';
+import CreditRequestPremium from './pages/CreditRequestPremium';
+import InstitutionOnboarding from './pages/InstitutionOnboarding';
 
 function App() {
   return (
@@ -64,7 +75,9 @@ function App() {
 
           <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
           <Route path="/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
+          <Route path="/clients/new" element={<ProtectedRoute><ClientOnboarding /></ProtectedRoute>} />
           <Route path="/clients/:id" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
+          <Route path="/clients/:clientId/request-credit" element={<ProtectedRoute><CreditRequestPremium /></ProtectedRoute>} />
           <Route path="/loans" element={<ProtectedRoute><LoanList /></ProtectedRoute>} />
           <Route path="/credits/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
           <Route path="/payments" element={<ProtectedRoute><PaymentList /></ProtectedRoute>} />
@@ -72,11 +85,16 @@ function App() {
           <Route path="/commissions" element={<ProtectedRoute><CommissionSettings /></ProtectedRoute>} />
           <Route path="/agent-performance" element={<ProtectedRoute><AgentPerformance /></ProtectedRoute>} />
           <Route path="/my-commissions" element={<ProtectedRoute><MyCommissions /></ProtectedRoute>} />
-          <Route path="/sms-logs" element={<ProtectedRoute><SmsLogs /></ProtectedRoute>} />
-          <Route path="/audit-logs" element={<ProtectedRoute><AuditLogs /></ProtectedRoute>} />
+          <Route path="/sms-logs" element={<ProtectedRoute><SMSLogs /></ProtectedRoute>} />
+          <Route path="/audit-logs" element={<ProtectedRoute roles={['owner']}><AuditLogs /></ProtectedRoute>} />
+          <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
+          <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
+          <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager']}><ContractTemplates /></ProtectedRoute>} />
+          <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner']}><GlobalDashboard /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><InstitutionSettings /></ProtectedRoute>} />
+          <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
 
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </Router>
     </AuthProvider>

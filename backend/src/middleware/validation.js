@@ -16,11 +16,22 @@ export const validate = (req, res, next) => {
 // Validações para registro de usuário
 export const registerValidation = [
     body('name').trim().notEmpty().withMessage('Nome é obrigatório'),
-    body('email').isEmail().withMessage('Email inválido').normalizeEmail(),
+    body('email').optional({ checkFalsy: true }).isEmail().withMessage('Email inválido').normalizeEmail(),
     body('phone').trim().notEmpty().withMessage('Telefone é obrigatório'),
     body('password').isLength({ min: 6 }).withMessage('Senha deve ter no mínimo 6 caracteres'),
     body('identityDocument').trim().notEmpty().withMessage('Número do BI é obrigatório'),
     body('dateOfBirth').isISO8601().withMessage('Data de nascimento inválida')
+];
+
+// Validações para criação de cliente (Agente/Manager)
+export const clientValidation = [
+    body('name').trim().notEmpty().withMessage('Nome é obrigatório'),
+    body('phone').trim().notEmpty().withMessage('Telefone é obrigatório'),
+    body('identityDocument').trim().notEmpty().withMessage('Número do BI é obrigatório'),
+    body('email').optional({ checkFalsy: true }).isEmail().withMessage('Email inválido').normalizeEmail(),
+    body('dateOfBirth').notEmpty().withMessage('Data de nascimento é obrigatória').isISO8601().withMessage('Data de nascimento inválida'),
+    body('address.province').notEmpty().withMessage('Província é obrigatória'),
+    body('address.city').notEmpty().withMessage('Cidade é obrigatória')
 ];
 
 // Validações para login

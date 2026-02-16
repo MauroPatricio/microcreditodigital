@@ -1,0 +1,68 @@
+{
+    "common": {
+        "loading": "Carregando...",
+        "back": "Voltar",
+        "save": "Salvar",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "actions": "Ações",
+        "status": "Estado",
+        "error": "Erro",
+        "success": "Sucesso"
+    },
+    "client_profile": {
+        "title": "Perfil do Cliente",
+        "id": "ID",
+        "verified": "VERIFICADO",
+        "verify_now": "VERIFICAR AGORA",
+        "new_loan": "Novo Empréstimo",
+        "generate_report": "Gerar Relatório",
+        "personal_info": "Informações Pessoais",
+        "phone": "Telefone",
+        "email": "Email",
+        "identity": "BI / NUIT",
+        "birth_date": "Data de Nascimento",
+        "address": "Endereço",
+        "risk_profile": "Perfil de Risco",
+        "credit_score": "Score Atual",
+        "score_range": "(0 - 1000)",
+        "risk": "RISCO",
+        "loan_history": "Histórico de Empréstimos",
+        "no_loans": "Nenhum empréstimo registrado para este cliente.",
+        "contract": "Contrato",
+        "generate_and_send": "Gerar e Enviar",
+        "resend": "Reenviar",
+        "contract_success": "Contrato gerado com sucesso!",
+        "doc_status": {
+            "verified": "Validado",
+            "pending": "Pendente"
+        },
+        "contract_status": {
+            "draft": "Rascunho",
+            "sent": "Enviado",
+            "signed": "Assinado",
+            "expired": "Expirado"
+        },
+        "documentation": "Documentação do Cliente",
+        "no_documents": "Nenhum documento anexado.",
+        "upload_manual": "Upload Manual",
+        "upload_title": "Enviar Documento",
+        "file": "Arquivo",
+        "doc_type": "Tipo de Documento",
+        "uploading": "Enviando...",
+        "upload_error": "Erro ao enviar documento",
+        "doc_types": {
+            "identity_card": "Documento de Identidade (BI)",
+            "proof_of_address": "Comprovativo de Morada",
+            "income_proof": "Comprovativo de Rendimentos",
+            "contract": "Contrato Assinado",
+            "other": "Outro"
+        }
+    },
+    "onboarding": {
+        "title": "Onboarding Premium",
+        "subtitle": "Siga os passos para cadastrar um novo cliente com validação inteligente."
+    }
+}

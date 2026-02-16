@@ -6,9 +6,11 @@ export const protect = async (req, res, next) => {
     try {
         let token;
 
-        // Verificar se o token existe no header
+        // Verificar se o token existe no header ou query string
         if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
             token = req.headers.authorization.split(' ')[1];
+        } else if (req.query.token) {
+            token = req.query.token;
         }
 
         if (!token) {
@@ -22,8 +24,10 @@ export const protect = async (req, res, next) => {
             // Verificar token
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            // Buscar usuário e popular instituição
-            req.user = await User.findById(decoded.id).populate('institution');
+            // Buscar usuário e popular instituições
+            req.user = await User.findById(decoded.id)
+                .populate('institution')
+                .populate('activeInstitution');
 
             if (!req.user) {
                 return res.status(401).json({
@@ -39,9 +43,16 @@ export const protect = async (req, res, next) => {
                 });
             }
 
-            // Injetar ID da instituição no request para fácil acesso em outros controllers
-            if (req.user.institution) {
-                req.institutionId = req.user.institution._id;
+            // Lógica Multi-Tenant: Priorizar activeInstitution para Owners
+            if (req.user.role === 'owner' || req.user.role === 'super_admin') {
+                req.institution = req.user.activeInstitution || req.user.institution;
+            } else {
+                req.institution = req.user.institution;
+            }
+
+            if (req.institution) {
+                // Se estiver populado é um objeto com _id, se não é o próprio ID (string/ObjectId)
+                req.institutionId = req.institution._id || req.institution;
             }
 
             next();

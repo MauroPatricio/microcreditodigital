@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { FiUser, FiMail, FiPhone, FiLock, FiCreditCard, FiFileText, FiCalendar, FiMapPin, FiBriefcase, FiArrowLeft, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiLock, FiTrendingUp, FiFileText, FiCalendar, FiMapPin, FiBriefcase, FiArrowLeft, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../api';
 
 const OwnerRegister = () => {
@@ -198,7 +198,7 @@ const OwnerRegister = () => {
                         color: 'white',
                         margin: '0 auto 1.5rem'
                     }}>
-                        <FiCreditCard />
+                        <FiTrendingUp />
                     </div>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem' }}>Criar Conta de Owner</h1>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>

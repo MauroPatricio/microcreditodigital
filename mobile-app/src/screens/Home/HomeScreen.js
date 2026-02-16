@@ -7,9 +7,11 @@ import {
     TouchableOpacity,
     ActivityIndicator,
     RefreshControl,
+    Image,
+    Platform,
 } from 'react-native';
 import { useAuth } from '../../context/AuthContext';
-import { creditService, notificationService } from '../../services';
+import api from '../../services/api'; // Certifique-se que o api está disponível
 
 export default function HomeScreen({ navigation }) {
     const { user } = useAuth();
@@ -58,6 +60,14 @@ export default function HomeScreen({ navigation }) {
 
     const unreadCount = data.notifications.filter((n) => !n.isRead).length;
 
+    const getLogoUrl = () => {
+        if (user?.institution?.settings?.appearance?.logoUrl) {
+            const baseUrl = api.defaults.baseURL.replace('/api', '');
+            return `${baseUrl}/${user.institution.settings.appearance.logoUrl}`;
+        }
+        return null;
+    };
+
     if (loading) {
         return (
             <View style={styles.loadingContainer}>
@@ -69,9 +79,18 @@ export default function HomeScreen({ navigation }) {
     const renderAgentHome = () => (
         <>
             <View style={styles.header}>
-                <View>
-                    <Text style={styles.greeting}>Olá Agente,</Text>
-                    <Text style={styles.userName}>{user?.name.split(' ')[0]}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                    {getLogoUrl() ? (
+                        <Image source={{ uri: getLogoUrl() }} style={styles.headerLogo} />
+                    ) : (
+                        <View style={[styles.headerLogo, { backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center' }]}>
+                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>CS</Text>
+                        </View>
+                    )}
+                    <View>
+                        <Text style={styles.greeting}>{user?.institution?.settings?.appearance?.headerTitle || 'CrediSmart+'}</Text>
+                        <Text style={styles.userName}>{user?.name.split(' ')[0]}</Text>
+                    </View>
                 </View>
                 <TouchableOpacity style={styles.notificationButton}>
                     <Text style={styles.notificationIcon}>🔔</Text>
@@ -113,15 +132,56 @@ export default function HomeScreen({ navigation }) {
         return (
             <>
                 <View style={styles.header}>
-                    <View>
-                        <Text style={styles.greeting}>Olá,</Text>
-                        <Text style={styles.userName}>{user?.name}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+                        {getLogoUrl() ? (
+                            <Image source={{ uri: getLogoUrl() }} style={styles.headerLogo} />
+                        ) : (
+                            <View style={[styles.headerLogo, { backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center' }]}>
+                                <Text style={{ color: '#fff', fontWeight: 'bold' }}>CS</Text>
+                            </View>
+                        )}
+                        <View>
+                            <Text style={styles.greeting}>{user?.institution?.settings?.appearance?.headerTitle || 'CrediSmart+'}</Text>
+                            <Text style={styles.userName}>{user?.name.split(' ')[0]}</Text>
+                        </View>
                     </View>
                     <TouchableOpacity style={styles.notificationButton}>
                         <Text style={styles.notificationIcon}>🔔</Text>
                         {unreadCount > 0 && <View style={styles.badge}><Text style={styles.badgeText}>{unreadCount}</Text></View>}
                     </TouchableOpacity>
                 </View>
+
+                {/* Pendências Críticas */}
+                {!user?.isVerified && (
+                    <TouchableOpacity
+                        style={[styles.statusCard, styles.warningCard]}
+                        onPress={() => navigation.navigate('DocumentCenter')}
+                    >
+                        <Text style={styles.statusTitle}>Documentação Pendente</Text>
+                        <Text style={styles.statusText}>Complete seu perfil para liberar novos créditos.</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+                            <Text style={{ color: '#ef4444', fontWeight: '700' }}>Resolver Agora</Text>
+                            <Text style={{ marginLeft: 5 }}>➔</Text>
+                        </View>
+                    </TouchableOpacity>
+                )}
+
+                {data.credits.some(c => c.contractStatus === 'pending_signature') && (
+                    <TouchableOpacity
+                        style={[styles.statusCard, { backgroundColor: '#e0f2fe', borderLeftColor: '#0ea5e9', borderLeftWidth: 4 }]}
+                        onPress={() => {
+                            const credit = data.credits.find(c => c.contractStatus === 'pending_signature');
+                            navigation.navigate('ContractSigner', { creditId: credit._id });
+                        }}
+                    >
+                        <Text style={[styles.statusTitle, { color: '#0369a1' }]}>Contrato Disponível</Text>
+                        <Text style={styles.statusText}>Seu crédito foi aprovado! Assine o contrato para receber o valor.</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10 }}>
+                            <Text style={{ color: '#0ea5e9', fontWeight: '700' }}>Assinar Digitalmente</Text>
+                            <Text style={{ marginLeft: 5 }}>➔</Text>
+                        </View>
+                    </TouchableOpacity>
+                )}
 
                 {activeCredit ? (
                     <View style={[styles.statusCard, styles.activeCard]}>
@@ -175,12 +235,22 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 20,
-        paddingTop: 40,
+        paddingTop: Platform.OS === 'ios' ? 60 : 40,
         backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9'
+    },
+    headerLogo: {
+        width: 48,
+        height: 48,
+        borderRadius: 12,
+        backgroundColor: '#f8fafc'
     },
     greeting: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#64748b',
+        fontWeight: '600',
+        textTransform: 'uppercase'
     },
     userName: {
         fontSize: 24,

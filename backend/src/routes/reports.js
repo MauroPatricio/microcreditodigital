@@ -358,4 +358,142 @@ router.get('/approval-metrics', async (req, res) => {
     }
 });
 
+// @route   GET /api/reports/onboarding-funnel
+// @desc    Funil de conversão de onboarding
+// @access  Private (Owner/Admin)
+router.get('/onboarding-funnel', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const match = { institution: req.user.institution };
+        if (startDate && endDate) {
+            match.createdAt = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate)
+            };
+        }
+
+        // Etapa 1: Registros Totais
+        const totalRegistrations = await User.countDocuments({ ...match, role: 'client' });
+
+        // Etapa 2: Clientes com Documentos (ex: BI preenchido)
+        const withDocs = await User.countDocuments({
+            ...match,
+            role: 'client',
+            identityDocument: { $exists: true, $ne: '' }
+        });
+
+        // Etapa 3: Clientes com Solicitação de Crédito
+        const withCreditRequest = await Credit.distinct('client', match);
+
+        // Etapa 4: Créditos Aprovados
+        const approvedCredits = await Credit.countDocuments({ ...match, status: 'approved' });
+
+        // Etapa 5: Créditos Ativos (Desembolsados)
+        const disbursedCredits = await Credit.countDocuments({ ...match, status: 'active' });
+
+        res.json({
+            success: true,
+            data: {
+                steps: [
+                    { name: 'Cadastros', count: totalRegistrations },
+                    { name: 'Documentação', count: withDocs },
+                    { name: 'Solicitações', count: withCreditRequest.length },
+                    { name: 'Aprovações', count: approvedCredits },
+                    { name: 'Desembolsos', count: disbursedCredits }
+                ]
+            }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar funil de onboarding',
+            error: error.message
+        });
+    }
+});
+
+// @route   GET /api/reports/agent-performance
+// @desc    Performance de agentes (onboarding e créditos)
+// @access  Private (Owner/Admin)
+router.get('/agent-performance', async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const match = { institution: req.user.institution };
+        if (startDate && endDate) {
+            match.createdAt = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate)
+            };
+        }
+
+        // Performance por Agente (Registros e Créditos)
+        const agentStats = await User.aggregate([
+            { $match: { ...match, role: 'agent' } },
+            {
+                $lookup: {
+                    from: 'users',
+                    localField: '_id',
+                    foreignField: 'registeredBy',
+                    as: 'clients'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    clientCount: { $size: '$clients' },
+                    agentId: '$_id'
+                }
+            },
+            {
+                $lookup: {
+                    from: 'credits',
+                    localField: 'agentId',
+                    foreignField: 'performedBy', // Ou via client registeredBy se o agente não for o que criou o crédito
+                    as: 'credits'
+                }
+            },
+            // Como créditos são associados ao cliente, vamos buscar créditos dos clientes registrados pelo agente
+            {
+                $lookup: {
+                    from: 'credits',
+                    let: { agentId: '$_id' },
+                    pipeline: [
+                        {
+                            $lookup: {
+                                from: 'users',
+                                localField: 'client',
+                                foreignField: '_id',
+                                as: 'clientInfo'
+                            }
+                        },
+                        { $unwind: '$clientInfo' },
+                        { $match: { $expr: { $eq: ['$clientInfo.registeredBy', '$$agentId'] } } }
+                    ],
+                    as: 'agentCredits'
+                }
+            },
+            {
+                $project: {
+                    name: 1,
+                    clientCount: 1,
+                    creditCount: { $size: '$agentCredits' },
+                    totalVolume: { $sum: '$agentCredits.amount' }
+                }
+            },
+            { $sort: { creditCount: -1 } }
+        ]);
+
+        res.json({
+            success: true,
+            data: agentStats
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar performance de agentes',
+            error: error.message
+        });
+    }
+});
+
 export default router;

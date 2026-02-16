@@ -2,13 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
-import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin } from 'react-icons/fi';
+import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin, FiUpload, FiImage } from 'react-icons/fi';
+import Modal from '../components/Modal';
 
 const InstitutionSettings = () => {
-    const { user } = useAuth();
+    const { user, updateUser } = useAuth();
     const [institution, setInstitution] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploadingLogo, setUploadingLogo] = useState(false);
+    const [logoPreview, setLogoPreview] = useState(null);
+    const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'error' });
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -65,13 +69,66 @@ const InstitutionSettings = () => {
         });
     };
 
+    const handleLogoUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // Preview local
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setLogoPreview(reader.result);
+        };
+        reader.readAsDataURL(file);
+
+        const formDataFile = new FormData();
+        formDataFile.append('logo', file);
+
+        setUploadingLogo(true);
+        try {
+            const res = await api.post('/institutions/my/logo', formDataFile, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.success) {
+                // Atualizar o estado global ou o formData se necessário
+                setFormData(prev => ({
+                    ...prev,
+                    settings: {
+                        ...prev.settings,
+                        appearance: {
+                            ...prev.settings?.appearance,
+                            logoUrl: res.data.data.logoUrl
+                        }
+                    }
+                }));
+                // Atualizar dados globais do usuário para atualizar Sidebar, etc.
+                updateUser();
+            }
+        } catch (error) {
+            console.error("Error uploading logo", error);
+            setModal({
+                isOpen: true,
+                title: 'Erro de Upload',
+                message: 'Não foi possível enviar o logo. Verifique se o arquivo é uma imagem válida e tem menos de 2MB.',
+                type: 'error'
+            });
+        } finally {
+            setUploadingLogo(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
             const res = await api.put('/institutions/my', formData);
             if (res.data.success) {
-                alert('Configurações salvas com sucesso!');
+                setModal({
+                    isOpen: true,
+                    title: 'Sucesso!',
+                    message: 'As configurações da instituição foram atualizadas com sucesso.',
+                    type: 'success'
+                });
+                updateUser(); // Refrescar dados do topo/sidebar
             }
         } catch (error) {
             console.error("Error updating settings", error);
@@ -97,6 +154,46 @@ const InstitutionSettings = () => {
                             <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <FiBriefcase style={{ color: 'var(--accent)' }} /> Identidade Corporativa
                             </h3>
+
+                            {/* Logo Upload Section */}
+                            <div>
+                                <div style={{
+                                    width: '100px',
+                                    height: '100px',
+                                    borderRadius: '12px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    border: '2px dashed rgba(255,255,255,0.1)',
+                                    overflow: 'hidden',
+                                    position: 'relative'
+                                }}>
+                                    {(logoPreview || formData.settings?.appearance?.logoUrl) ? (
+                                        <img
+                                            src={logoPreview || `${api.defaults.baseURL.replace('/api', '')}/${formData.settings?.appearance?.logoUrl}`}
+                                            alt="Logo Preview"
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                        />
+                                    ) : (
+                                        <FiImage size={32} color="var(--text-muted)" />
+                                    )}
+                                    {uploadingLogo && (
+                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <div className="spinner-small" style={{ width: '20px', height: '20px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div>
+                                    <p style={{ fontWeight: 700, marginBottom: '0.5rem', fontSize: '1rem' }}>Logo da Instituição</p>
+                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>PNG ou JPEG, máx 2MB. Recomendado 400x400px.</p>
+                                    <label className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        <FiUpload /> {uploadingLogo ? 'Enviando...' : 'Alterar Logo'}
+                                        <input type="file" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                                    </label>
+                                </div>
+                            </div>
+
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Nome da Instituição</label>
@@ -127,6 +224,50 @@ const InstitutionSettings = () => {
                                         type="email" name="email" value={formData.email} onChange={handleChange}
                                         style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
                                     />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Personalização Visual */}
+                        <div className="card">
+                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiImage style={{ color: 'var(--accent)' }} /> Identidade Visual
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <div>
+                                    <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.75rem' }}>Cor Primária do Sistema</label>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                        <input
+                                            type="color"
+                                            name="settings.appearance.primaryColor"
+                                            value={formData.settings?.appearance?.primaryColor || '#00FF00'}
+                                            onChange={(e) => {
+                                                setFormData({
+                                                    ...formData,
+                                                    settings: {
+                                                        ...formData.settings,
+                                                        appearance: {
+                                                            ...formData.settings?.appearance,
+                                                            primaryColor: e.target.value
+                                                        }
+                                                    }
+                                                });
+                                            }}
+                                            style={{
+                                                width: '50px',
+                                                height: '50px',
+                                                padding: '0',
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                background: 'none',
+                                                cursor: 'pointer'
+                                            }}
+                                        />
+                                        <div>
+                                            <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>{formData.settings?.appearance?.primaryColor || '#0A2540'}</p>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Esta cor será usada em botões, ícones e destaques.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -202,7 +343,6 @@ const InstitutionSettings = () => {
                                 </div>
                             </div>
                         </div>
-
                         {/* Botão Salvar */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                             <button
@@ -217,6 +357,14 @@ const InstitutionSettings = () => {
                     </div>
                 </div>
             </form>
+
+            <Modal
+                isOpen={modal.isOpen}
+                onClose={() => setModal({ ...modal, isOpen: false })}
+                title={modal.title}
+                message={modal.message}
+                type={modal.type}
+            />
         </Layout>
     );
 };

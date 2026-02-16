@@ -10,6 +10,7 @@ import { protect, authorize } from '../middleware/auth.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
+import { calculateScore } from '../services/scoringService.js';
 
 const router = express.Router();
 
@@ -27,14 +28,19 @@ router.post('/simulate', protect, async (req, res) => {
             });
         }
 
-        const rate = interestRate || parseFloat(process.env.DEFAULT_INTEREST_RATE) || 15;
-        const monthlyRate = rate / 100 / 12;
+        const rate = interestRate || 10;
+        const monthlyRate = rate / 100;
         const numberOfPayments = parseInt(term);
 
-        // Calcular parcela mensal (Price)
-        const monthlyPayment = amount *
-            (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
-            (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+        let monthlyPayment;
+        if (monthlyRate > 0) {
+            // Calcular parcela mensal (Price) adaptada para taxa mensal
+            monthlyPayment = amount *
+                (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
+                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+        } else {
+            monthlyPayment = amount / numberOfPayments;
+        }
 
         const totalPayable = monthlyPayment * numberOfPayments;
         const totalInterest = totalPayable - amount;
@@ -64,10 +70,18 @@ router.post('/simulate', protect, async (req, res) => {
 // @access  Private (Agent/Client)
 router.post('/request', protect, auditAction('Credit', 'request', 'medium'), creditRequestValidation, validate, async (req, res) => {
     try {
-        const { amount, term, purpose } = req.body;
+        const { amount, term, purpose, collateral, clientId } = req.body;
+
+        // Se um clientId for passado (por um agente), usamos ele. Caso contrário, usamos o req.user._id
+        const effectiveClientId = (['agent', 'manager', 'owner'].includes(req.user.role) && clientId) ? clientId : req.user._id;
+        const client = await User.findById(effectiveClientId);
+
+        if (!client) {
+            return res.status(404).json({ success: false, message: 'Cliente não encontrado' });
+        }
 
         // Verificar se cliente está verificado
-        if (!req.user.isVerified) {
+        if (!client.isVerified && req.user.role === 'client') {
             return res.status(403).json({
                 success: false,
                 message: 'Você precisa verificar sua conta antes de solicitar crédito'
@@ -76,26 +90,39 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
 
         // Verificar se cliente tem créditos ativos não pagos
         const activeCredits = await Credit.find({
-            client: req.user._id,
+            client: effectiveClientId,
             status: { $in: ['active', 'defaulted'] }
         });
 
         if (activeCredits.length > 0) {
             return res.status(400).json({
                 success: false,
-                message: 'Você já possui um crédito ativo. Quite-o antes de solicitar outro.'
+                message: 'O cliente já possui um crédito ativo.'
             });
         }
 
+        // Calcular Score Automático
+        const allClientCredits = await Credit.find({ client: effectiveClientId });
+        const scoringData = await calculateScore(client, allClientCredits);
+
         // Criar solicitação de crédito
         const credit = await Credit.create({
-            client: req.user._id,
+            client: effectiveClientId,
             institution: req.user.institution._id,
             amount,
             term,
             purpose,
+            collateral,
             interestRate: req.user.institution.settings?.interestRates?.default || 15,
-            status: 'pending'
+            status: 'pending',
+            currentStage: 'submission',
+            scoring: scoringData,
+            workflowHistory: [{
+                stage: 'submission',
+                action: 'submitted',
+                performedBy: req.user._id,
+                comment: 'Solicitação submetida via Onboarding Premium.'
+            }]
         });
 
         res.status(201).json({
@@ -246,8 +273,16 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
         // Atualizar crédito
         credit.approvedAmount = finalApprovedAmount;
         credit.status = 'approved';
+        credit.currentStage = 'approval';
         credit.approvedBy = req.user._id;
         credit.approvedAt = new Date();
+
+        credit.workflowHistory.push({
+            stage: 'approval',
+            action: 'approved',
+            performedBy: req.user._id,
+            comment: `Crédito aprovado no valor de ${finalApprovedAmount.toLocaleString()} MT.`
+        });
 
         // O pre-save hook do Mongoose calculará monthlyPayment e totalPayable automaticamente
         await credit.save();
@@ -357,10 +392,29 @@ router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'),
         }
 
         credit.status = 'rejected';
+        credit.currentStage = 'analysis';
         credit.rejectedBy = req.user._id;
         credit.rejectedAt = new Date();
         credit.rejectionReason = reason || 'Não especificado';
+
+        credit.workflowHistory.push({
+            stage: 'analysis',
+            action: 'rejected',
+            performedBy: req.user._id,
+            comment: `Solicitação rejeitada. Motivo: ${reason || 'Não especificado'}`
+        });
+
         await credit.save();
+
+        // Enviar SMS de rejeição
+        const client = await User.findById(credit.client);
+        await smsService.sendCreditRejected(
+            client.phone,
+            reason,
+            req.user.institution,
+            req.user._id,
+            credit._id
+        );
 
         res.json({
             success: true,
@@ -394,16 +448,25 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
             });
         }
 
-        if (credit.status !== 'approved') {
+        if (credit.status !== 'approved' || credit.contractStatus !== 'signed') {
             return res.status(400).json({
                 success: false,
-                message: 'Apenas créditos aprovados podem ser desembolsados'
+                message: 'Crédito deve estar aprovado e contrato assinado para desembolso'
             });
         }
 
         credit.status = 'active';
+        credit.currentStage = 'disbursement';
         credit.disbursedAt = new Date();
         credit.disbursementMethod = disbursementMethod || 'mpesa';
+
+        credit.workflowHistory.push({
+            stage: 'disbursement',
+            action: 'disbursed',
+            performedBy: req.user._id,
+            comment: `Crédito desembolsado via ${disbursementMethod ? disbursementMethod.toUpperCase() : 'método não especificado'}.`
+        });
+
         await credit.save();
 
         // Enviar SMS de desembolso
@@ -419,7 +482,7 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
 
         res.json({
             success: true,
-            message: `Crédito desembolsado via ${disbursementMethod.toUpperCase()}`,
+            message: `Crédito desembolsado via ${disbursementMethod ? disbursementMethod.toUpperCase() : 'método não especificado'}`,
             data: {
                 credit
             }
@@ -430,6 +493,80 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
             message: 'Erro ao desembolsar crédito',
             error: error.message
         });
+    }
+});
+
+// @route   POST /api/credits/:id/generate-contract
+// @desc    Gerar PDF do contrato via template
+// @access  Private (Owner/Manager)
+router.post('/:id/generate-contract', protect, authorize('owner', 'manager'), auditAction('Credit', 'generate_contract', 'medium'), async (req, res) => {
+    try {
+        const { templateName } = req.body;
+        const credit = await Credit.findById(req.params.id);
+
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        const pdfBuffer = await contractService.generateContractPDF(credit._id, templateName);
+        const fileName = `contract-${credit._id}-${Date.now()}.pdf`;
+        const fileUrl = await contractService.uploadToLocal(pdfBuffer, fileName);
+
+        credit.signedContractUrl = fileUrl; // Inicialmente apenas o template gerado
+        credit.contractStatus = 'pending_signature';
+        credit.currentStage = 'signature';
+
+        credit.workflowHistory.push({
+            stage: 'signature',
+            action: 'contract_generated',
+            performedBy: req.user._id,
+            comment: `Contrato digital (${templateName || 'Padrão'}) gerado e enviado para assinatura.`
+        });
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: 'Contrato gerado e enviado para assinatura',
+            data: { fileUrl }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// @route   POST /api/credits/:id/sign-contract
+// @desc    Assinar contrato digitalmente
+// @access  Private (Client)
+router.post('/:id/sign-contract', protect, auditAction('Credit', 'sign_contract', 'high'), async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id);
+
+        if (!credit || credit.client.toString() !== req.user._id.toString()) {
+            return res.status(404).json({ success: false, message: 'Acesso negado' });
+        }
+
+        credit.contractStatus = 'signed';
+        credit.signatureData = {
+            timestamp: new Date(),
+            ipAddress: req.ip,
+            userAgent: req.headers['user-agent'],
+            method: req.body.method || 'otp'
+        };
+
+        credit.workflowHistory.push({
+            stage: 'signature',
+            action: 'signed',
+            performedBy: req.user._id,
+            comment: 'Contrato assinado digitalmente pelo cliente.'
+        });
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: 'Contrato assinado com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
     }
 });
 

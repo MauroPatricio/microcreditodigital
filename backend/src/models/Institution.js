@@ -39,6 +39,16 @@ const institutionSchema = new mongoose.Schema({
         },
         interestRates: {
             default: { type: Number, default: 10 } // 10%
+        },
+        appearance: {
+            primaryColor: { type: String, default: '#0A2540' },
+            logoUrl: String,
+            headerTitle: String
+        },
+        signature: {
+            name: String,
+            role: String,
+            stampUrl: String
         }
     },
     subscription: {
