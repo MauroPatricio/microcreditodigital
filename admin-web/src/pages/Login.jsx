@@ -45,8 +45,8 @@ const Login = () => {
                 padding: '2.5rem',
                 borderRadius: '32px',
                 background: '#0a0a1a', // Slightly lighter card bg
-                boxShadow: '0 0 40px rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255,255,255,0.05)',
+                boxShadow: '0 0 50px rgba(0,0,0,0.5), 0 0 30px rgba(0, 230, 118, 0.1)', // Added neon glow
+                border: '1px solid rgba(0, 230, 118, 0.1)', // Subtle green border
                 textAlign: 'center'
             }}>
                 {/* Logo Icon */}
@@ -59,7 +59,7 @@ const Login = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    boxShadow: '0 10px 25px rgba(0, 200, 83, 0.3)'
+                    boxShadow: '0 0 40px rgba(0, 230, 118, 0.4)' // Stronger neon glow
                 }}>
                     <FiTrendingUp size={40} color="white" />
                 </div>
@@ -69,7 +69,8 @@ const Login = () => {
                     fontWeight: '800',
                     color: '#ffffff',
                     marginBottom: '0.5rem',
-                    letterSpacing: '-0.5px'
+                    letterSpacing: '-0.5px',
+                    textShadow: '0 0 20px rgba(0, 230, 118, 0.2)' // Subtle neon title glow
                 }}>
                     Microcrédito Digital
                 </h1>
@@ -172,7 +173,8 @@ const Login = () => {
                                 color: '#00e676', // Neon Green
                                 textDecoration: 'none',
                                 fontSize: '0.9rem',
-                                fontWeight: '600'
+                                fontWeight: '600',
+                                textShadow: '0 0 10px rgba(0, 230, 118, 0.3)'
                             }}
                         >
                             Esqueceu sua senha?
@@ -197,7 +199,7 @@ const Login = () => {
                             gap: '0.5rem',
                             marginTop: '0.5rem',
                             transition: 'transform 0.1s',
-                            boxShadow: '0 4px 15px rgba(0, 230, 118, 0.3)'
+                            boxShadow: '0 0 30px rgba(0, 230, 118, 0.5)' // Intense neon glow
                         }}
                         onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
                         onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1)'}
@@ -257,6 +259,7 @@ const Login = () => {
                 .login-input:focus {
                     border-color: #00e676 !important;
                     background: #1a1a35 !important;
+                    box-shadow: 0 0 20px rgba(0, 230, 118, 0.2) !important;
                 }
             `}</style>
         </div>
