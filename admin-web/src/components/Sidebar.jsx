@@ -5,7 +5,7 @@ import api from '../api';
 import {
     FiHome, FiUsers, FiDollarSign, FiBarChart2, FiActivity,
     FiSettings, FiLogOut, FiBriefcase, FiTrendingUp,
-    FiSmartphone, FiFileText, FiMessageCircle, FiChevronLeft, FiMenu
+    FiSmartphone, FiFileText, FiMessageCircle, FiChevronLeft, FiMenu, FiServer
 } from 'react-icons/fi';
 import InstitutionSwitcher from './InstitutionSwitcher';
 
@@ -67,6 +67,7 @@ const Sidebar = () => {
                 { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner'] },
                 { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager'] },
                 { name: 'Configurações', icon: <FiSettings />, path: '/settings', roles: ['owner'] },
+                { name: 'Status Sistema', icon: <FiServer />, path: '/system-status', roles: ['owner', 'admin'] },
             ]
         }
     ];

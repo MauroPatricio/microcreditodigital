@@ -62,6 +62,7 @@ import GlobalDashboard from './pages/GlobalDashboard';
 import ClientOnboarding from './pages/ClientOnboarding';
 import CreditRequestPremium from './pages/CreditRequestPremium';
 import InstitutionOnboarding from './pages/InstitutionOnboarding';
+import SystemStatus from './pages/SystemStatus';
 
 function App() {
   return (
@@ -93,6 +94,7 @@ function App() {
           <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner']}><GlobalDashboard /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><InstitutionSettings /></ProtectedRoute>} />
           <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
+          <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>

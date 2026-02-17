@@ -26,6 +26,7 @@ import auditRoutes from './src/routes/audit.js';
 import whatsappRoutes from './src/routes/whatsapp.js';
 import documentRoutes from './src/routes/documents.js';
 import contractTemplateRoutes from './src/routes/contractTemplates.js';
+import healthRoutes from './src/routes/health.js';
 
 // Importar jobs
 import paymentRemindersJob from './src/jobs/paymentReminders.js';
@@ -97,6 +98,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/contract-templates', contractTemplateRoutes);
+app.use('/api/health', healthRoutes);
 
 // Rota raiz
 app.get('/', (req, res) => {
