@@ -50,7 +50,7 @@ const creditSchema = new mongoose.Schema({
     },
     currentStage: {
         type: String,
-        enum: ['submission', 'analysis', 'approval', 'disbursement'],
+        enum: ['submission', 'analysis', 'approval', 'signature', 'disbursement'],
         default: 'submission'
     },
     workflowHistory: [{

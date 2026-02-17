@@ -53,7 +53,7 @@ import Reports from './pages/Reports';
 import CommissionSettings from './pages/CommissionSettings';
 import AgentPerformance from './pages/AgentPerformance';
 import MyCommissions from './pages/MyCommissions';
-import SMSLogs from './pages/SMSLogs';
+import SmsLogs from './pages/SmsLogs';
 import AuditLogs from './pages/AuditLogs';
 import PendingDocuments from './pages/PendingDocuments';
 import WhatsAppSettings from './pages/WhatsAppSettings';
@@ -85,7 +85,7 @@ function App() {
           <Route path="/commissions" element={<ProtectedRoute><CommissionSettings /></ProtectedRoute>} />
           <Route path="/agent-performance" element={<ProtectedRoute><AgentPerformance /></ProtectedRoute>} />
           <Route path="/my-commissions" element={<ProtectedRoute><MyCommissions /></ProtectedRoute>} />
-          <Route path="/sms-logs" element={<ProtectedRoute><SMSLogs /></ProtectedRoute>} />
+          <Route path="/sms-logs" element={<ProtectedRoute><SmsLogs /></ProtectedRoute>} />
           <Route path="/audit-logs" element={<ProtectedRoute roles={['owner']}><AuditLogs /></ProtectedRoute>} />
           <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
           <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
