@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import api from '../services/api';
+import api from '../api';
 
 const SystemStatus = () => {
     const [status, setStatus] = useState(null);
