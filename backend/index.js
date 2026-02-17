@@ -100,22 +100,118 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/contract-templates', contractTemplateRoutes);
 app.use('/api/health', healthRoutes);
 
-// Rota raiz
+// Rota raiz com página de status visual
 app.get('/', (req, res) => {
-    res.json({
-        success: true,
-        message: 'CrediSmart+ API - Plataforma Premium de Microcrédito Digital',
-        version: '1.0.0',
-        endpoints: {
-            auth: '/api/auth',
-            clients: '/api/clients',
-            credits: '/api/credits',
-            payments: '/api/payments',
-            analytics: '/api/analytics',
-            notifications: '/api/notifications',
-            commissions: '/api/commissions'
+    res.send(`
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Status - CrediSmart+</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #0f172a;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
         }
-    });
+        .container {
+            width: 90%;
+            max-width: 600px;
+            padding: 2px;
+            border-radius: 16px;
+            background: linear-gradient(45deg, #00C853, #1de9b6);
+            box-shadow: 0 0 20px rgba(0, 200, 83, 0.3);
+        }
+        .content {
+            background-color: #0f172a;
+            border-radius: 14px;
+            padding: 48px;
+            text-align: center;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .rocket {
+            font-size: 60px;
+            margin-bottom: 24px;
+            display: inline-block;
+            animation: bounce-slow 3s infinite ease-in-out;
+        }
+        h1 {
+            font-size: 32px;
+            font-weight: 900;
+            margin: 0 0 16px 0;
+            letter-spacing: -0.5px;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 18px;
+            line-height: 1.6;
+            margin: 0 0 32px 0;
+        }
+        .badges {
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .badge-status {
+            background-color: #064e3b;
+            border: 1px solid rgba(5, 150, 105, 0.3);
+            color: #34d399;
+        }
+        .badge-port {
+            background-color: #1e1b4b;
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            color: #818cf8;
+        }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(5%); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <div class="rocket">🚀</div>
+            <h1>API Conectada com Sucesso</h1>
+            <p>Você conseguiu chegar ao servidor. Este endpoint é apenas para fins de verificação.</p>
+            <div class="badges">
+                <div class="badge badge-status">
+                    <span>Status:</span>
+                    <span>OK</span>
+                </div>
+                <div class="badge badge-port">
+                    <span>Porta:</span>
+                    <span>${PORT}</span>
+                </div>
+                <div class="badge badge-port" style="border-color: rgba(236, 72, 153, 0.3); background-color: #500724; color: #f472b6;">
+                   <span>Versão:</span>
+                   <span>1.0.0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+    `);
 });
 
 // Rota de health check
