@@ -1,112 +1,105 @@
-import WhatsAppLog from '../models/WhatsAppLog.js';
-import WhatsAppTemplate from '../models/WhatsAppTemplate.js';
+import qrcode from 'qrcode';
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pkg = require('whatsapp-web.js');
+const { Client, LocalAuth } = pkg;
 
-/**
- * Serviço de integração com WhatsApp
- * Camada desacoplada para suportar múltiplos provedores (Twilio, Meta APIs, etc)
- */
-class WhatsAppService {
-    constructor() {
-        this.provider = process.env.WHATSAPP_PROVIDER || 'simulated';
-        this.initialized = false;
+let client;
+let qrCodeDataUrl = null;
+let status = 'DISCONNECTED'; // DISCONNECTED, INITIALIZING, QR_READY, AUTHENTICATED, READY
 
-        console.log(`✅ WhatsApp Service em modo: ${this.provider}`);
-    }
+const initializeClient = async () => {
+    if (client) return;
 
-    /**
-     * Parse do template com dados dinâmicos
-     */
-    parseTemplate(body, data) {
-        let parsed = body;
-        const placeholders = {
-            '{{name}}': data.client?.name || 'Cliente',
-            '{{amount}}': this.formatCurrency(data.amount || 0),
-            '{{date}}': data.dueDate ? new Date(data.dueDate).toLocaleDateString() : '',
-            '{{institution}}': data.institution?.name || 'Nossa Instituição',
-            '{{contract}}': data.contractNumber || '',
-            '{{installment}}': data.installmentNumber || ''
-        };
+    console.log('Initializing WhatsApp Client...');
+    status = 'INITIALIZING';
 
-        Object.keys(placeholders).forEach(key => {
-            parsed = parsed.replace(new RegExp(key, 'g'), placeholders[key]);
-        });
+    client = new Client({
+        authStrategy: new LocalAuth({
+            dataPath: './.wwebjs_auth'
+        }),
+        puppeteer: {
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
+            headless: true
+        }
+    });
 
-        return parsed;
-    }
-
-    /**
-     * Enviar mensagem genérica
-     */
-    async sendMessage(to, message, metadata = {}) {
-        let status = 'sent';
-        let error = null;
-
+    client.on('qr', async (qr) => {
+        console.log('QR Code received');
+        status = 'QR_READY';
         try {
-            // Lógica de envio real aqui (integração com API externa)
-            console.log(`🟢 [WHATSAPP ${this.provider.toUpperCase()}] para ${to}: ${message}`);
-
-            // Registrar no log
-            await WhatsAppLog.create({
-                institution: metadata.institutionId,
-                recipient: to,
-                client: metadata.clientId,
-                credit: metadata.creditId,
-                installment: metadata.installmentId,
-                template: metadata.templateId,
-                message,
-                status,
-                provider: this.provider,
-                metadata: metadata.extra
-            });
-
-            return { success: true, status };
+            qrCodeDataUrl = await qrcode.toDataURL(qr);
         } catch (err) {
-            console.error(`❌ Erro ao enviar WhatsApp: ${err.message}`);
-
-            await WhatsAppLog.create({
-                institution: metadata.institutionId,
-                recipient: to,
-                client: metadata.clientId,
-                message,
-                status: 'failed',
-                error: err.message
-            }).catch(() => { });
-
-            return { success: false, error: err.message };
+            console.error('Error generating QR code', err);
         }
-    }
+    });
 
-    /**
-     * Enviar usando um template específico
-     */
-    async sendByTemplate(templateName, recipient, data, metadata = {}) {
-        try {
-            const template = await WhatsAppTemplate.findOne({
-                institution: metadata.institutionId,
-                name: templateName,
-                isActive: true
-            });
+    client.on('ready', () => {
+        console.log('WhatsApp Client is ready!');
+        status = 'READY';
+        qrCodeDataUrl = null; // Clear QR when ready
+    });
 
-            if (!template) {
-                console.warn(`⚠️ Template ${templateName} não encontrado ou inativo`);
-                return { success: false, error: 'Template not found' };
-            }
+    client.on('authenticated', () => {
+        console.log('WhatsApp Client authenticated');
+        status = 'AUTHENTICATED';
+    });
 
-            const message = this.parseTemplate(template.body, data);
+    client.on('auth_failure', msg => {
+        console.error('WhatsApp Authentication failure', msg);
+        status = 'DISCONNECTED';
+    });
 
-            return this.sendMessage(recipient, message, {
-                ...metadata,
-                templateId: template._id
-            });
-        } catch (error) {
-            console.error('Erro ao buscar template/enviar:', error);
-            return { success: false, error: error.message };
+    client.on('disconnected', (reason) => {
+        console.log('WhatsApp Client disconnected', reason);
+        status = 'DISCONNECTED';
+        client = null;
+    });
+
+    try {
+        await client.initialize();
+    } catch (err) {
+        console.error('Failed to initialize WhatsApp client:', err.message);
+        if (err.message.includes('user data directory is already in use')) {
+            console.error('🚨 ATENÇÃO: Parece haver outra instância do backend rodando! Por favor, feche outros terminais.');
         }
+        status = 'DISCONNECTED';
     }
+};
 
-    formatCurrency(value) {
-        return new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(value);
+const getStatus = () => {
+    return { status, qrCode: qrCodeDataUrl };
+};
+
+const sendMessage = async (to, message) => {
+    if (status !== 'READY') {
+        throw new Error('WhatsApp client is not ready');
     }
-}
+    // format to: 'number@c.us'
+    // basic check, usually needs country code. Assume 'to' is like '258841234567'
+    const chatId = to.includes('@c.us') ? to : `${to}@c.us`;
 
-export default new WhatsAppService();
+    try {
+        const response = await client.sendMessage(chatId, message);
+        return response;
+    } catch (error) {
+        console.error('Error sending WhatsApp message:', error);
+        throw error;
+    }
+};
+
+const restartClient = async () => {
+    if (client) {
+        await client.destroy();
+        client = null;
+    }
+    initializeClient();
+    return { success: true };
+};
+
+export default {
+    initializeClient,
+    getStatus,
+    sendMessage,
+    restartClient
+};

@@ -239,7 +239,7 @@ const LoanList = () => {
                                                 </div>
                                                 <div>
                                                     <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{client.name}</p>
-                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Score: {client.creditScore}</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Score: {(typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500}</p>
                                                 </div>
                                             </div>
                                             <FiArrowRight size={16} color="var(--accent)" />

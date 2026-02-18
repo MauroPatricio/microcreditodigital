@@ -1,21 +1,40 @@
 :root {
-  --primary: #00FF00;
-  --primary-light: #33FF33;
-  --accent: #00FF00;
-  --accent-hover: #00CC00;
-  --success: #10b981;
+  /* Premium Palette - Neon Green Default */
+  --primary: #00E676;
+  /* Green 400 */
+  --primary-light: #69F0AE;
+  /* Green 200 */
+  --accent: #00E676;
+  /* Green 400 */
+  --accent-hover: #00C853;
+  /* Green 600 */
+  --success: #00E676;
   --warning: #f59e0b;
+  /* Amber 500 */
   --danger: #ef4444;
+  /* Red 500 */
+
+  /* Text */
   --text-main: #f8fafc;
+  /* Slate 50 */
   --text-muted: #94a3b8;
-  --bg-main: #0f172a;
-  --bg-card: #1e293b;
+  /* Slate 400 */
+
+  /* Backgrounds - Deep Blue/Black */
+  --bg-main: #020617;
+  /* Slate 950 */
+  --bg-card: #0f172a;
+  /* Slate 900 */
+
+  /* Dimensions & Effects */
   --sidebar-width: 260px;
   --sidebar-collapsed-width: 80px;
   --header-height: 70px;
-  --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  --glass-bg: rgba(255, 255, 255, 0.03);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Glassmorphism */
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -41,8 +60,7 @@ body {
 }
 
 .glass-hover:hover {
-  border-color: rgba(59, 130, 246, 0.4);
-  transform: translateY(-2px);
+  border-color: rgba(0, 230, 118, 0.4);
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
 }
 
@@ -84,8 +102,8 @@ button {
 }
 
 .card:hover {
-  border-color: rgba(59, 130, 246, 0.3);
-  transform: translateY(-2px);
+  border-color: rgba(0, 230, 118, 0.3);
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* Scrollbar */
@@ -169,10 +187,10 @@ label {
 }
 
 .btn-primary {
-  box-shadow: 0 8px 20px -5px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 20px -5px rgba(0, 230, 118, 0.4);
 }
 
 .btn-primary:hover {
-  box-shadow: 0 12px 30px -5px rgba(59, 130, 246, 0.6);
+  box-shadow: 0 12px 30px -5px rgba(0, 230, 118, 0.6);
   transform: translateY(-2px);
 }

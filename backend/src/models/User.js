@@ -65,8 +65,16 @@ const userSchema = new mongoose.Schema({
             lng: Number
         }
     },
+    demographics: {
+        gender: { type: String, enum: ['male', 'female', 'other'] },
+        maritalStatus: { type: String, enum: ['single', 'married', 'divorced', 'widowed'] },
+        dependents: { type: Number, default: 0 },
+        educationLevel: { type: String, enum: ['none', 'primary', 'secondary', 'university', 'post_grad'] },
+        residenceType: { type: String, enum: ['owned', 'rented', 'family', 'other'] },
+        yearsInResidence: { type: Number, default: 0 }
+    },
     professionalInfo: {
-        employmentStatus: { type: String, enum: ['employed', 'self_employed', 'unemployed', 'retired', 'student'] },
+        employmentStatus: { type: String, enum: ['employed', 'self_employed', 'unemployed', 'retired', 'student', 'civil_servant'] },
         employerName: String,
         monthlyIncome: Number,
         position: String,
@@ -94,16 +102,22 @@ const userSchema = new mongoose.Schema({
         default: 'incomplete'
     },
     creditScore: {
-        type: Number,
-        default: 500,
-        min: 0,
-        max: 1000
+        score: { type: Number, default: 500, min: 0, max: 1000 },
+        riskLevel: { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
+        lastCalculated: { type: Date, default: Date.now },
+        history: [{
+            score: Number,
+            date: { type: Date, default: Date.now },
+            reason: String // e.g., 'Loan Repayment', 'Late Payment'
+        }],
+        breakdown: {
+            paymentHistory: { type: Number, default: 0 },
+            financialStability: { type: Number, default: 0 },
+            demographics: { type: Number, default: 0 },
+            relationship: { type: Number, default: 0 }
+        }
     },
-    riskProfile: {
-        type: String,
-        enum: ['low', 'medium', 'high'],
-        default: 'medium'
-    },
+
     isVerified: {
         type: Boolean,
         default: false

@@ -49,54 +49,57 @@ const InstitutionSwitcher = () => {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0.75rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    padding: '0.85rem',
+                    background: 'rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
                     borderRadius: '12px',
-                    color: '#fff',
+                    color: '#ffffff',
                     cursor: 'pointer',
-                    transition: 'all 0.2s'
+                    transition: 'all 0.2s',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
                     <div style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '32px',
+                        height: '32px',
                         background: 'var(--accent)',
-                        borderRadius: '6px',
+                        borderRadius: '8px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        flexShrink: 0
+                        flexShrink: 0,
+                        color: '#000',
+                        fontWeight: 'bold'
                     }}>
-                        <FiRepeat size={14} />
+                        <FiRepeat size={16} />
                     </div>
                     <div style={{ textAlign: 'left', overflow: 'hidden' }}>
-                        <p style={{ fontSize: '0.75rem', opacity: 0.6, marginBottom: '2px' }}>Instituição Ativa</p>
-                        <p style={{ fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', marginBottom: '2px', fontWeight: 500 }}>Instituição Ativa</p>
+                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                             {activeInst?.name || 'Selecionar...'}
                         </p>
                     </div>
                 </div>
-                <FiChevronDown style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: '0.2s' }} />
+                <FiChevronDown size={20} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'rgba(255,255,255,0.7)' }} />
             </button>
 
             {isOpen && (
                 <div style={{
                     position: 'absolute',
-                    top: '100%',
-                    left: '0.75rem',
-                    right: '0.75rem',
-                    background: '#1e293b',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    top: 'calc(100% + 0.5rem)',
+                    left: '0',
+                    right: '0',
+                    background: '#0f172a',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
                     borderRadius: '12px',
-                    marginTop: '0.5rem',
                     zIndex: 1100,
-                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
                     maxHeight: '300px',
-                    overflowY: 'auto'
+                    overflowY: 'auto',
+                    padding: '0.5rem'
                 }}>
-                    <div style={{ padding: '0.5rem' }}>
+                    <div style={{ paddingBottom: '0.5rem' }}>
                         {institutions.map(inst => (
                             <button
                                 key={inst._id}
@@ -107,24 +110,35 @@ const InstitutionSwitcher = () => {
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    padding: '0.75rem',
-                                    background: inst._id === activeInst?._id ? 'rgba(59, 130, 246, 0.1)' : 'transparent',
-                                    border: 'none',
+                                    padding: '0.75rem 1rem',
+                                    background: inst._id === activeInst?._id ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
+                                    border: '1px solid ' + (inst._id === activeInst?._id ? 'rgba(34, 197, 94, 0.3)' : 'transparent'),
                                     borderRadius: '8px',
-                                    color: inst._id === activeInst?._id ? 'var(--accent)' : '#cbd5e1',
+                                    color: inst._id === activeInst?._id ? '#4ade80' : '#f8fafc',
                                     cursor: inst._id === activeInst?._id ? 'default' : 'pointer',
                                     textAlign: 'left',
-                                    marginBottom: '2px'
+                                    marginBottom: '4px',
+                                    fontWeight: inst._id === activeInst?._id ? 700 : 500
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (inst._id !== activeInst?._id) {
+                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (inst._id !== activeInst?._id) {
+                                        e.currentTarget.style.background = 'transparent';
+                                    }
                                 }}
                             >
-                                <span style={{ fontSize: '0.85rem', fontWeight: 500 }}>{inst.name}</span>
-                                {inst._id === activeInst?._id && <FiCheck />}
+                                <span style={{ fontSize: '0.9rem' }}>{inst.name}</span>
+                                {inst._id === activeInst?._id && <FiCheck size={18} />}
                             </button>
                         ))}
                     </div>
                     <div style={{
-                        padding: '0.5rem',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.05)'
+                        paddingTop: '0.5rem',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
                     }}>
                         <button
                             onClick={() => window.location.href = '/institutions/new'}
@@ -132,15 +146,25 @@ const InstitutionSwitcher = () => {
                                 width: '100%',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: 'center',
                                 gap: '0.5rem',
                                 padding: '0.75rem',
-                                background: 'transparent',
-                                border: 'none',
+                                background: 'rgba(255, 255, 255, 0.05)',
+                                border: '1px dashed rgba(255, 255, 255, 0.2)',
                                 borderRadius: '8px',
-                                color: 'var(--accent)',
+                                color: '#white',
                                 cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                fontWeight: 600
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                transition: 'all 0.2s'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                                e.currentTarget.style.borderColor = 'white';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
                             }}
                         >
                             <FiPlus /> Criar Nova Instituição

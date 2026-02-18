@@ -183,4 +183,102 @@ router.get('/revenue', protect, authorize('manager', 'owner', 'super_admin'), as
     }
 });
 
+// @route   GET /api/analytics/global
+// @desc    Métricas globais multi-instituição
+// @access  Private (Owner/SuperAdmin)
+router.get('/global', protect, authorize('owner', 'super_admin'), async (req, res) => {
+    try {
+        const Institution = (await import('../models/Institution.js')).default;
+
+        // 1. Buscar todas as instituições do dono
+        const institutions = await Institution.find({ owner: req.user._id });
+
+        if (institutions.length === 0) {
+            return res.json({
+                success: true,
+                data: {
+                    aggregate: {
+                        totalStartups: 0,
+                        totalActiveLoans: 0,
+                        totalActiveValue: 0,
+                        totalRevenue: 0,
+                        globalDefaultRate: 0
+                    },
+                    breakdown: []
+                }
+            });
+        }
+
+        const breakdown = [];
+        let aggActiveLoans = 0;
+        let aggActiveValue = 0;
+        let aggRevenue = 0;
+        let aggTotalCredits = 0;
+        let aggDefaultedCredits = 0;
+
+        // 2. Iterar e calcular métricas para cada uma
+        // (Poderia ser otimizado com aggregation framework, mas loop é ok para < 50 filiais)
+        for (const inst of institutions) {
+            const instId = inst._id;
+
+            // Créditos Ativos
+            const activeCredits = await Credit.find({ status: 'active', institution: instId });
+            const activeValue = activeCredits.reduce((sum, c) => sum + c.approvedAmount, 0);
+
+            // Receita
+            const payments = await Payment.find({ status: 'completed', institution: instId });
+            const revenue = payments.reduce((sum, p) => sum + p.amount, 0);
+
+            // Inadimplência
+            const defaultedCount = await Credit.countDocuments({ status: 'defaulted', institution: instId });
+            const totalCount = await Credit.countDocuments({ status: { $ne: 'pending' }, institution: instId });
+            const defaultRate = totalCount > 0 ? (defaultedCount / totalCount) * 100 : 0;
+
+            // Clientes
+            const clientCount = await User.countDocuments({ role: 'client', institution: instId });
+
+            breakdown.push({
+                id: instId,
+                name: inst.name,
+                activeLoans: activeCredits.length,
+                activeValue,
+                revenue,
+                defaultRate,
+                clients: clientCount
+            });
+
+            // Agregação
+            aggActiveLoans += activeCredits.length;
+            aggActiveValue += activeValue;
+            aggRevenue += revenue;
+            aggTotalCredits += totalCount;
+            aggDefaultedCredits += defaultedCount;
+        }
+
+        const globalDefaultRate = aggTotalCredits > 0 ? (aggDefaultedCredits / aggTotalCredits) * 100 : 0;
+
+        res.json({
+            success: true,
+            data: {
+                aggregate: {
+                    totalBranches: institutions.length,
+                    totalActiveLoans: aggActiveLoans,
+                    totalActiveValue: Math.round(aggActiveValue * 100) / 100,
+                    totalRevenue: Math.round(aggRevenue * 100) / 100,
+                    globalDefaultRate: Math.round(globalDefaultRate * 100) / 100
+                },
+                breakdown: breakdown.sort((a, b) => b.revenue - a.revenue) // Ordenar por receita
+            }
+        });
+
+    } catch (error) {
+        console.error('Global Analytics Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao obter métricas globais',
+            error: error.message
+        });
+    }
+});
+
 export default router;

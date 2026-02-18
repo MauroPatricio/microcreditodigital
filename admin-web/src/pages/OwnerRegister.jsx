@@ -200,7 +200,7 @@ const OwnerRegister = () => {
                     }}>
                         <FiTrendingUp />
                     </div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem' }}>Criar Conta de Owner</h1>
+                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.5rem' }}>Criar Conta</h1>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
                         Passo {step} de 2 - {step === 1 ? 'Dados Pessoais' : 'Dados da Instituição'}
                     </p>

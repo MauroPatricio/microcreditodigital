@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
-import { FiSearch, FiUserPlus, FiMoreVertical, FiCheckCircle, FiXCircle } from 'react-icons/fi';
+import { FiSearch, FiUserPlus, FiMoreVertical, FiCheckCircle, FiXCircle, FiArrowRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
 const ClientList = () => {
@@ -114,17 +114,17 @@ const ClientList = () => {
                                                     width: '100px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden'
                                                 }}>
                                                     <div style={{
-                                                        width: `${(client.creditScore / 1000) * 100}%`, height: '100%', background: 'var(--accent)'
+                                                        width: `${((typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500) / 10}%`, height: '100%', background: 'var(--accent)'
                                                     }}></div>
                                                 </div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{client.creditScore}</span>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{(typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500}</span>
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                                             {new Date(client.createdAt).toLocaleDateString()}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                                            <Link to={`/clients/${client._id}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Ver Detalhes</Link>
+                                            <Link to={`/clients/${client._id}`} style={{ color: '#38bdf8', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>Ver Detalhes <FiArrowRight /></Link>
                                         </td>
                                     </tr>
                                 ))

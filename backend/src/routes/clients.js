@@ -128,9 +128,13 @@ router.get('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), 
     try {
         const { search, isVerified, isBlocked, page = 1, limit = 20 } = req.query;
 
+        console.log('GET /clients request');
+        console.log('User:', req.user._id, req.user.role);
+        console.log('Institution Context:', req.institutionId);
+
         let query = {
             role: 'client',
-            institution: req.user.institution._id
+            institution: req.institutionId
         };
 
         if (search) {

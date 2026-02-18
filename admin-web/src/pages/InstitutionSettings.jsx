@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import api from '../api';
 import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin, FiUpload, FiImage } from 'react-icons/fi';
 import Modal from '../components/Modal';
+import WhatsAppConnect from '../components/WhatsAppConnect';
 
 const InstitutionSettings = () => {
     const { user, updateUser } = useAuth();
@@ -298,15 +299,27 @@ const InstitutionSettings = () => {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         {/* Taxas e Regras */}
+
+                        {/* Taxas e Regras */}
                         <div className="card">
                             <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 <FiPercent style={{ color: 'var(--accent)' }} /> Taxas e Regras de Negócio
                             </h3>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                                 <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                                        <label style={{ fontSize: '0.9rem', fontWeight: 600 }}>Taxa de Juros Padrão (%)</label>
-                                        <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{formData.settings?.interestRates?.default}%</span>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                        <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>Taxa de Juros Padrão (%)</label>
+                                        <span style={{
+                                            color: '#fff',
+                                            fontWeight: 800,
+                                            fontSize: '1.2rem',
+                                            background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%)',
+                                            padding: '0.25rem 0.8rem',
+                                            borderRadius: '8px',
+                                            minWidth: '70px',
+                                            textAlign: 'center',
+                                            boxShadow: '0 4px 10px rgba(0,0,0,0.2)'
+                                        }}>{formData.settings?.interestRates?.default || 0}%</span>
                                     </div>
                                     <input
                                         type="range" min="1" max="50" step="0.5"
@@ -343,15 +356,19 @@ const InstitutionSettings = () => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* Integração WhatsApp */}
+                        <WhatsAppConnect />
+
                         {/* Botão Salvar */}
-                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
                             <button
                                 type="submit"
                                 disabled={saving}
                                 className="btn-primary"
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', justifyContent: 'center', padding: '1rem' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%', justifyContent: 'center', padding: '1rem', fontWeight: 800, fontSize: '1.1rem' }}
                             >
-                                <FiSave /> {saving ? 'Salvando...' : 'Salvar Configurações'}
+                                <FiSave /> {saving ? 'Salvando...' : 'Salvar Tudo'}
                             </button>
                         </div>
                     </div>

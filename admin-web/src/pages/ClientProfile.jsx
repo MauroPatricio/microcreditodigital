@@ -212,15 +212,15 @@ const ClientProfile = () => {
                             <FiTrendingUp style={{ color: 'var(--accent)' }} /> {t('client_profile.risk_profile')}
                         </h3>
                         <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                            <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--accent)', marginBottom: '0.5rem' }}>{client.creditScore}</div>
+                            <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--accent)', marginBottom: '0.5rem' }}>{(typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500}</div>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{t('client_profile.credit_score')} {t('client_profile.score_range')}</p>
                             <div style={{
                                 padding: '0.5rem', borderRadius: '8px',
-                                background: client.riskProfile === 'low' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                color: client.riskProfile === 'low' ? 'var(--success)' : 'var(--warning)',
+                                background: (client.creditScore?.riskLevel || client.riskProfile) === 'low' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                                color: (client.creditScore?.riskLevel || client.riskProfile) === 'low' ? 'var(--success)' : 'var(--warning)',
                                 fontWeight: 700, fontSize: '0.85rem'
                             }}>
-                                {t('client_profile.risk')}: {client.riskProfile?.toUpperCase()}
+                                {t('client_profile.risk')}: {(client.creditScore?.riskLevel || client.riskProfile || 'medium').toUpperCase()}
                             </div>
                         </div>
                     </div>
@@ -291,12 +291,33 @@ const ClientProfile = () => {
                                     accept=".pdf,.jpg,.jpeg,.png"
                                 />
                                 <button
-                                    className="btn-icon"
                                     title={t('client_profile.upload_manual')}
                                     onClick={() => document.getElementById('doc-upload').click()}
                                     disabled={uploading}
+                                    style={{
+                                        width: '42px',
+                                        height: '42px',
+                                        borderRadius: '12px',
+                                        background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%)',
+                                        color: '#000',
+                                        border: 'none',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        boxShadow: '0 4px 15px rgba(0, 255, 0, 0.3)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                    }}
+                                    onMouseOver={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(-2px) scale(1.05)';
+                                        e.currentTarget.style.boxShadow = '0 8px 25px rgba(0, 255, 0, 0.5)';
+                                    }}
+                                    onMouseOut={(e) => {
+                                        e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                                        e.currentTarget.style.boxShadow = '0 4px 15px rgba(0, 255, 0, 0.3)';
+                                    }}
                                 >
-                                    <FiPlus />
+                                    <FiPlus size={22} strokeWidth={3} />
                                 </button>
                             </div>
                         </div>

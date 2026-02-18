@@ -147,6 +147,7 @@ const ClientOnboarding = () => {
                                     <option value="self_employed">Conta Própria / Empreendedor</option>
                                     <option value="unemployed">Desempregado</option>
                                     <option value="retired">Reformado</option>
+                                    <option value="civil_servant">Funcionário Público</option>
                                 </select>
                             </div>
                             <div className="form-group">
@@ -178,7 +179,7 @@ const ClientOnboarding = () => {
                                 <input type="text" name="type" value={formData.businessInfo.type} onChange={(e) => handleChange(e, 'businessInfo')} placeholder="Ex: Comércio, Agro" />
                             </div>
                             <div className="form-group">
-                                <label>Anos de Operação</label>
+                                <label>Anos de Trabalho</label>
                                 <input type="number" name="yearsInOperation" value={formData.businessInfo.yearsInOperation} onChange={(e) => handleChange(e, 'businessInfo')} />
                             </div>
                             <div className="form-group">
@@ -265,7 +266,14 @@ const ClientOnboarding = () => {
                             <p><strong>Nome:</strong> {formData.name}</p>
                             <p><strong>Telefone:</strong> {formData.phone}</p>
                             <p><strong>Renda Declarada:</strong> {formData.professionalInfo.monthlyIncome} MT</p>
-                            <p><strong>Status de Emprego:</strong> {formData.professionalInfo.employmentStatus}</p>
+                            <p><strong>Status de Emprego:</strong> {{
+                                employed: 'Empregado',
+                                self_employed: 'Conta Própria / Empreendedor',
+                                unemployed: 'Desempregado',
+                                retired: 'Reformado',
+                                civil_servant: 'Funcionário Público',
+                                student: 'Estudante'
+                            }[formData.professionalInfo.employmentStatus] || formData.professionalInfo.employmentStatus}</p>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                             <input type="checkbox" checked readOnly />
@@ -283,7 +291,7 @@ const ClientOnboarding = () => {
             <div style={{ maxWidth: '900px', margin: '0 auto', padding: '2rem 0' }}>
                 <header style={{ marginBottom: '3rem', textAlign: 'center' }}>
                     <h1 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-1px', marginBottom: '0.5rem' }}>
-                        Onboarding Premium
+                        Onboarding
                     </h1>
                     <p style={{ color: 'var(--text-muted)' }}>Siga os passos para cadastrar um novo cliente com validação inteligente.</p>
                 </header>

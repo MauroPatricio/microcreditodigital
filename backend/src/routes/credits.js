@@ -11,6 +11,7 @@ import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
 import { calculateScore } from '../services/scoringService.js';
+import simulationService from '../services/simulationService.js';
 
 const router = express.Router();
 
@@ -19,7 +20,7 @@ const router = express.Router();
 // @access  Private (Client)
 router.post('/simulate', protect, async (req, res) => {
     try {
-        const { amount, term, interestRate } = req.body;
+        const { amount, term, interestRate, periodicity, startDate } = req.body;
 
         if (!amount || !term) {
             return res.status(400).json({
@@ -29,15 +30,46 @@ router.post('/simulate', protect, async (req, res) => {
         }
 
         const rate = interestRate || 10;
+        // Default to monthly if not specified, for backward compatibility
+        const period = periodicity || 'monthly';
+        const start = startDate || new Date();
+
+        const simulation = simulationService.calculateSimulation(amount, term, rate, period, start);
+
+        res.json({
+            success: true,
+            data: simulation.summary,
+            schedule: simulation.schedule
+        });
+    } catch (error) {
+        console.error('Simulate Error:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao simular crédito',
+            error: error.message
+        });
+    }
+});
+
+// @route   POST /api/credits/simulate/pdf
+// @desc    Gerar PDF da simulação
+// @access  Private
+router.post('/simulate/pdf', protect, async (req, res) => {
+    try {
+        const { amount, term, interestRate } = req.body;
+
+        if (!amount || !term) {
+            return res.status(400).json({ success: false, message: 'Dados incompletos' });
+        }
+
+        // Reusing simulation logic (should be a service function but repeating for safety/speed)
+        const rate = interestRate || req.user.institution.settings?.interestRates?.default || 10;
         const monthlyRate = rate / 100;
         const numberOfPayments = parseInt(term);
 
         let monthlyPayment;
         if (monthlyRate > 0) {
-            // Calcular parcela mensal (Price) adaptada para taxa mensal
-            monthlyPayment = amount *
-                (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
-                (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+            monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
         } else {
             monthlyPayment = amount / numberOfPayments;
         }
@@ -45,23 +77,28 @@ router.post('/simulate', protect, async (req, res) => {
         const totalPayable = monthlyPayment * numberOfPayments;
         const totalInterest = totalPayable - amount;
 
-        res.json({
-            success: true,
-            data: {
-                amount: parseFloat(amount),
-                term: numberOfPayments,
-                interestRate: rate,
-                monthlyPayment: Math.round(monthlyPayment * 100) / 100,
-                totalPayable: Math.round(totalPayable * 100) / 100,
-                totalInterest: Math.round(totalInterest * 100) / 100
-            }
+        const simulationData = {
+            amount: parseFloat(amount),
+            term: numberOfPayments,
+            interestRate: rate,
+            monthlyPayment,
+            totalPayable,
+            totalInterest
+        };
+
+        const pdfBuffer = await contractService.generateSimulationPDF(simulationData, req.user);
+
+        res.set({
+            'Content-Type': 'application/pdf',
+            'Content-Length': pdfBuffer.length,
+            'Content-Disposition': `attachment; filename="simulacao-${Date.now()}.pdf"`
         });
+
+        res.send(pdfBuffer);
+
     } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: 'Erro ao simular crédito',
-            error: error.message
-        });
+        console.error("Erro ao gerar PDF de simulação:", error);
+        res.status(500).json({ success: false, message: 'Erro ao gerar PDF' });
     }
 });
 
