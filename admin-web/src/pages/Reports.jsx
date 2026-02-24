@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiTrendingUp, FiAlertCircle, FiDollarSign, FiUsers, FiCheckCircle, FiCalendar, FiDownload } from 'react-icons/fi';
+import { FiTrendingUp, FiAlertCircle, FiDollarSign, FiUsers, FiCheckCircle, FiCalendar, FiDownload, FiCreditCard, FiArrowRight } from 'react-icons/fi';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import api from '../api';
 import Layout from '../components/Layout';
 
 const Reports = () => {
+    const navigate = useNavigate();
     const [activeReport, setActiveReport] = useState(null);
     const [loading, setLoading] = useState(false);
     const [reportData, setReportData] = useState(null);
@@ -111,6 +113,34 @@ const Reports = () => {
                         Insights e métricas premium para gestão de microcrédito
                     </p>
                 </div>
+
+                {/* Quick Access Cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem', marginBottom: '2.5rem' }}>
+                    {[
+                        { label: 'Gestão de Caixa', desc: 'Entradas, saídas e saldo diário', icon: FiCreditCard, color: '#8b5cf6', path: '/cashflow' },
+                        { label: 'Relatório Mensal', desc: 'Resumo completo com export Excel/PDF', icon: FiCalendar, color: '#3b82f6', path: '/reports/monthly' },
+                        { label: 'Relatório Trimestral', desc: 'Consolidado 3 meses + comparativo', icon: FiTrendingUp, color: '#f59e0b', path: '/reports/quarterly' },
+                        { label: 'Relatório BdM', desc: 'Formato Banco de Moçambique oficial', icon: FiCheckCircle, color: '#e63946', path: '/reports/bom' }
+                    ].map(card => (
+                        <button key={card.path} onClick={() => navigate(card.path)} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                            <div className="glass" style={{ padding: '1.4rem', borderRadius: '14px', borderTop: `3px solid ${card.color}`, transition: 'all 0.2s', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                                onMouseLeave={e => e.currentTarget.style.background = ''}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ width: 38, height: 38, borderRadius: '10px', background: `${card.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <card.icon size={18} style={{ color: card.color }} />
+                                    </div>
+                                    <FiArrowRight size={15} style={{ color: 'var(--text-muted)' }} />
+                                </div>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{card.label}</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{card.desc}</div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+
+                <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Relatórios Analíticos</div>
 
                 <div className="glass" style={{
                     padding: '1.5rem',

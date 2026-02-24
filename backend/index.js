@@ -21,6 +21,7 @@ import auditRoutes from './src/routes/audit.js';
 import commissionRoutes from './src/routes/commissions.js';
 import smsRoutes from './src/routes/sms.js';
 import contractTemplateRoutes from './src/routes/contractTemplates.js';
+import cashflowRoutes from './src/routes/cashflow.js';
 
 // Services
 import whatsappService from './src/services/whatsappService.js';
@@ -59,6 +60,7 @@ app.use('/api/audit', auditRoutes);
 app.use('/api/commissions', commissionRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/contract-templates', contractTemplateRoutes);
+app.use('/api/cashflow', cashflowRoutes);
 
 // Root
 app.get('/', (req, res) => {

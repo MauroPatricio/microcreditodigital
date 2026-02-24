@@ -5,7 +5,7 @@ import api from '../api';
 import {
     FiHome, FiUsers, FiDollarSign, FiBarChart2, FiActivity,
     FiSettings, FiLogOut, FiBriefcase, FiTrendingUp,
-    FiSmartphone, FiFileText, FiMessageCircle, FiChevronLeft, FiMenu, FiServer
+    FiSmartphone, FiFileText, FiMessageCircle, FiChevronLeft, FiMenu, FiServer, FiCreditCard
 } from 'react-icons/fi';
 import InstitutionSwitcher from './InstitutionSwitcher';
 
@@ -44,6 +44,7 @@ const Sidebar = () => {
                 { name: 'Clientes', icon: <FiUsers />, path: '/clients', roles: ['owner', 'manager', 'agent'] },
                 { name: 'Empréstimos', icon: <FiBriefcase />, path: '/loans', roles: ['owner', 'manager', 'agent'] },
                 { name: 'Cobranças', icon: <FiDollarSign />, path: '/payments', roles: ['owner', 'manager', 'agent'] },
+                { name: 'Caixa', icon: <FiCreditCard />, path: '/cashflow', roles: ['owner', 'manager'] },
             ]
         },
         {
@@ -54,6 +55,9 @@ const Sidebar = () => {
                 { name: 'Documentos', icon: <FiFileText />, path: '/pending-documents', roles: ['owner', 'manager'] },
                 { name: 'Contratos', icon: <FiFileText />, path: '/contract-templates', roles: ['owner', 'manager'] },
                 { name: 'Relatórios', icon: <FiTrendingUp />, path: '/reports', roles: ['owner', 'manager'] },
+                { name: 'Rel. Mensal', icon: <FiBarChart2 />, path: '/reports/monthly', roles: ['owner', 'manager'] },
+                { name: 'Rel. Trimestral', icon: <FiBarChart2 />, path: '/reports/quarterly', roles: ['owner', 'manager'] },
+                { name: 'Rel. BdM', icon: <FiFileText />, path: '/reports/bom', roles: ['owner', 'manager'] },
                 { name: 'Comissões', icon: <FiDollarSign />, path: '/commissions', roles: ['owner', 'manager'] },
                 { name: 'Meus Ganhos', icon: <FiTrendingUp />, path: '/my-commissions', roles: ['agent'] },
             ]

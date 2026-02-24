@@ -63,6 +63,10 @@ import ClientOnboarding from './pages/ClientOnboarding';
 import CreditRequestPremium from './pages/CreditRequestPremium';
 import InstitutionOnboarding from './pages/InstitutionOnboarding';
 import SystemStatus from './pages/SystemStatus';
+import CashFlow from './pages/CashFlow';
+import MonthlyReport from './pages/MonthlyReport';
+import QuarterlyReport from './pages/QuarterlyReport';
+import BomReport from './pages/BomReport';
 
 function App() {
   return (
@@ -95,6 +99,10 @@ function App() {
           <Route path="/settings" element={<ProtectedRoute><InstitutionSettings /></ProtectedRoute>} />
           <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
           <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
+          <Route path="/cashflow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
+          <Route path="/reports/monthly" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
+          <Route path="/reports/quarterly" element={<ProtectedRoute><QuarterlyReport /></ProtectedRoute>} />
+          <Route path="/reports/bom" element={<ProtectedRoute><BomReport /></ProtectedRoute>} />
 
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
         </Routes>
