@@ -117,7 +117,8 @@ const CreditRequestPremium = () => {
                                 ...prev,
                                 amount: data.amount,
                                 term: data.term,
-                                periodicity: data.periodicity // Sync periodicity
+                                periodicity: data.periodicity, // Sync periodicity
+                                interestRate: data.interestRate // Sync interest rate
                             }));
                             setSimulation(data);
                         }}

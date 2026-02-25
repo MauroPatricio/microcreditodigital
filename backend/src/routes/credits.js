@@ -94,7 +94,7 @@ router.post('/simulate/pdf', protect, async (req, res) => {
 // @access  Private (Agent/Client)
 router.post('/request', protect, auditAction('Credit', 'request', 'medium'), creditRequestValidation, validate, async (req, res) => {
     try {
-        const { amount, term, purpose, collateral, clientId } = req.body;
+        const { amount, term, purpose, collateral, clientId, periodicity, interestRate } = req.body;
 
         // Se um clientId for passado (por um agente), usamos ele. Caso contrário, usamos o req.user._id
         const effectiveClientId = (['agent', 'manager', 'owner'].includes(req.user.role) && clientId) ? clientId : req.user._id;
@@ -135,9 +135,10 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
             institution: req.user.institution._id,
             amount,
             term,
+            periodicity: periodicity || 'monthly',
+            interestRate: interestRate || req.user.institution.settings?.interestRates?.default || 15,
             purpose,
             collateral,
-            interestRate: req.user.institution.settings?.interestRates?.default || 15,
             status: 'pending',
             currentStage: 'submission',
             scoring: scoringData,

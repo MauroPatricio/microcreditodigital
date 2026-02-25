@@ -29,7 +29,12 @@ const creditSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'Prazo é obrigatório'],
         min: 1,
-        max: 36 // até 36 meses
+        max: 365 // relaxado para suportar dias/semanas
+    },
+    periodicity: {
+        type: String,
+        enum: ['daily', 'weekly', 'biweekly', 'monthly'],
+        default: 'monthly'
     },
     monthlyPayment: {
         type: Number,
@@ -136,18 +141,18 @@ const creditSchema = new mongoose.Schema({
 
 // Calcular total a pagar antes de salvar
 creditSchema.pre('save', function (next) {
-    if (this.isModified('approvedAmount') || this.isModified('interestRate') || this.isModified('term') || this.isModified('amount')) {
+    if (this.isModified('approvedAmount') || this.isModified('interestRate') || this.isModified('term') || this.isModified('amount') || this.isModified('periodicity')) {
         const baseAmount = this.approvedAmount || this.amount;
-        // Tratamos a taxa como MENSAL conforme o padrão de microcrédito e UI (30% Mensal)
-        const monthlyRate = (this.interestRate || 10) / 100;
+        // A taxa agora é tratada POR PERÍODO (conforme simulador)
+        const ratePerPeriod = (this.interestRate || 10) / 100;
         const numberOfPayments = this.term;
 
         if (baseAmount > 0 && numberOfPayments > 0) {
-            // Fórmula de amortização (Price) - Adaptada para taxa mensal direta
-            if (monthlyRate > 0) {
+            // Fórmula de amortização (Price)
+            if (ratePerPeriod > 0) {
                 this.monthlyPayment = baseAmount *
-                    (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) /
-                    (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
+                    (ratePerPeriod * Math.pow(1 + ratePerPeriod, numberOfPayments)) /
+                    (Math.pow(1 + ratePerPeriod, numberOfPayments) - 1);
             } else {
                 this.monthlyPayment = baseAmount / numberOfPayments;
             }

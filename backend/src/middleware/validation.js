@@ -43,8 +43,9 @@ export const loginValidation = [
 // Validações para solicitação de crédito
 export const creditRequestValidation = [
     body('amount').isNumeric().isFloat({ min: 1000 }).withMessage('Valor mínimo é 1.000 MT'),
-    body('term').isInt({ min: 1, max: 36 }).withMessage('Prazo deve ser entre 1 e 36 meses'),
-    body('purpose').trim().notEmpty().withMessage('Finalidade do crédito é obrigatória')
+    body('term').isInt({ min: 1, max: 365 }).withMessage('Prazo deve ser entre 1 e 365 períodos'),
+    body('purpose').trim().notEmpty().withMessage('Finalidade do crédito é obrigatória'),
+    body('periodicity').optional().isIn(['daily', 'weekly', 'biweekly', 'monthly']).withMessage('Periodicidade inválida')
 ];
 
 // Validações para pagamento
