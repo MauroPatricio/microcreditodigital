@@ -56,37 +56,24 @@ router.post('/simulate', protect, async (req, res) => {
 // @access  Private
 router.post('/simulate/pdf', protect, async (req, res) => {
     try {
-        const { amount, term, interestRate } = req.body;
+        const { amount, term, interestRate, periodicity, startDate, clientName, template } = req.body;
 
         if (!amount || !term) {
             return res.status(400).json({ success: false, message: 'Dados incompletos' });
         }
 
-        // Reusing simulation logic (should be a service function but repeating for safety/speed)
         const rate = interestRate || req.user.institution.settings?.interestRates?.default || 10;
-        const monthlyRate = rate / 100;
-        const numberOfPayments = parseInt(term);
+        const period = periodicity || 'monthly';
+        const start = startDate || new Date();
 
-        let monthlyPayment;
-        if (monthlyRate > 0) {
-            monthlyPayment = amount * (monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments)) / (Math.pow(1 + monthlyRate, numberOfPayments) - 1);
-        } else {
-            monthlyPayment = amount / numberOfPayments;
-        }
+        // Usar o serviço para garantir que os cálculos batem com a tela
+        const simulation = simulationService.calculateSimulation(amount, term, rate, period, start);
 
-        const totalPayable = monthlyPayment * numberOfPayments;
-        const totalInterest = totalPayable - amount;
+        // Incluir metadados para o PDF
+        simulation.summary.clientName = clientName;
+        simulation.summary.template = template;
 
-        const simulationData = {
-            amount: parseFloat(amount),
-            term: numberOfPayments,
-            interestRate: rate,
-            monthlyPayment,
-            totalPayable,
-            totalInterest
-        };
-
-        const pdfBuffer = await contractService.generateSimulationPDF(simulationData, req.user);
+        const pdfBuffer = await contractService.generateSimulationPDF(simulation.summary, req.user);
 
         res.set({
             'Content-Type': 'application/pdf',

@@ -870,8 +870,10 @@ router.get('/bom', async (req, res) => {
                 period: { month: m, year: y, label: `${String(m).padStart(2, '0')}/${y}` },
                 institution: {
                     name: institution?.name || '',
-                    address: institution?.address || '',
-                    province: institution?.province || 'MAPUTO',
+                    address: typeof institution?.address === 'object'
+                        ? `${institution.address.street || ''}, ${institution.address.city || ''}`
+                        : (institution?.address || ''),
+                    province: institution?.address?.province || institution?.province || 'MAPUTO',
                     phone: institution?.phone || '',
                     email: institution?.email || '',
                     workers: institution?.workers || 2,

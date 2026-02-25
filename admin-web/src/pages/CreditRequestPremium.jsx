@@ -188,7 +188,7 @@ const CreditRequestPremium = () => {
                         borderRadius: '12px'
                     }}
                 >
-                    {submitting ? 'Processando...' : 'Submeter Solicitação Premium'}
+                    {submitting ? 'Processando...' : 'Submeter Solicitação'}
                 </button>
             </div>
 
