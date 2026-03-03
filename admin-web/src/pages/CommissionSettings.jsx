@@ -105,7 +105,7 @@ const CommissionSettings = () => {
                             type="month"
                             value={period}
                             onChange={(e) => setPeriod(e.target.value)}
-                            style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none' }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none' }}
                         />
                     </div>
                     <button
@@ -250,7 +250,7 @@ const CommissionSettings = () => {
                             <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sem dados.</p>
                         ) : (
                             summary?.byAgent?.map((item) => (
-                                <div key={item.agent._id} style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div key={item.agent._id} style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                         <span style={{ fontWeight: 600 }}>{item.agent.name}</span>
                                         <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{formatCurrency(item.total)}</span>

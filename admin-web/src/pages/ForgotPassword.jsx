@@ -57,7 +57,7 @@ const ForgotPassword = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '1.8rem',
-                        color: 'white',
+                        color: 'var(--text-main)',
                         margin: '0 auto 1.5rem'
                     }}>
                         <FiCheck />
@@ -137,7 +137,7 @@ const ForgotPassword = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     fontSize: '1.8rem',
-                    color: 'white',
+                    color: 'var(--text-main)',
                     margin: '0 auto 1.5rem'
                 }}>
                     <FiTrendingUp />
@@ -159,10 +159,10 @@ const ForgotPassword = () => {
                             style={{
                                 width: '100%',
                                 padding: '1rem 1rem 1rem 3rem',
-                                background: 'rgba(255,255,255,0.03)',
+                                background: 'var(--bg-main)',
                                 border: '1px solid rgba(255,255,255,0.1)',
                                 borderRadius: '12px',
-                                color: 'white',
+                                color: 'var(--text-main)',
                                 fontSize: '0.95rem'
                             }}
                         />

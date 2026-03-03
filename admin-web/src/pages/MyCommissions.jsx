@@ -68,7 +68,7 @@ const MyCommissions = () => {
                         type="month"
                         value={period}
                         onChange={(e) => setPeriod(e.target.value)}
-                        style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none' }}
+                        style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none' }}
                     />
                 </div>
             </div>
@@ -88,28 +88,28 @@ const MyCommissions = () => {
                         <div>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Novos Clientes</p>
                             <p style={{ fontWeight: 700 }}>{target.target.achieved.newClients} / {target.target.targets.newClients}</p>
-                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.5rem' }}>
+                            <div style={{ width: '100%', height: '4px', background: 'var(--bg-main)', borderRadius: '2px', marginTop: '0.5rem' }}>
                                 <div style={{ width: `${Math.min(target.target.achieved.newClients / target.target.targets.newClients * 100, 100)}%`, height: '100%', background: 'var(--accent)', borderRadius: '2px' }}></div>
                             </div>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Créditos Aprovados</p>
                             <p style={{ fontWeight: 700 }}>{target.target.achieved.creditsApproved} / {target.target.targets.creditsApproved}</p>
-                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.5rem' }}>
+                            <div style={{ width: '100%', height: '4px', background: 'var(--bg-main)', borderRadius: '2px', marginTop: '0.5rem' }}>
                                 <div style={{ width: `${Math.min(target.target.achieved.creditsApproved / target.target.targets.creditsApproved * 100, 100)}%`, height: '100%', background: '#10b981', borderRadius: '2px' }}></div>
                             </div>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Montante Total</p>
                             <p style={{ fontWeight: 700 }}>{formatCurrency(target.target.achieved.totalDisbursed)} / {formatCurrency(target.target.targets.totalDisbursed)}</p>
-                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.5rem' }}>
+                            <div style={{ width: '100%', height: '4px', background: 'var(--bg-main)', borderRadius: '2px', marginTop: '0.5rem' }}>
                                 <div style={{ width: `${Math.min(target.target.achieved.totalDisbursed / target.target.targets.totalDisbursed * 100, 100)}%`, height: '100%', background: '#f59e0b', borderRadius: '2px' }}></div>
                             </div>
                         </div>
                         <div>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem' }}>Taxa de Cobrança</p>
                             <p style={{ fontWeight: 700 }}>{target.target.achieved.collectionRate}% / {target.target.targets.collectionRate}%</p>
-                            <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', marginTop: '0.5rem' }}>
+                            <div style={{ width: '100%', height: '4px', background: 'var(--bg-main)', borderRadius: '2px', marginTop: '0.5rem' }}>
                                 <div style={{ width: `${Math.min(target.target.achieved.collectionRate / target.target.targets.collectionRate * 100, 100)}%`, height: '100%', background: '#ef4444', borderRadius: '2px' }}></div>
                             </div>
                         </div>

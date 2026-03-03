@@ -114,7 +114,7 @@ const LoanDetail = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <div>
                         <h1 style={{ fontSize: '2rem', fontWeight: 900, marginBottom: '0.25rem' }}>Detalhes da Solicitação</h1>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Protocolo: <span style={{ color: 'white', fontWeight: 600 }}>#{loan._id.toUpperCase()}</span></p>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Protocolo: <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>#{loan._id.toUpperCase()}</span></p>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                         {loan.status === 'pending' && (
@@ -173,7 +173,7 @@ const LoanDetail = () => {
                                         <span style={{ fontWeight: 700 }}>Risco: {loan.scoring.riskLevel?.toUpperCase()}</span>
                                         <span style={{ color: 'var(--text-muted)' }}>{loan.scoring.score}/1000</span>
                                     </div>
-                                    <div style={{ height: '12px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden' }}>
+                                    <div style={{ height: '12px', background: 'var(--bg-main)', borderRadius: '10px', overflow: 'hidden' }}>
                                         <div style={{
                                             width: `${(loan.scoring.score / 1000) * 100}%`,
                                             height: '100%',
@@ -196,7 +196,7 @@ const LoanDetail = () => {
                                 {loan.workflowHistory.map((step, idx) => (
                                     <div key={idx} style={{ display: 'flex', gap: '1.5rem', position: 'relative' }}>
                                         {idx !== loan.workflowHistory.length - 1 && (
-                                            <div style={{ position: 'absolute', left: '11px', top: '24px', bottom: '-24px', width: '2px', background: 'rgba(255,255,255,0.05)' }}></div>
+                                            <div style={{ position: 'absolute', left: '11px', top: '24px', bottom: '-24px', width: '2px', background: 'var(--bg-main)' }}></div>
                                         )}
                                         <div style={{
                                             width: '24px', height: '24px', borderRadius: '50%', background: 'var(--accent)',
@@ -249,7 +249,7 @@ const LoanDetail = () => {
                             <div style={{ overflowX: 'auto' }}>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                     <thead>
-                                        <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                        <tr style={{ background: 'var(--bg-main)' }}>
                                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>Nº</th>
                                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>VENCIMENTO</th>
                                             <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>VALOR</th>

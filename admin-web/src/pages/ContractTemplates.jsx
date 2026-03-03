@@ -173,7 +173,7 @@ const ContractTemplateManager = () => {
                                     </div>
                                     <div style={{ display: 'flex', gap: '0.6rem' }}>
                                         {t.isActive && <span style={{ padding: '0.3rem 0.75rem', background: 'rgba(16, 185, 129, 0.2)', color: '#10b981', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 900, letterSpacing: '0.5px' }}>ATIVO</span>}
-                                        <span style={{ padding: '0.3rem 0.75rem', background: 'rgba(255, 255, 255, 0.08)', color: 'var(--text-muted)', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 900 }}>v{t.version}.0</span>
+                                        <span style={{ padding: '0.3rem 0.75rem', background: 'var(--bg-main)', color: 'var(--text-muted)', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 900 }}>v{t.version}.0</span>
                                     </div>
                                 </div>
                                 <h3 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.5rem', color: editing?._id === t._id ? 'white' : 'inherit', letterSpacing: '-0.3px', position: 'relative', zIndex: 1 }}>{t.title}</h3>
@@ -208,7 +208,7 @@ const ContractTemplateManager = () => {
                                     <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.5px' }}>{editing._id ? 'Ajustar Modelo' : 'Novo Modelo Legal'}</h2>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Defina as variáveis e o conteúdo jurídico.</p>
                                 </div>
-                                <button onClick={() => setEditing(null)} style={{ background: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255,255,255,0.4)', width: '40px', height: '40px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <button onClick={() => setEditing(null)} style={{ background: 'var(--bg-main)', color: 'rgba(255,255,255,0.4)', width: '40px', height: '40px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                     <FiX size={24} />
                                 </button>
                             </div>
@@ -221,7 +221,7 @@ const ContractTemplateManager = () => {
                                             type="text"
                                             value={editing.name}
                                             onChange={e => setEditing({ ...editing, name: e.target.value })}
-                                            style={{ width: '100%', padding: '1.1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', outline: 'none' }}
+                                            style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                             placeholder="ex: contrato_consumo"
                                             required
                                         />
@@ -232,7 +232,7 @@ const ContractTemplateManager = () => {
                                             type="text"
                                             value={editing.title}
                                             onChange={e => setEditing({ ...editing, title: e.target.value })}
-                                            style={{ width: '100%', padding: '1.1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', outline: 'none' }}
+                                            style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                             placeholder="ex: Contrato de Empréstimo Pessoal"
                                             required
                                         />
@@ -254,10 +254,10 @@ const ContractTemplateManager = () => {
                                             style={{
                                                 width: '100%',
                                                 padding: '1.5rem',
-                                                background: 'rgba(255,255,255,0.01)',
+                                                background: 'var(--bg-main)',
                                                 border: '1px solid rgba(255,255,255,0.1)',
                                                 borderRadius: '20px',
-                                                color: 'white',
+                                                color: 'var(--text-main)',
                                                 fontFamily: '"Fira Code", monospace',
                                                 fontSize: '0.95rem',
                                                 lineHeight: '1.7',
@@ -291,11 +291,11 @@ const ContractTemplateManager = () => {
                                                 onClick={() => copyToClipboard(p.tag)}
                                                 style={{
                                                     fontSize: '0.75rem',
-                                                    background: 'rgba(255,255,255,0.03)',
+                                                    background: 'var(--bg-main)',
                                                     padding: '0.6rem 0.9rem',
                                                     border: '1px solid rgba(255,255,255,0.08)',
                                                     borderRadius: '12px',
-                                                    color: 'white',
+                                                    color: 'var(--text-main)',
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     gap: '0.5rem',
@@ -342,9 +342,9 @@ const ContractTemplateManager = () => {
                                             flex: 0.8,
                                             height: '64px',
                                             borderRadius: '20px',
-                                            background: 'rgba(255, 255, 255, 0.05)',
+                                            background: 'var(--bg-main)',
                                             border: '1px solid rgba(255,255,255,0.1)',
-                                            color: 'white',
+                                            color: 'var(--text-main)',
                                             fontWeight: 700,
                                             cursor: 'pointer'
                                         }}
@@ -420,8 +420,8 @@ const ContractTemplateManager = () => {
                             <button
                                 onClick={() => setPreview(null)}
                                 style={{
-                                    background: 'rgba(255,255,255,0.05)',
-                                    color: 'white',
+                                    background: 'var(--bg-main)',
+                                    color: 'var(--text-main)',
                                     padding: '0.75rem 1.5rem',
                                     borderRadius: '12px',
                                     border: '1px solid rgba(255,255,255,0.1)',
@@ -451,7 +451,7 @@ const ContractTemplateManager = () => {
                         >
                             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ width: '60px', height: '60px', background: 'var(--accent)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'white' }}>
+                                    <div style={{ width: '60px', height: '60px', background: 'var(--accent)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'var(--text-main)' }}>
                                         <FiTrendingUp size={32} />
                                     </div>
                                     <h1 style={{ fontSize: '18pt', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem' }}>{preview.title}</h1>

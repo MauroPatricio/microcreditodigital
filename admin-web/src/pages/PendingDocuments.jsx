@@ -98,8 +98,8 @@ const PendingDocuments = () => {
                                 padding: '1.1rem 1.1rem 1.1rem 3.5rem',
                                 borderRadius: '16px',
                                 border: '1px solid rgba(255,255,255,0.1)',
-                                background: 'rgba(255,255,255,0.02)',
-                                color: 'white',
+                                background: 'var(--bg-main)',
+                                color: 'var(--text-main)',
                                 fontSize: '1rem',
                                 outline: 'none',
                                 transition: 'all 0.3s'
@@ -168,7 +168,7 @@ const PendingDocuments = () => {
                                                 width: '40px',
                                                 height: '40px',
                                                 borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)',
+                                                background: 'var(--bg-main)',
                                                 border: '1px solid rgba(255,255,255,0.1)',
                                                 color: 'rgba(255,255,255,0.6)',
                                                 display: 'flex',
@@ -188,7 +188,7 @@ const PendingDocuments = () => {
                                                 width: '40px',
                                                 height: '40px',
                                                 borderRadius: '12px',
-                                                background: 'rgba(255,255,255,0.05)',
+                                                background: 'var(--bg-main)',
                                                 border: '1px solid rgba(255,255,255,0.1)',
                                                 color: 'rgba(255,255,255,0.6)',
                                                 display: 'flex',
@@ -210,7 +210,7 @@ const PendingDocuments = () => {
                                         {docTypeLabels[doc.type] || doc.type}
                                     </h3>
                                     <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.25rem' }}>
-                                        Cliente: <strong style={{ color: 'white', fontWeight: 700 }}>{doc.client?.name}</strong>
+                                        Cliente: <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{doc.client?.name}</strong>
                                     </p>
 
                                     <div style={{
@@ -219,7 +219,7 @@ const PendingDocuments = () => {
                                         gap: '0.6rem',
                                         fontSize: '0.85rem',
                                         color: 'var(--text-muted)',
-                                        background: 'rgba(255,255,255,0.03)',
+                                        background: 'var(--bg-main)',
                                         padding: '0.75rem 1rem',
                                         borderRadius: '12px',
                                         marginBottom: '2rem',
@@ -322,7 +322,7 @@ const PendingDocuments = () => {
                             <h3 style={{ fontWeight: 800 }}>Visualizar: {docTypeLabels[previewDoc.type] || previewDoc.type}</h3>
                             <button
                                 onClick={() => setPreviewDoc(null)}
-                                style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'white', width: '40px', height: '40px', borderRadius: '12px', cursor: 'pointer' }}
+                                style={{ background: 'var(--bg-main)', border: 'none', color: 'var(--text-main)', width: '40px', height: '40px', borderRadius: '12px', cursor: 'pointer' }}
                             >
                                 <FiX size={24} />
                             </button>

@@ -68,46 +68,50 @@ import MonthlyReport from './pages/MonthlyReport';
 import QuarterlyReport from './pages/QuarterlyReport';
 import BomReport from './pages/BomReport';
 
+import { ThemeProvider } from './context/ThemeContext';
+
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password/:token" element={<ResetPassword />} />
-          <Route path="/register-owner" element={<OwnerRegister />} />
+    <ThemeProvider>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password/:token" element={<ResetPassword />} />
+            <Route path="/register-owner" element={<OwnerRegister />} />
 
-          <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-          <Route path="/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
-          <Route path="/clients/new" element={<ProtectedRoute><ClientOnboarding /></ProtectedRoute>} />
-          <Route path="/clients/:id" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
-          <Route path="/clients/:clientId/request-credit" element={<ProtectedRoute><CreditRequestPremium /></ProtectedRoute>} />
-          <Route path="/loans" element={<ProtectedRoute><LoanList /></ProtectedRoute>} />
-          <Route path="/credits/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
-          <Route path="/payments" element={<ProtectedRoute><PaymentList /></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-          <Route path="/commissions" element={<ProtectedRoute><CommissionSettings /></ProtectedRoute>} />
-          <Route path="/agent-performance" element={<ProtectedRoute><AgentPerformance /></ProtectedRoute>} />
-          <Route path="/my-commissions" element={<ProtectedRoute><MyCommissions /></ProtectedRoute>} />
-          <Route path="/sms-logs" element={<ProtectedRoute><SmsLogs /></ProtectedRoute>} />
-          <Route path="/audit-logs" element={<ProtectedRoute roles={['owner']}><AuditLogs /></ProtectedRoute>} />
-          <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
-          <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
-          <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager']}><ContractTemplates /></ProtectedRoute>} />
-          <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner']}><GlobalDashboard /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><InstitutionSettings /></ProtectedRoute>} />
-          <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
-          <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
-          <Route path="/cashflow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
-          <Route path="/reports/monthly" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
-          <Route path="/reports/quarterly" element={<ProtectedRoute><QuarterlyReport /></ProtectedRoute>} />
-          <Route path="/reports/bom" element={<ProtectedRoute><BomReport /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><ClientList /></ProtectedRoute>} />
+            <Route path="/clients/new" element={<ProtectedRoute><ClientOnboarding /></ProtectedRoute>} />
+            <Route path="/clients/:id" element={<ProtectedRoute><ClientProfile /></ProtectedRoute>} />
+            <Route path="/clients/:clientId/request-credit" element={<ProtectedRoute><CreditRequestPremium /></ProtectedRoute>} />
+            <Route path="/loans" element={<ProtectedRoute><LoanList /></ProtectedRoute>} />
+            <Route path="/credits/:id" element={<ProtectedRoute><LoanDetail /></ProtectedRoute>} />
+            <Route path="/payments" element={<ProtectedRoute><PaymentList /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/commissions" element={<ProtectedRoute><CommissionSettings /></ProtectedRoute>} />
+            <Route path="/agent-performance" element={<ProtectedRoute><AgentPerformance /></ProtectedRoute>} />
+            <Route path="/my-commissions" element={<ProtectedRoute><MyCommissions /></ProtectedRoute>} />
+            <Route path="/sms-logs" element={<ProtectedRoute><SmsLogs /></ProtectedRoute>} />
+            <Route path="/audit-logs" element={<ProtectedRoute roles={['owner']}><AuditLogs /></ProtectedRoute>} />
+            <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
+            <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
+            <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager']}><ContractTemplates /></ProtectedRoute>} />
+            <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner']}><GlobalDashboard /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><InstitutionSettings /></ProtectedRoute>} />
+            <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
+            <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
+            <Route path="/cashflow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
+            <Route path="/reports/monthly" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
+            <Route path="/reports/quarterly" element={<ProtectedRoute><QuarterlyReport /></ProtectedRoute>} />
+            <Route path="/reports/bom" element={<ProtectedRoute><BomReport /></ProtectedRoute>} />
 
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        </Routes>
-      </Router>
-    </AuthProvider>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </Router>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

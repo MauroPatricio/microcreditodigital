@@ -89,10 +89,10 @@ const OwnerRegister = () => {
     const inputStyle = {
         width: '100%',
         padding: '1rem 1rem 1rem 3rem',
-        background: 'rgba(255,255,255,0.03)',
+        background: 'var(--bg-main)',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '12px',
-        color: 'white',
+        color: 'var(--text-main)',
         fontSize: '0.95rem'
     };
 
@@ -131,7 +131,7 @@ const OwnerRegister = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '2.5rem',
-                        color: 'white',
+                        color: 'var(--text-main)',
                         margin: '0 auto 2rem'
                     }}>
                         <FiCheck />
@@ -140,7 +140,7 @@ const OwnerRegister = () => {
                         ✅ Conta Criada com Sucesso!
                     </h1>
                     <p style={{
-                        color: 'white',
+                        color: 'var(--text-main)',
                         fontSize: '1.15rem',
                         marginBottom: '0.5rem',
                         fontWeight: 600
@@ -195,7 +195,7 @@ const OwnerRegister = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '1.8rem',
-                        color: 'white',
+                        color: 'var(--text-main)',
                         margin: '0 auto 1.5rem'
                     }}>
                         <FiTrendingUp />
@@ -422,7 +422,7 @@ const OwnerRegister = () => {
                                 className="btn-primary"
                                 style={{
                                     flex: 1,
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: 'var(--bg-main)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',

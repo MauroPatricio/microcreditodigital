@@ -1,9 +1,12 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
+import { FiMoon, FiSun } from 'react-icons/fi';
 
 const Layout = ({ children }) => {
     const { user } = useAuth();
+    const { theme, toggleTheme } = useTheme();
     const primaryColor = user?.institution?.settings?.appearance?.primaryColor || '#00FF00';
 
     // Função para escurecer a cor (para hover states)
@@ -34,14 +37,43 @@ const Layout = ({ children }) => {
                 padding: '2rem',
                 minHeight: '100vh',
                 background: 'var(--bg-main)',
-                transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease'
             }}>
                 <header style={{
                     display: 'flex',
                     justifyContent: 'flex-end',
                     marginBottom: '2rem',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    gap: '1rem' // Added gap
                 }}>
+                    <button
+                        onClick={toggleTheme}
+                        style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            background: 'var(--bg-card)',
+                            border: '1px solid var(--border-light)',
+                            color: theme === 'dark' ? '#FBBF24' : '#6B7280', // Yellow for dark mode to indicate sun
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            boxShadow: theme === 'dark' ? '0 0 10px rgba(251, 191, 36, 0.2)' : '0 2px 5px rgba(0,0,0,0.05)'
+                        }}
+                        title={theme === 'dark' ? 'Mudar para Light Mode' : 'Mudar para Dark Mode'}
+                        onMouseOver={(e) => {
+                            e.currentTarget.style.transform = 'scale(1.05)';
+                            if (theme === 'light') e.currentTarget.style.color = '#111827';
+                        }}
+                        onMouseOut={(e) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            if (theme === 'light') e.currentTarget.style.color = '#6B7280';
+                        }}
+                    >
+                        {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
+                    </button>
                     {/* Placeholder para notificações / busca se necessário */}
                     <div style={{
                         padding: '0.5rem 1rem',
@@ -49,7 +81,8 @@ const Layout = ({ children }) => {
                         borderRadius: '8px',
                         fontSize: '0.8rem',
                         color: 'var(--text-muted)',
-                        border: '1px solid rgba(255,255,255,0.05)'
+                        border: '1px solid var(--border-light)',
+                        transition: 'var(--theme-transition)'
                     }}>
                         {new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>

@@ -78,7 +78,7 @@ const InstitutionOnboarding = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         fontSize: '2.5rem',
-                        color: 'white',
+                        color: 'var(--text-main)',
                         marginBottom: '1.5rem',
                         boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)'
                     }}>
@@ -98,10 +98,10 @@ const InstitutionOnboarding = () => {
     const inputStyle = {
         width: '100%',
         padding: '0.875rem 1rem 0.875rem 3rem',
-        background: 'rgba(255,255,255,0.03)',
+        background: 'var(--bg-main)',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '12px',
-        color: 'white',
+        color: 'var(--text-main)',
         fontSize: '0.95rem',
         outline: 'none',
         transition: 'all 0.2s'
@@ -146,7 +146,7 @@ const InstitutionOnboarding = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             fontSize: '1.8rem',
-                            color: 'white',
+                            color: 'var(--text-main)',
                             margin: '0 auto 1.5rem'
                         }}>
                             <FiBriefcase />

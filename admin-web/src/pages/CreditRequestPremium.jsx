@@ -137,7 +137,7 @@ const CreditRequestPremium = () => {
                             value={requestData.purpose}
                             onChange={(e) => setRequestData({ ...requestData, purpose: e.target.value })}
                             placeholder="Descreva como o valor será utilizado..."
-                            style={{ width: '100%', padding: '1rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }}
+                            style={{ width: '100%', padding: '1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'var(--text-main)' }}
                         />
                     </div>
 
@@ -158,14 +158,14 @@ const CreditRequestPremium = () => {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {requestData.collateral.map((item, idx) => (
                                 <div key={idx} className="glass" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr auto', gap: '1rem', alignItems: 'center' }}>
-                                    <select value={item.type} onChange={(e) => handleCollateralChange(idx, 'type', e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'white', border: 'none' }}>
+                                    <select value={item.type} onChange={(e) => handleCollateralChange(idx, 'type', e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: 'none' }}>
                                         <option value="vehicle">Veículo</option>
                                         <option value="real_estate">Imóvel</option>
                                         <option value="guarantor">Fiador</option>
                                         <option value="equipment">Equipamento</option>
                                     </select>
-                                    <input type="text" placeholder="Descrição" value={item.description} onChange={(e) => handleCollateralChange(idx, 'description', e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'white', border: 'none' }} />
-                                    <input type="number" placeholder="Valor Est." value={item.value} onChange={(e) => handleCollateralChange(idx, 'value', parseFloat(e.target.value))} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'white', border: 'none' }} />
+                                    <input type="text" placeholder="Descrição" value={item.description} onChange={(e) => handleCollateralChange(idx, 'description', e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: 'none' }} />
+                                    <input type="number" placeholder="Valor Est." value={item.value} onChange={(e) => handleCollateralChange(idx, 'value', parseFloat(e.target.value))} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: 'none' }} />
                                     <button onClick={() => handleRemoveCollateral(idx)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}><FiTrash2 /></button>
                                 </div>
                             ))}

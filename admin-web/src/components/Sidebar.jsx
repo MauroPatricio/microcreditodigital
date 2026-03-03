@@ -71,7 +71,7 @@ const Sidebar = () => {
                 { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner'] },
                 { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager'] },
                 { name: 'Configurações', icon: <FiSettings />, path: '/settings', roles: ['owner'] },
-                { name: 'Status Sistema', icon: <FiServer />, path: '/system-status', roles: ['owner', 'admin'] },
+                // { name: 'Status Sistema', icon: <FiServer />, path: '/system-status', roles: ['owner', 'admin'] },
             ]
         }
     ];
@@ -88,8 +88,8 @@ const Sidebar = () => {
             display: 'flex',
             flexDirection: 'column',
             background: 'var(--bg-card)',
-            borderRight: '1px solid rgba(255, 255, 255, 0.05)',
-            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+            borderRight: '1px solid var(--border-light)',
+            transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1), var(--theme-transition)',
             zIndex: 1000,
             overflowX: 'hidden'
         }}>
@@ -99,8 +99,9 @@ const Sidebar = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: isCollapsed ? 'center' : 'space-between',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-                minHeight: '70px'
+                borderBottom: '1px solid var(--border-light)',
+                minHeight: '70px',
+                transition: 'var(--theme-transition)'
             }}>
                 {!isCollapsed && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
@@ -112,12 +113,12 @@ const Sidebar = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'white',
+                            color: 'white', // Icon inside accent box is always white
                             flexShrink: 0
                         }}>
                             <FiTrendingUp size={18} />
                         </div>
-                        <span style={{ fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap', color: 'white' }}>
+                        <span style={{ fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap', color: 'var(--text-main)', transition: 'var(--theme-transition)' }}>
                             {user?.institution?.name || 'Microcrédito'}
                         </span>
                     </div>
@@ -131,7 +132,10 @@ const Sidebar = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        borderRadius: '6px'
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        transition: 'var(--theme-transition)'
                     }}
                     className="sidebar-toggle"
                 >
@@ -162,7 +166,8 @@ const Sidebar = () => {
                                     color: 'var(--text-muted)',
                                     marginBottom: '0.5rem',
                                     textTransform: 'uppercase',
-                                    letterSpacing: '0.5px'
+                                    letterSpacing: '0.5px',
+                                    transition: 'var(--theme-transition)'
                                 }}>
                                     {section.title}
                                 </p>
@@ -180,31 +185,35 @@ const Sidebar = () => {
                                                 padding: '0.75rem 1rem',
                                                 borderRadius: '8px',
                                                 textDecoration: 'none',
-                                                color: isActive ? 'white' : 'var(--text-muted)',
-                                                background: isActive ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
-                                                transition: 'all 0.2s ease',
+                                                color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
+                                                background: isActive ? 'var(--sidebar-active-bg)' : 'transparent',
+                                                transition: 'all 0.2s ease, var(--theme-transition)',
                                                 fontWeight: isActive ? 600 : 500,
                                                 fontSize: '0.9rem',
                                                 position: 'relative'
                                             })}
                                             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
                                         >
-                                            <span style={{ fontSize: '1.1rem', display: 'flex', flexShrink: 0 }}>{item.icon}</span>
-                                            {!isCollapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.name}</span>}
+                                            {({ isActive }) => (
+                                                <React.Fragment>
+                                                    <span style={{ fontSize: '1.1rem', display: 'flex', flexShrink: 0, color: isActive ? 'var(--accent)' : 'inherit' }}>{item.icon}</span>
+                                                    {!isCollapsed && <span style={{ whiteSpace: 'nowrap' }}>{item.name}</span>}
 
-                                            {/* Active indicator bar */}
-                                            {!isCollapsed && (
-                                                <div className="active-indicator" style={{
-                                                    position: 'absolute',
-                                                    left: '0',
-                                                    top: '20%',
-                                                    bottom: '20%',
-                                                    width: '3px',
-                                                    background: 'var(--accent)',
-                                                    borderRadius: '0 4px 4px 0',
-                                                    opacity: 0,
-                                                    transition: 'opacity 0.2s'
-                                                }} />
+                                                    {/* Active indicator bar */}
+                                                    {!isCollapsed && (
+                                                        <div className="active-indicator" style={{
+                                                            position: 'absolute',
+                                                            left: '0',
+                                                            top: '20%',
+                                                            bottom: '20%',
+                                                            width: '3px',
+                                                            background: 'var(--accent)',
+                                                            borderRadius: '0 4px 4px 0',
+                                                            opacity: 0,
+                                                            transition: 'opacity 0.2s'
+                                                        }} />
+                                                    )}
+                                                </React.Fragment>
                                             )}
                                         </NavLink>
                                     </li>
@@ -218,8 +227,9 @@ const Sidebar = () => {
             {/* Footer / User Profile */}
             <div style={{
                 padding: isCollapsed ? '1rem 0.5rem' : '1.25rem',
-                borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-                background: 'rgba(0,0,0,0.1)'
+                borderTop: '1px solid var(--border-light)',
+                background: 'var(--sidebar-footer-bg)',
+                transition: 'var(--theme-transition)'
             }}>
                 <div style={{
                     display: 'flex',
@@ -243,8 +253,8 @@ const Sidebar = () => {
                     }}>{user?.name?.charAt(0)}</div>
                     {!isCollapsed && (
                         <div style={{ overflow: 'hidden' }}>
-                            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{user?.name}</p>
-                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{user?.role}</p>
+                            <p style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'var(--theme-transition)' }}>{user?.name}</p>
+                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px', transition: 'var(--theme-transition)' }}>{user?.role}</p>
                         </div>
                     )}
                 </div>
@@ -264,7 +274,9 @@ const Sidebar = () => {
                             color: 'var(--danger)',
                             fontSize: '0.85rem',
                             fontWeight: 600,
-                            border: '1px solid rgba(239, 68, 68, 0.1)'
+                            border: '1px solid rgba(239, 68, 68, 0.1)',
+                            cursor: 'pointer',
+                            transition: 'var(--theme-transition)'
                         }}
                         className="btn-logout"
                     >
@@ -283,7 +295,9 @@ const Sidebar = () => {
                             color: 'var(--danger)',
                             marginTop: '1rem',
                             background: 'rgba(239, 68, 68, 0.05)',
-                            borderRadius: '6px'
+                            borderRadius: '6px',
+                            cursor: 'pointer',
+                            transition: 'var(--theme-transition)'
                         }}
                     >
                         <FiLogOut size={18} />
@@ -296,8 +310,8 @@ const Sidebar = () => {
                 .sidebar::-webkit-scrollbar { width: 0; display: none; }
                 
                 .sidebar-link:hover:not(.active) {
-                    background: rgba(255, 255, 255, 0.03);
-                    color: white;
+                    background: var(--sidebar-hover-bg);
+                    color: var(--text-main) !important;
                 }
                 
                 .sidebar-link.active .active-indicator {
@@ -305,13 +319,13 @@ const Sidebar = () => {
                 }
                 
                 .sidebar-toggle:hover {
-                    background: rgba(255, 255, 255, 0.05) !important;
-                    color: white !important;
+                    background: var(--sidebar-hover-bg) !important;
+                    color: var(--text-main) !important;
                 }
                 
                 .btn-logout:hover {
-                    background: rgba(239, 68, 68, 0.1) !important;
-                    border-color: rgba(239, 68, 68, 0.2) !important;
+                    background: rgba(239, 68, 68, 0.15) !important;
+                    border-color: rgba(239, 68, 68, 0.3) !important;
                 }
 
                 @media (max-width: 1024px) {

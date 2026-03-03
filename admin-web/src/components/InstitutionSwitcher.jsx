@@ -50,13 +50,13 @@ const InstitutionSwitcher = () => {
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     padding: '0.85rem',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    background: 'var(--sidebar-hover-bg)',
+                    border: '1px solid var(--border-light)',
                     borderRadius: '12px',
-                    color: '#ffffff',
+                    color: 'var(--text-main)',
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    transition: 'var(--theme-transition)',
+                    boxShadow: 'var(--card-shadow)'
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
@@ -69,19 +69,19 @@ const InstitutionSwitcher = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
-                        color: '#000',
+                        color: 'white',
                         fontWeight: 'bold'
                     }}>
                         <FiRepeat size={16} />
                     </div>
                     <div style={{ textAlign: 'left', overflow: 'hidden' }}>
-                        <p style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.7)', marginBottom: '2px', fontWeight: 500 }}>Instituição Ativa</p>
-                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'white', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: 500, transition: 'var(--theme-transition)' }}>Instituição Ativa</p>
+                        <p style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', transition: 'var(--theme-transition)' }}>
                             {activeInst?.name || 'Selecionar...'}
                         </p>
                     </div>
                 </div>
-                <FiChevronDown size={20} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'rgba(255,255,255,0.7)' }} />
+                <FiChevronDown size={20} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition: '0.2s', color: 'var(--text-muted)' }} />
             </button>
 
             {isOpen && (
@@ -90,14 +90,15 @@ const InstitutionSwitcher = () => {
                     top: 'calc(100% + 0.5rem)',
                     left: '0',
                     right: '0',
-                    background: '#0f172a',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    background: 'var(--bg-card)',
+                    border: '1px solid var(--border-light)',
                     borderRadius: '12px',
                     zIndex: 1100,
-                    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5)',
+                    boxShadow: 'var(--card-shadow)',
                     maxHeight: '300px',
                     overflowY: 'auto',
-                    padding: '0.5rem'
+                    padding: '0.5rem',
+                    transition: 'var(--theme-transition)'
                 }}>
                     <div style={{ paddingBottom: '0.5rem' }}>
                         {institutions.map(inst => (
@@ -111,18 +112,19 @@ const InstitutionSwitcher = () => {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     padding: '0.75rem 1rem',
-                                    background: inst._id === activeInst?._id ? 'rgba(34, 197, 94, 0.15)' : 'transparent',
-                                    border: '1px solid ' + (inst._id === activeInst?._id ? 'rgba(34, 197, 94, 0.3)' : 'transparent'),
+                                    background: inst._id === activeInst?._id ? 'var(--sidebar-active-bg)' : 'transparent',
+                                    border: '1px solid ' + (inst._id === activeInst?._id ? 'var(--primary-light)' : 'transparent'),
                                     borderRadius: '8px',
-                                    color: inst._id === activeInst?._id ? '#4ade80' : '#f8fafc',
+                                    color: inst._id === activeInst?._id ? 'var(--primary)' : 'var(--text-main)',
                                     cursor: inst._id === activeInst?._id ? 'default' : 'pointer',
                                     textAlign: 'left',
                                     marginBottom: '4px',
-                                    fontWeight: inst._id === activeInst?._id ? 700 : 500
+                                    fontWeight: inst._id === activeInst?._id ? 700 : 500,
+                                    transition: 'var(--theme-transition)'
                                 }}
                                 onMouseEnter={(e) => {
                                     if (inst._id !== activeInst?._id) {
-                                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                                        e.currentTarget.style.background = 'var(--sidebar-hover-bg)';
                                     }
                                 }}
                                 onMouseLeave={(e) => {
@@ -138,7 +140,7 @@ const InstitutionSwitcher = () => {
                     </div>
                     <div style={{
                         paddingTop: '0.5rem',
-                        borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+                        borderTop: '1px solid var(--border-light)'
                     }}>
                         <button
                             onClick={() => window.location.href = '/institutions/new'}
@@ -149,22 +151,22 @@ const InstitutionSwitcher = () => {
                                 justifyContent: 'center',
                                 gap: '0.5rem',
                                 padding: '0.75rem',
-                                background: 'rgba(255, 255, 255, 0.05)',
-                                border: '1px dashed rgba(255, 255, 255, 0.2)',
+                                background: 'transparent',
+                                border: '1px dashed var(--text-muted)',
                                 borderRadius: '8px',
-                                color: '#white',
+                                color: 'var(--text-main)',
                                 cursor: 'pointer',
                                 fontSize: '0.85rem',
                                 fontWeight: 600,
-                                transition: 'all 0.2s'
+                                transition: 'var(--theme-transition)'
                             }}
                             onMouseEnter={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
-                                e.currentTarget.style.borderColor = 'white';
+                                e.currentTarget.style.background = 'var(--sidebar-hover-bg)';
+                                e.currentTarget.style.borderColor = 'var(--text-main)';
                             }}
                             onMouseLeave={(e) => {
-                                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.borderColor = 'var(--text-muted)';
                             }}
                         >
                             <FiPlus /> Criar Nova Instituição

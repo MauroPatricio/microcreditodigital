@@ -147,7 +147,7 @@ const QuarterlyReport = () => {
                             </div>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
-                                    <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                    <tr style={{ background: 'var(--bg-main)' }}>
                                         {['Mês', 'Créditos Concedidos', 'Volume', 'Arrecadado', 'Em Atraso'].map(h => (
                                             <th key={h} style={{ padding: '0.85rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
                                         ))}
@@ -163,7 +163,7 @@ const QuarterlyReport = () => {
                                             <td style={{ padding: '0.85rem 1.25rem', color: m.overdue > 0 ? '#ef4444' : 'var(--text-muted)', fontWeight: m.overdue > 0 ? 700 : 400 }}>{fmtNum(m.overdue)}</td>
                                         </tr>
                                     ))}
-                                    <tr style={{ background: 'rgba(255,255,255,0.03)', fontWeight: 800 }}>
+                                    <tr style={{ background: 'var(--bg-main)', fontWeight: 800 }}>
                                         <td style={{ padding: '0.85rem 1.25rem' }}>TOTAL</td>
                                         <td style={{ padding: '0.85rem 1.25rem', color: '#3b82f6' }}>{fmtNum(data.totals.creditsConceded)}</td>
                                         <td style={{ padding: '0.85rem 1.25rem' }}>{fmt(data.totals.volumeConceded)}</td>
@@ -180,7 +180,7 @@ const QuarterlyReport = () => {
                                 <h3 style={{ fontWeight: 700, marginBottom: '1.25rem', fontSize: '1rem' }}>🏆 Performance por Agente</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                     {data.agentPerformance.map((a, i) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.85rem 1rem', background: 'var(--bg-main)', borderRadius: '10px' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{ width: 32, height: 32, borderRadius: '50%', background: COLORS[i % COLORS.length] + '22', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 800, color: COLORS[i % COLORS.length] }}>{i + 1}</div>
                                                 <span style={{ fontWeight: 600 }}>{a.name}</span>
@@ -199,18 +199,18 @@ const QuarterlyReport = () => {
                         <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginTop: '1.5rem', borderLeft: '4px solid #8b5cf6' }}>
                             <h3 style={{ fontWeight: 700, marginBottom: '1.25rem', fontSize: '1rem' }}>⚖️ Comparativo com Trimestre Anterior</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem', textAlign: 'center' }}>
-                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px' }}>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.5rem' }}>PERÍODO ANTERIOR</div>
                                     <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{QUARTER_NAMES[data.previousQuarter.quarter]} {data.previousQuarter.year}</div>
                                     <div style={{ color: '#3b82f6', fontWeight: 800 }}>{fmt(data.previousQuarter.volumeConceded)}</div>
                                 </div>
-                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px' }}>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.5rem' }}>CRESCIMENTO</div>
                                     <div style={{ fontSize: '2rem', fontWeight: 800, color: data.crescimentoVolume !== 'N/A' && parseFloat(data.crescimentoVolume) >= 0 ? '#10b981' : '#ef4444' }}>
                                         {data.crescimentoVolume !== 'N/A' ? `${parseFloat(data.crescimentoVolume) >= 0 ? '+' : ''}${data.crescimentoVolume}%` : 'N/A'}
                                     </div>
                                 </div>
-                                <div style={{ padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                <div style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px' }}>
                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, marginBottom: '0.5rem' }}>PERÍODO ATUAL</div>
                                     <div style={{ fontWeight: 700, marginBottom: '0.25rem' }}>{QUARTER_NAMES[quarter]} {year}</div>
                                     <div style={{ color: '#3b82f6', fontWeight: 800 }}>{fmt(data.totals.volumeConceded)}</div>
@@ -224,5 +224,5 @@ const QuarterlyReport = () => {
     );
 };
 
-const selStyle = { background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' };
+const selStyle = { background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' };
 export default QuarterlyReport;

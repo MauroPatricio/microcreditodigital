@@ -51,7 +51,7 @@ const BomReport = () => {
         } catch (e) { console.error(e); }
     };
 
-    const selStyle = { background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' };
+    const selStyle = { background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' };
 
     return (
         <Layout>
@@ -92,8 +92,8 @@ const BomReport = () => {
                             <div style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.35rem' }}>REPORTE PERIÓDICO DE INFORMAÇÕES DE</div>
                             <div style={{ fontSize: '1rem', fontWeight: 700 }}>INSTITUIÇÕES SUJEITAS À MONITORIZAÇÃO</div>
                             <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.875rem', color: 'var(--text-muted)', flexWrap: 'wrap' }}>
-                                <span><strong style={{ color: 'white' }}>Período de Reporte:</strong> {data.period.label}</span>
-                                <span><strong style={{ color: 'white' }}>Data:</strong> {new Date().toLocaleDateString('pt-MZ')}</span>
+                                <span><strong style={{ color: 'var(--text-main)' }}>Período de Reporte:</strong> {data.period.label}</span>
+                                <span><strong style={{ color: 'var(--text-main)' }}>Data:</strong> {new Date().toLocaleDateString('pt-MZ')}</span>
                             </div>
                         </div>
 
@@ -111,7 +111,7 @@ const BomReport = () => {
                                     { label: 'Data de Início das Actividades', value: data.institution.startDate ? new Date(data.institution.startDate).toLocaleDateString('pt-MZ') : '—' },
                                     { label: 'Nome do Responsável pela Gestão', value: data.institution.manager }
                                 ].map(f => (
-                                    <div key={f.label} style={{ padding: '0.6rem 0.9rem', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+                                    <div key={f.label} style={{ padding: '0.6rem 0.9rem', background: 'var(--bg-main)', borderRadius: '8px', display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 700, minWidth: '140px', paddingTop: '0.1rem', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{f.label}:</span>
                                         <span style={{ fontWeight: 600, fontSize: '0.875rem' }}>{f.value || '—'}</span>
                                     </div>
@@ -174,7 +174,7 @@ const BomReport = () => {
                                     {/* Totals row */}
                                     {data.operations.length > 0 && (
                                         <tfoot>
-                                            <tr style={{ background: 'rgba(255,255,255,0.04)', fontWeight: 800, borderTop: '2px solid rgba(255,255,255,0.1)' }}>
+                                            <tr style={{ background: 'var(--bg-main)', fontWeight: 800, borderTop: '2px solid rgba(255,255,255,0.1)' }}>
                                                 <td colSpan={3} style={{ padding: '0.85rem 0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>TOTAIS ({data.totals.totalOperacoes} op.)</td>
                                                 <td style={{ padding: '0.85rem 0.6rem' }}>{fmt(data.totals.totalDesembolsado)}</td>
                                                 <td colSpan={5}></td>

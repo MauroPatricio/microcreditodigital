@@ -56,10 +56,10 @@ const ClientList = () => {
                         style={{
                             width: '100%',
                             padding: '0.75rem 1rem 0.75rem 2.8rem',
-                            background: 'rgba(255,255,255,0.03)',
+                            background: 'var(--bg-main)',
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '12px',
-                            color: 'white'
+                            color: 'var(--text-main)'
                         }}
                     />
                 </div>
@@ -67,7 +67,7 @@ const ClientList = () => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <tr style={{ background: 'var(--bg-main)' }}>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>CLIENTE</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>STATUS</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>SCORE</th>
@@ -111,7 +111,7 @@ const ClientList = () => {
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                 <div style={{
-                                                    width: '100px', height: '6px', background: 'rgba(255,255,255,0.05)', borderRadius: '10px', overflow: 'hidden'
+                                                    width: '100px', height: '6px', background: 'var(--bg-main)', borderRadius: '10px', overflow: 'hidden'
                                                 }}>
                                                     <div style={{
                                                         width: `${((typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500) / 10}%`, height: '100%', background: 'var(--accent)'

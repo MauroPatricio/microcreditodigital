@@ -125,7 +125,7 @@ const CashFlow = () => {
                         <select value={year} onChange={e => setYear(Number(e.target.value))} style={inputStyle}>
                             {[2023, 2024, 2025, 2026].map(y => <option key={y} value={y}>{y}</option>)}
                         </select>
-                        <button onClick={load} style={{ ...btnStyle, background: 'rgba(255,255,255,0.05)' }}><FiRefreshCw size={16} /></button>
+                        <button onClick={load} style={{ ...btnStyle, background: 'var(--sidebar-hover-bg)' }}><FiRefreshCw size={16} /></button>
                         <button onClick={openCreate} className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.65rem 1.25rem' }}>
                             <FiPlus size={16} /> Nova Transação
                         </button>
@@ -173,7 +173,7 @@ const CashFlow = () => {
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                             <thead>
-                                <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                                <tr style={{ background: 'var(--bg-main)' }}>
                                     {['Tipo', 'Categoria', 'Descrição', 'Método', 'Valor', 'Data', 'Ações'].map(h => (
                                         <th key={h} style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
                                     ))}
@@ -261,7 +261,7 @@ const CashFlow = () => {
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
-                                    <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+                                    <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
                                     <button type="submit" className="btn-primary" style={{ flex: 2, padding: '0.75rem' }} disabled={saving}>{saving ? 'Guardando...' : editTx ? 'Guardar Alterações' : 'Registar Transação'}</button>
                                 </div>
                             </form>
@@ -273,8 +273,8 @@ const CashFlow = () => {
     );
 };
 
-const inputStyle = { width: '100%', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: 'white', fontSize: '0.9rem', boxSizing: 'border-box' };
+const inputStyle = { width: '100%', padding: '0.65rem 0.9rem', borderRadius: '10px', border: '1px solid var(--border-light)', background: 'var(--bg-main)', color: 'var(--text-main)', fontSize: '0.9rem', boxSizing: 'border-box' };
 const labelStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.4px' };
-const btnStyle = { padding: '0.5rem 0.9rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 };
+const btnStyle = { padding: '0.5rem 0.9rem', borderRadius: '8px', border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.82rem', fontWeight: 600 };
 
 export default CashFlow;

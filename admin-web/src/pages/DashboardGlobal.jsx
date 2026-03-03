@@ -119,7 +119,7 @@ const DashboardGlobal = () => {
                         {breakdown.map((branch) => (
                             <div key={branch.id} style={{
                                 padding: '1rem',
-                                background: 'rgba(255,255,255,0.03)',
+                                background: 'var(--bg-main)',
                                 borderRadius: '12px',
                                 borderLeft: `4px solid ${branch.defaultRate > 10 ? 'var(--error)' : 'var(--success)'}`
                             }}>

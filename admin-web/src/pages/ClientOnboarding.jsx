@@ -194,7 +194,7 @@ const ClientOnboarding = () => {
                     <div className="step-content fadeIn">
                         <h3 className="step-title">Referências Pessoais</h3>
                         {formData.references.map((ref, idx) => (
-                            <div key={idx} style={{ marginBottom: '2rem', padding: '1.5rem', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div key={idx} style={{ marginBottom: '2rem', padding: '1.5rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <h4 style={{ marginBottom: '1rem', color: 'var(--accent)', fontSize: '0.9rem', fontWeight: 700 }}>Referência #{idx + 1}</h4>
                                 <div className="grid-2">
                                     <div className="form-group">
@@ -298,7 +298,7 @@ const ClientOnboarding = () => {
 
                 {/* Step Progress Bar */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4rem', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '24px', left: '5%', right: '5%', height: '2px', background: 'rgba(255,255,255,0.05)', zIndex: 0 }}>
+                    <div style={{ position: 'absolute', top: '24px', left: '5%', right: '5%', height: '2px', background: 'var(--bg-main)', zIndex: 0 }}>
                         <div style={{ width: `${((currentStep - 1) / 5) * 100}%`, height: '100%', background: 'var(--accent)', transition: '0.3s' }}></div>
                     </div>
                     {steps.map(step => (

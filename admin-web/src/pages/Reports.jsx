@@ -163,8 +163,8 @@ const Reports = () => {
                             padding: '0.5rem 1rem',
                             borderRadius: '8px',
                             border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.05)',
-                            color: 'white',
+                            background: 'var(--bg-main)',
+                            color: 'var(--text-main)',
                             fontSize: '0.9rem'
                         }}
                     />
@@ -177,8 +177,8 @@ const Reports = () => {
                             padding: '0.5rem 1rem',
                             borderRadius: '8px',
                             border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.05)',
-                            color: 'white',
+                            background: 'var(--bg-main)',
+                            color: 'var(--text-main)',
                             fontSize: '0.9rem'
                         }}
                     />
@@ -258,7 +258,7 @@ const Reports = () => {
                             className="btn-primary"
                             style={{
                                 marginBottom: '1.5rem',
-                                background: 'rgba(255,255,255,0.05)',
+                                background: 'var(--bg-main)',
                                 padding: '0.5rem 1rem'
                             }}
                         >

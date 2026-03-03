@@ -47,7 +47,7 @@ const MonthlyReport = () => {
         pdf.save(`relatorio-mensal-${String(month).padStart(2, '0')}-${year}.pdf`);
     };
 
-    const selStyle = { background: 'transparent', border: 'none', color: 'white', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' };
+    const selStyle = { background: 'transparent', border: 'none', color: 'var(--text-main)', fontSize: '0.9rem', outline: 'none', cursor: 'pointer' };
 
     return (
         <Layout>
@@ -143,7 +143,7 @@ const MonthlyReport = () => {
                                     { label: 'Créditos Concedidos', value: data.creditosDoMes?.total || 0, color: '#3b82f6', isNum: true },
                                     { label: 'Clientes Inadimplentes', value: data.clientes?.inadimplentes || 0, color: '#ef4444', isNum: true },
                                 ].map(cf => (
-                                    <div key={cf.label} style={{ textAlign: 'center', padding: '1rem', background: 'rgba(255,255,255,0.03)', borderRadius: '10px' }}>
+                                    <div key={cf.label} style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px' }}>
                                         <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: 600, textTransform: 'uppercase' }}>{cf.label}</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: cf.color }}>{cf.isNum ? cf.value : cf.value}</div>
                                     </div>
@@ -159,7 +159,7 @@ const MonthlyReport = () => {
                                 </div>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                                     <thead>
-                                        <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                                        <tr style={{ background: 'var(--bg-main)' }}>
                                             {['#', 'Cliente', 'Nº Pagamentos', 'Valor Pago'].map(h =>
                                                 <th key={h} style={{ padding: '0.85rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                                             )}
@@ -189,7 +189,7 @@ const MonthlyReport = () => {
                             </div>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
                                 <thead>
-                                    <tr style={{ background: 'rgba(255,255,255,0.03)' }}>
+                                    <tr style={{ background: 'var(--bg-main)' }}>
                                         {['Categoria', 'Qtd', 'Valor'].map(h =>
                                             <th key={h} style={{ padding: '0.85rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                                         )}

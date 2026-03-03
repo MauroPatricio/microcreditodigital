@@ -162,7 +162,7 @@ const InstitutionSettings = () => {
                                     width: '100px',
                                     height: '100px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255,255,255,0.05)',
+                                    background: 'var(--bg-main)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
@@ -200,7 +200,7 @@ const InstitutionSettings = () => {
                                     <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Nome da Instituição</label>
                                     <input
                                         type="text" name="name" value={formData.name} onChange={handleChange}
-                                        style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                        style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }}
                                     />
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -208,14 +208,14 @@ const InstitutionSettings = () => {
                                         <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>NUIT / Registro</label>
                                         <input
                                             type="text" name="nuit" value={formData.nuit} onChange={handleChange}
-                                            style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                            style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }}
                                         />
                                     </div>
                                     <div>
                                         <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Telefone</label>
                                         <input
                                             type="text" name="phone" value={formData.phone} onChange={handleChange}
-                                            style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                            style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }}
                                         />
                                     </div>
                                 </div>
@@ -223,7 +223,7 @@ const InstitutionSettings = () => {
                                     <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Email de Contato</label>
                                     <input
                                         type="email" name="email" value={formData.email} onChange={handleChange}
-                                        style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                        style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }}
                                     />
                                 </div>
                             </div>
@@ -283,14 +283,14 @@ const InstitutionSettings = () => {
                                     <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Endereço / Rua</label>
                                     <input
                                         type="text" name="address.street" value={formData.address?.street} onChange={handleChange}
-                                        style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                        style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }}
                                     />
                                 </div>
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Cidade</label>
                                     <input
                                         type="text" name="address.city" value={formData.address?.city} onChange={handleChange}
-                                        style={{ width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white' }}
+                                        style={{ width: '100%', padding: '0.75rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }}
                                     />
                                 </div>
                             </div>
@@ -339,7 +339,7 @@ const InstitutionSettings = () => {
                                         <input
                                             type="number" value={formData.settings?.interestRates?.management}
                                             onChange={(e) => handleRateChange('management', e.target.value)}
-                                            style={{ width: '80px', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'white', textAlign: 'center' }}
+                                            style={{ width: '80px', padding: '0.5rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'var(--text-main)', textAlign: 'center' }}
                                         />
                                     </div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -350,7 +350,7 @@ const InstitutionSettings = () => {
                                         <input
                                             type="number" value={formData.settings?.interestRates?.late}
                                             onChange={(e) => handleRateChange('late', e.target.value)}
-                                            style={{ width: '80px', padding: '0.5rem', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'white', textAlign: 'center' }}
+                                            style={{ width: '80px', padding: '0.5rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'var(--text-main)', textAlign: 'center' }}
                                         />
                                     </div>
                                 </div>

@@ -148,7 +148,7 @@ const ClientProfile = () => {
                         </Link>
                         <button style={{
                             padding: '0.75rem 1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'rgba(255,255,255,0.02)', color: 'white', fontWeight: 600
+                            background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 600
                         }}>{t('client_profile.generate_report')}</button>
                         <button
                             onClick={() => navigate(`/clients/${id}/request-credit`)}
@@ -236,7 +236,7 @@ const ClientProfile = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {credits.map(credit => (
                                     <div key={credit._id} style={{
-                                        padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                        padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)',
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                                     }}>
                                         <div>
@@ -325,13 +325,13 @@ const ClientProfile = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 {client.documents.map(doc => (
                                     <div key={doc._id} style={{
-                                        padding: '1rem', borderRadius: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                                        padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)',
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                                     }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <div style={{
                                                 width: '52px', height: '52px', borderRadius: '14px',
-                                                background: 'rgba(255, 255, 255, 0.03)',
+                                                background: 'var(--bg-main)',
                                                 border: '1px solid rgba(255, 255, 255, 0.08)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 boxShadow: 'inset 0 0 12px rgba(255, 255, 255, 0.02)'
@@ -339,7 +339,7 @@ const ClientProfile = () => {
                                                 {getDocIcon(doc.type)}
                                             </div>
                                             <div>
-                                                <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'white' }}>{t(`client_profile.doc_types.${doc.type}`)}</p>
+                                                <p style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-main)' }}>{t(`client_profile.doc_types.${doc.type}`)}</p>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginTop: '0.2rem' }}>
                                                     {doc.isVerified ? (
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', color: 'var(--success)', fontSize: '0.75rem', fontWeight: 700 }}>
@@ -358,7 +358,7 @@ const ClientProfile = () => {
                                             className="btn-icon"
                                             style={{
                                                 width: '36px', height: '36px', borderRadius: '10px',
-                                                background: 'rgba(255, 255, 255, 0.05)', color: 'white',
+                                                background: 'var(--bg-main)', color: 'var(--text-main)',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center'
                                             }}
                                         >
@@ -395,7 +395,7 @@ const ClientProfile = () => {
                             <select
                                 value={docType}
                                 onChange={(e) => setDocType(e.target.value)}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}
+                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}
                             >
                                 {Object.keys(t('client_profile.doc_types', { returnObjects: true })).map(key => (
                                     <option key={key} value={key}>{t(`client_profile.doc_types.${key}`)}</option>

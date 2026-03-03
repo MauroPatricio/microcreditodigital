@@ -80,7 +80,7 @@ const AgentPerformance = () => {
                         <select
                             value={selectedAgent}
                             onChange={handleAgentChange}
-                            style={{ background: 'transparent', border: 'none', color: 'white', outline: 'none', fontSize: '1rem', cursor: 'pointer' }}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', outline: 'none', fontSize: '1rem', cursor: 'pointer' }}
                         >
                             {agents.map(a => (
                                 <option key={a._id} value={a._id} style={{ background: '#1a1a2e' }}>{a.name}</option>
@@ -158,7 +158,7 @@ const AgentPerformance = () => {
                                         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Liquidado</span>
                                         <span style={{ fontWeight: 700, color: '#10b981' }}>{formatCurrency(performance.commissions.paid)}</span>
                                     </div>
-                                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: '100%', height: '8px', background: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
                                         <div style={{
                                             width: `${(performance.commissions.paid / performance.commissions.total * 100) || 0}%`,
                                             height: '100%',
@@ -171,7 +171,7 @@ const AgentPerformance = () => {
                                         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Aprovado</span>
                                         <span style={{ fontWeight: 700, color: '#3b82f6' }}>{formatCurrency(performance.commissions.approved)}</span>
                                     </div>
-                                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: '100%', height: '8px', background: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
                                         <div style={{
                                             width: `${(performance.commissions.approved / performance.commissions.total * 100) || 0}%`,
                                             height: '100%',
@@ -184,7 +184,7 @@ const AgentPerformance = () => {
                                         <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Pendente</span>
                                         <span style={{ fontWeight: 700, color: '#f59e0b' }}>{formatCurrency(performance.commissions.pending)}</span>
                                     </div>
-                                    <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: '100%', height: '8px', background: 'var(--bg-main)', borderRadius: '4px', overflow: 'hidden' }}>
                                         <div style={{
                                             width: `${(performance.commissions.pending / performance.commissions.total * 100) || 0}%`,
                                             height: '100%',

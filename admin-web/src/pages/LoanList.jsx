@@ -79,7 +79,7 @@ const LoanList = () => {
                             background: 'var(--bg-card)',
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '8px',
-                            color: 'white',
+                            color: 'var(--text-main)',
                             fontSize: '0.9rem'
                         }}
                     >
@@ -105,7 +105,7 @@ const LoanList = () => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <tr style={{ background: 'var(--bg-main)' }}>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>CLIENTE</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>VALOR</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>PRAZO</th>
@@ -204,10 +204,10 @@ const LoanList = () => {
                                     style={{
                                         width: '100%',
                                         padding: '0.85rem 1rem 0.85rem 2.8rem',
-                                        background: 'rgba(255,255,255,0.03)',
+                                        background: 'var(--bg-main)',
                                         border: '1px solid rgba(255,255,255,0.1)',
                                         borderRadius: '12px',
-                                        color: 'white',
+                                        color: 'var(--text-main)',
                                         outline: 'none'
                                     }}
                                 />
@@ -230,11 +230,11 @@ const LoanList = () => {
                                                 borderRadius: '12px',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.2s',
-                                                background: 'rgba(255,255,255,0.02)'
+                                                background: 'var(--bg-main)'
                                             }}
                                         >
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 800, fontSize: '0.8rem' }}>
+                                                <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--accent)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.8rem' }}>
                                                     {client.name.charAt(0)}
                                                 </div>
                                                 <div>
@@ -253,7 +253,7 @@ const LoanList = () => {
                             </div>
                         </div>
 
-                        <div style={{ padding: '1.25rem', background: 'rgba(255,255,255,0.02)', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                        <div style={{ padding: '1.25rem', background: 'var(--bg-main)', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                 Não encontrou o cliente? <Link to="/clients/new" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Cadastrar Novo</Link>
                             </p>

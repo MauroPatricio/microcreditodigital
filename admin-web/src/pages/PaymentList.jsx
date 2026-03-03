@@ -33,8 +33,8 @@ const PaymentList = () => {
                     <p style={{ color: 'var(--text-muted)' }}>Histórico completo de pagamentos e recuperações.</p>
                 </div>
                 <button style={{
-                    padding: '0.75rem 1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
-                    background: 'rgba(255,255,255,0.02)', color: 'white', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem'
+                    padding: '0.75rem 1.25rem', borderRadius: '8px', border: '1px solid var(--border-light)',
+                    background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem'
                 }}>
                     <FiDownload /> Exportar CSV
                 </button>
@@ -44,7 +44,7 @@ const PaymentList = () => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <tr style={{ background: 'var(--bg-main)' }}>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>ID TRANSACÇÃO</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>CLIENTE</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>VALOR</th>
@@ -73,7 +73,7 @@ const PaymentList = () => {
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <span style={{
                                                 fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)',
-                                                textTransform: 'uppercase', background: 'rgba(255,255,255,0.03)', padding: '0.2rem 0.5rem', borderRadius: '4px'
+                                                textTransform: 'uppercase', background: 'var(--bg-main)', padding: '0.2rem 0.5rem', borderRadius: '4px'
                                             }}>{payment.paymentMethod}</span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>

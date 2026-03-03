@@ -73,7 +73,7 @@ const AuditLogs = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Nível de Gravidade</label>
-                        <select name="severity" value={filters.severity} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
+                        <select name="severity" value={filters.severity} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}>
                             <option value="">Todos</option>
                             <option value="critical">Crítico</option>
                             <option value="high">Alto</option>
@@ -83,7 +83,7 @@ const AuditLogs = () => {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Tipo de Entidade</label>
-                        <select name="entityType" value={filters.entityType} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
+                        <select name="entityType" value={filters.entityType} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}>
                             <option value="">Todas</option>
                             <option value="Credit">Créditos</option>
                             <option value="User">Utilizadores/Clientes</option>
@@ -93,7 +93,7 @@ const AuditLogs = () => {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Ação</label>
-                        <select name="action" value={filters.action} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white' }}>
+                        <select name="action" value={filters.action} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}>
                             <option value="">Todas</option>
                             <option value="approve">Aprovação</option>
                             <option value="disburse">Desembolso</option>

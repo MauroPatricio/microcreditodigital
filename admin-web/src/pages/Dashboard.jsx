@@ -55,7 +55,7 @@ const Dashboard = () => {
                     <Icon size={16} style={{ color }} />
                 </div>
             </div>
-            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.25rem' }}>{value}</div>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, marginBottom: '0.25rem', color: 'var(--text-main)' }}>{value}</div>
             <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>{subtitle}</div>
         </div>
     );
@@ -68,11 +68,11 @@ const Dashboard = () => {
     return (
         <div>
             <div style={{ marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem' }}>
+                <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
                     Olá, {user?.name?.split(' ')[0]}! 👋
                 </h1>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Bem-vindo ao painel — <strong>{user?.institution?.name}</strong>
+                    Bem-vindo ao painel — <strong style={{ color: 'var(--text-main)' }}>{user?.institution?.name}</strong>
                 </p>
             </div>
 
@@ -82,7 +82,7 @@ const Dashboard = () => {
                     title="Capital em Carteira"
                     value={fmt(stats.portfolio.totalActiveAmount)}
                     icon={FiTrendingUp}
-                    color="var(--accent)"
+                    color="var(--blue-highlight)"
                     subtitle={`${fmtNum(stats.portfolio.activeCredits)} créditos ativos`}
                     onClick={() => navigate('/loans')}
                 />
@@ -90,7 +90,7 @@ const Dashboard = () => {
                     title="Valor em Atraso"
                     value={fmt(stats.portfolio.overdueAmount)}
                     icon={FiAlertCircle}
-                    color="#ef4444"
+                    color="var(--danger)"
                     subtitle="Risco de inadimplência"
                     onClick={() => navigate('/loans')}
                 />
@@ -98,14 +98,14 @@ const Dashboard = () => {
                     title="Taxa Inadimplência"
                     value={`${taxaInadimplencia}%`}
                     icon={FiBarChart2}
-                    color={parseFloat(taxaInadimplencia) > 10 ? '#ef4444' : '#10b981'}
+                    color={parseFloat(taxaInadimplencia) > 10 ? 'var(--danger)' : 'var(--success)'}
                     subtitle="Créditos em atraso / ativos"
                 />
                 <StatCard
                     title="Lucro Bruto (Mês)"
                     value={fmt(lucroBruto)}
                     icon={FiDollarSign}
-                    color="#10b981"
+                    color="var(--success)"
                     subtitle="Juros + multas arrecadadas"
                     onClick={() => navigate('/reports/monthly')}
                 />
@@ -122,7 +122,7 @@ const Dashboard = () => {
                         title="Saldo de Caixa"
                         value={fmt(cashSummary.saldoFinal)}
                         icon={FiCreditCard}
-                        color={cashSummary.saldoFinal >= 0 ? '#10b981' : '#ef4444'}
+                        color={cashSummary.saldoFinal >= 0 ? 'var(--success)' : 'var(--danger)'}
                         subtitle="Saldo atual do mês"
                         onClick={() => navigate('/cashflow')}
                     />
@@ -134,20 +134,20 @@ const Dashboard = () => {
                 {/* Pending Approvals */}
                 <div className="card">
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                        <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Solicitações Pendentes</h3>
-                        <button onClick={() => navigate('/loans')} style={{ color: 'var(--accent)', fontSize: '0.82rem', fontWeight: 600, background: 'none', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>Solicitações Pendentes</h3>
+                        <button onClick={() => navigate('/loans')} style={{ color: 'var(--blue-highlight)', fontSize: '0.82rem', fontWeight: 600, background: 'none', display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', border: 'none' }}>
                             Ver tudo <FiArrowRight size={13} />
                         </button>
                     </div>
                     {stats.performance.pendingApprovals > 0 ? (
                         <div style={{ textAlign: 'center', padding: '1.5rem' }}>
-                            <div style={{ fontSize: '2.5rem', color: '#f59e0b', marginBottom: '1rem' }}><FiAlertCircle /></div>
-                            <p>Existem <strong>{stats.performance.pendingApprovals}</strong> pedidos aguardando revisão.</p>
+                            <div style={{ fontSize: '2.5rem', color: 'var(--warning)', marginBottom: '1rem' }}><FiAlertCircle /></div>
+                            <p style={{ color: 'var(--text-main)' }}>Existem <strong style={{ color: 'var(--blue-highlight)' }}>{stats.performance.pendingApprovals}</strong> pedidos aguardando revisão.</p>
                             <button className="btn-primary" onClick={() => navigate('/loans')} style={{ marginTop: '1rem' }}>Analisar Pedidos</button>
                         </div>
                     ) : (
                         <div style={{ textAlign: 'center', padding: '1.5rem', color: 'var(--text-muted)' }}>
-                            <FiCheckCircle style={{ fontSize: '2.5rem', color: '#10b981', marginBottom: '1rem' }} />
+                            <FiCheckCircle style={{ fontSize: '2.5rem', color: 'var(--success)', marginBottom: '1rem' }} />
                             <p>Não há solicitações pendentes.</p>
                         </div>
                     )}
@@ -167,7 +167,7 @@ const Dashboard = () => {
                                 <lnk.icon size={16} style={{ color: lnk.color }} />
                             </div>
                             <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{lnk.label}</div>
+                                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{lnk.label}</div>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lnk.sub}</div>
                             </div>
                             <FiArrowRight size={14} style={{ color: 'var(--text-muted)' }} />

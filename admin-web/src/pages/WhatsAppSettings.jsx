@@ -147,7 +147,7 @@ const WhatsAppSettings = () => {
                                 <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.75rem', lineHeight: '1.6', height: '4.8rem', overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}>
                                     {t.body}
                                 </p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.03)', padding: '0.75rem 1rem', borderRadius: '12px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.75rem 1rem', borderRadius: '12px' }}>
                                     <FiClock color="var(--accent)" />
                                     <span>Gatilho: <strong style={{ color: 'var(--text-main)' }}>{triggerOptions.find(o => o.value === t.triggerType)?.label}</strong></span>
                                     <span style={{ marginLeft: 'auto', opacity: 0.8 }}>{t.triggerDays} dias</span>
@@ -174,7 +174,7 @@ const WhatsAppSettings = () => {
                                         onChange={e => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
                                         placeholder="ex: lembrete_atraso"
                                         required
-                                        style={{ width: '100%', padding: '1.1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', outline: 'none' }}
+                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -185,7 +185,7 @@ const WhatsAppSettings = () => {
                                         onChange={e => setEditingTemplate({ ...editingTemplate, title: e.target.value })}
                                         placeholder="ex: Aviso de Vencimento Próximo"
                                         required
-                                        style={{ width: '100%', padding: '1.1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', outline: 'none' }}
+                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -196,11 +196,11 @@ const WhatsAppSettings = () => {
                                         rows="6"
                                         placeholder="Use {{name}}, {{amount}}, etc para personalizar."
                                         required
-                                        style={{ width: '100%', padding: '1.1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', outline: 'none', resize: 'none', lineHeight: '1.6' }}
+                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none', resize: 'none', lineHeight: '1.6' }}
                                     ></textarea>
                                     <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                                         {['name', 'amount', 'date', 'institution', 'institution_logo', 'contract'].map(tag => (
-                                            <span key={tag} style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', color: 'var(--accent)' }}>
+                                            <span key={tag} style={{ fontSize: '0.7rem', padding: '0.2rem 0.5rem', background: 'var(--bg-main)', borderRadius: '6px', color: 'var(--accent)' }}>
                                                 {`{{${tag}}}`}
                                             </span>
                                         ))}
@@ -212,7 +212,7 @@ const WhatsAppSettings = () => {
                                         <select
                                             value={editingTemplate.triggerType}
                                             onChange={e => setEditingTemplate({ ...editingTemplate, triggerType: e.target.value })}
-                                            style={{ width: '100%', padding: '1.1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', appearance: 'none' }}
+                                            style={{ width: '100%', padding: '1.1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', appearance: 'none' }}
                                         >
                                             {triggerOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                         </select>
@@ -224,7 +224,7 @@ const WhatsAppSettings = () => {
                                                 type="number"
                                                 value={editingTemplate.triggerDays}
                                                 onChange={e => setEditingTemplate({ ...editingTemplate, triggerDays: parseInt(e.target.value) })}
-                                                style={{ width: '100%', padding: '1.1rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontSize: '1rem', textAlign: 'center' }}
+                                                style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', textAlign: 'center' }}
                                             />
                                             <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>dias</span>
                                         </div>
@@ -242,7 +242,7 @@ const WhatsAppSettings = () => {
                                     <button
                                         type="button"
                                         onClick={() => setEditingTemplate(null)}
-                                        style={{ flex: 1, padding: '1.1rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'white', fontWeight: 600, cursor: 'pointer' }}
+                                        style={{ flex: 1, padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer' }}
                                     >
                                         Cancelar
                                     </button>

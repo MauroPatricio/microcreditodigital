@@ -65,7 +65,7 @@ const SmsLogs = () => {
             case 'delivered': return { color: '#10b981', background: 'rgba(16, 185, 129, 0.1)' };
             case 'sent': return { color: '#3b82f6', background: 'rgba(59, 130, 246, 0.1)' };
             case 'failed': return { color: '#ef4444', background: 'rgba(239, 68, 68, 0.1)' };
-            default: return { color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.05)' };
+            default: return { color: 'var(--text-muted)', background: 'var(--bg-main)' };
         }
     };
 
@@ -143,7 +143,7 @@ const SmsLogs = () => {
                                 placeholder="Telefone..."
                                 value={filters.recipient}
                                 onChange={handleFilterChange}
-                                style={{ background: 'transparent', border: 'none', color: 'white', width: '100%', outline: 'none' }}
+                                style={{ background: 'transparent', border: 'none', color: 'var(--text-main)', width: '100%', outline: 'none' }}
                             />
                         </div>
                     </div>
@@ -153,7 +153,7 @@ const SmsLogs = () => {
                             name="type"
                             value={filters.type}
                             onChange={handleFilterChange}
-                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
+                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)', outline: 'none' }}
                         >
                             <option value="">Todos</option>
                             <option value="approval">Aprovação</option>
@@ -169,7 +169,7 @@ const SmsLogs = () => {
                             name="status"
                             value={filters.status}
                             onChange={handleFilterChange}
-                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'white', outline: 'none' }}
+                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)', outline: 'none' }}
                         >
                             <option value="">Todos</option>
                             <option value="sent">Enviado</option>
@@ -241,7 +241,7 @@ const SmsLogs = () => {
                                 style={{
                                     width: '32px', height: '32px', borderRadius: '8px',
                                     background: page === i + 1 ? 'var(--accent)' : 'rgba(255,255,255,0.05)',
-                                    color: 'white', border: 'none', cursor: 'pointer'
+                                    color: 'var(--text-main)', border: 'none', cursor: 'pointer'
                                 }}
                             >
                                 {i + 1}
