@@ -53,17 +53,20 @@ const Login = () => {
                 textAlign: 'center'
             }}>
                 {/* Logo Icon */}
-                <div style={{
-                    width: '56px',
-                    height: '56px',
-                    margin: '0 auto 0.75rem',
-                    background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // Blue like image
-                    borderRadius: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxShadow: '0 0 25px rgba(59, 130, 246, 0.5)' // Neon glow on logo
-                }}>
+                <div
+                    className="login-logo-neon"
+                    style={{
+                        width: '56px',
+                        height: '56px',
+                        margin: '0 auto 0.75rem',
+                        background: 'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // Blue like image
+                        borderRadius: '16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 0 25px rgba(59, 130, 246, 0.5)', // Neon glow on logo
+                        transition: 'background 0.3s ease, box-shadow 0.3s ease'
+                    }}>
                     <FiTrendingUp size={28} color="white" />
                 </div>
 
@@ -201,6 +204,7 @@ const Login = () => {
                     <button
                         type="submit"
                         disabled={loading}
+                        className="login-btn-neon"
                         style={{
                             background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)', // Blue/Purple gradient
                             color: 'var(--text-main)',
@@ -215,7 +219,7 @@ const Login = () => {
                             justifyContent: 'center',
                             gap: '0.5rem',
                             marginTop: '0.5rem',
-                            transition: 'transform 0.1s, box-shadow 0.2s',
+                            transition: 'background 0.3s ease, box-shadow 0.3s ease, transform 0.1s ease-out',
                             boxShadow: '0 0 25px rgba(99, 102, 241, 0.6)' // Strong neon glow
                         }}
                         onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
@@ -267,7 +271,7 @@ const Login = () => {
                     paddingTop: '1.25rem',
                     borderTop: '1px solid rgba(255,255,255,0.05)'
                 }}>
-                   
+
                     <div style={{
                         display: 'flex',
                         justifyContent: 'center',
@@ -285,7 +289,7 @@ const Login = () => {
                         boxShadow: '0 0 10px rgba(59, 130, 246, 0.1)'
                     }}>
                         <span style={{ color: '#3b82f6' }}>DESENVOLVIDO POR NHIQUELA SERVIÇOS & CONSULTORIA, LDA</span>
-                 
+
                     </div>
                 </div>
             </div>
@@ -296,6 +300,14 @@ const Login = () => {
                     border-color: #3b82f6 !important;
                     background: #1a1a35 !important;
                     box-shadow: 0 0 15px rgba(59, 130, 246, 0.3) !important;
+                }
+                .login-logo-neon:hover {
+                    background: linear-gradient(135deg, #2563eb 0%, #60a5fa 100%) !important;
+                    box-shadow: 0 0 35px rgba(59, 130, 246, 0.8) !important;
+                }
+                .login-btn-neon:hover {
+                    background: linear-gradient(135deg, #3b82f6 0%, #a78bfa 100%) !important;
+                    box-shadow: 0 0 35px rgba(139, 92, 246, 0.8) !important;
                 }
             `}</style>
         </div>
