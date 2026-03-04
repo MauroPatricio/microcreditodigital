@@ -12,7 +12,7 @@ import Layout from '../components/Layout';
 const MONTH_NAMES = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 const QUARTER_NAMES = { 1: '1º Trimestre (Jan-Mar)', 2: '2º Trimestre (Abr-Jun)', 3: '3º Trimestre (Jul-Set)', 4: '4º Trimestre (Out-Dez)' };
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4'];
-const fmt = (v) => new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(v || 0);
+const fmt = (v) => `${new Intl.NumberFormat('pt-MZ').format(v || 0)} MT`;
 const fmtNum = (v) => new Intl.NumberFormat('pt-MZ').format(v || 0);
 
 const QuarterlyReport = () => {

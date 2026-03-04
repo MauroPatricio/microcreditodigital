@@ -77,9 +77,17 @@ const userSchema = new mongoose.Schema({
         employmentStatus: { type: String, enum: ['employed', 'self_employed', 'unemployed', 'retired', 'student', 'civil_servant'] },
         employerName: String,
         monthlyIncome: Number,
+        monthlyExpenses: Number,
+        incomeSource: String,
+        employmentDuration: String,
         position: String,
         workAddress: String
     },
+    guarantor: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    collateralType: String,
     businessInfo: {
         name: String,
         type: String,
@@ -101,21 +109,27 @@ const userSchema = new mongoose.Schema({
         enum: ['incomplete', 'pending_verification', 'verified', 'rejected'],
         default: 'incomplete'
     },
-    creditScore: {
+    riskProfile: {
         score: { type: Number, default: 500, min: 0, max: 1000 },
-        riskLevel: { type: String, enum: ['low', 'medium', 'high', 'critical'], default: 'medium' },
+        confidenceLevel: { type: Number, default: 3, min: 1, max: 5 },
+        label: {
+            type: String,
+            enum: ['Muito Arriscado', 'Arriscado', 'Moderado', 'Confiável', 'Muito Confiável'],
+            default: 'Moderado'
+        },
+        metrics: {
+            defaultRate: { type: Number, default: 0 }, // Taxa de Inadimplência %
+            lateDaysAverage: { type: Number, default: 0 }, // Média de dias de atraso
+            totalPaidVolume: { type: Number, default: 0 }, // Valor total histórico já liquidado
+            loanFrequency: { type: Number, default: 0 }, // Total de créditos ativos/pagos
+        },
         lastCalculated: { type: Date, default: Date.now },
         history: [{
             score: Number,
+            confidenceLevel: Number,
             date: { type: Date, default: Date.now },
-            reason: String // e.g., 'Loan Repayment', 'Late Payment'
-        }],
-        breakdown: {
-            paymentHistory: { type: Number, default: 0 },
-            financialStability: { type: Number, default: 0 },
-            demographics: { type: Number, default: 0 },
-            relationship: { type: Number, default: 0 }
-        }
+            reason: String
+        }]
     },
 
     isVerified: {

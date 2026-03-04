@@ -1,17 +1,17 @@
 /**
- * score.js
- * Rotas para cálculo e consulta de Score de Risco (Premium)
+ * confidence.js
+ * Rotas para cálculo e consulta de Nível de Confiança (Premium)
  */
 import express from 'express';
 import { protect, authorize } from '../middleware/auth.js';
 import User from '../models/User.js';
 import Credit from '../models/Credit.js';
-import { calculateScore, getRiskRecommendation } from '../services/scoringService.js';
+import { calculateConfidence, getRiskRecommendation } from '../services/confidenceService.js';
 
 const router = express.Router();
 
-// @route   POST /api/score/calculate/:clientId
-// @desc    Calcular score de um cliente
+// @route   POST /api/confidence/calculate/:clientId
+// @desc    Calcular nível de confiança de um cliente
 // @access  Private (Manager/Owner/Agent)
 router.post('/calculate/:clientId', protect, authorize('manager', 'owner', 'agent'), async (req, res) => {
     try {
@@ -25,22 +25,24 @@ router.post('/calculate/:clientId', protect, authorize('manager', 'owner', 'agen
         // Buscar histórico de créditos
         const credits = await Credit.find({ client: clientId });
 
-        // Calcular Score
-        const scoreResult = await calculateScore(user, credits);
-        const recommendation = getRiskRecommendation(scoreResult);
+        // Calcular Confiança
+        const confidenceResult = await calculateConfidence(user, credits);
+        const recommendation = getRiskRecommendation(confidenceResult);
 
         // Atualizar User
-        user.creditScore = {
-            ...user.creditScore,
-            score: scoreResult.score,
-            riskLevel: scoreResult.riskLevel,
+        user.riskProfile = {
+            ...user.riskProfile,
+            score: confidenceResult.score,
+            confidenceLevel: confidenceResult.confidenceLevel,
+            label: confidenceResult.label,
             lastCalculated: new Date(),
-            breakdown: scoreResult.breakdown
+            metrics: confidenceResult.metrics
         };
 
         // Adicionar ao histórico
-        user.creditScore.history.push({
-            score: scoreResult.score,
+        user.riskProfile.history.push({
+            score: confidenceResult.score,
+            confidenceLevel: confidenceResult.confidenceLevel,
             date: new Date(),
             reason: req.body.reason || 'Manual Calculation'
         });
@@ -50,21 +52,22 @@ router.post('/calculate/:clientId', protect, authorize('manager', 'owner', 'agen
         res.json({
             success: true,
             data: {
-                score: scoreResult.score,
-                riskLevel: scoreResult.riskLevel,
-                breakdown: scoreResult.breakdown,
+                score: confidenceResult.score,
+                confidenceLevel: confidenceResult.confidenceLevel,
+                label: confidenceResult.label,
+                metrics: confidenceResult.metrics,
                 recommendation
             }
         });
 
     } catch (error) {
-        console.error('Erro ao calcular score:', error);
+        console.error('Erro ao calcular confiança:', error);
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// @route   GET /api/score/:clientId
-// @desc    Obter score e recomendação atual
+// @route   GET /api/confidence/:clientId
+// @desc    Obter nível de confiança e recomendação atual
 // @access  Private (Manager/Owner/Agent)
 router.get('/:clientId', protect, authorize('manager', 'owner', 'agent'), async (req, res) => {
     try {
@@ -73,19 +76,20 @@ router.get('/:clientId', protect, authorize('manager', 'owner', 'agent'), async 
             return res.status(404).json({ success: false, message: 'Cliente não encontrado' });
         }
 
-        const scoreData = {
-            score: user.creditScore?.score || 0,
-            riskLevel: user.creditScore?.riskLevel || 'medium',
-            breakdown: user.creditScore?.breakdown || {},
-            history: user.creditScore?.history || []
+        const confidenceData = {
+            score: user.riskProfile?.score || 500,
+            confidenceLevel: user.riskProfile?.confidenceLevel || 3,
+            label: user.riskProfile?.label || 'Moderado',
+            metrics: user.riskProfile?.metrics || {},
+            history: user.riskProfile?.history || []
         };
 
-        const recommendation = getRiskRecommendation(scoreData);
+        const recommendation = getRiskRecommendation(confidenceData);
 
         res.json({
             success: true,
             data: {
-                ...scoreData,
+                ...confidenceData,
                 recommendation
             }
         });

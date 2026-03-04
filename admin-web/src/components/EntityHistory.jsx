@@ -94,7 +94,7 @@ const EntityHistory = ({ entityType, entityId }) => {
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
                                 <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{getActionLabel(log.action)}</span>
                                 <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                    <FiClock /> {new Date(log.timestamp).toLocaleString()}
+                                    <FiClock /> {new Date(log.timestamp).toLocaleString('pt-MZ')}
                                 </span>
                             </div>
 

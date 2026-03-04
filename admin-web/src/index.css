@@ -211,6 +211,44 @@ textarea {
   font-family: inherit;
 }
 
+/* Premium Date Input Customization */
+.date-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.date-input-wrapper::before {
+  content: attr(data-date);
+  position: absolute;
+  left: 1.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-main);
+  color: var(--text-main);
+  pointer-events: none;
+  font-size: 0.95rem;
+  z-index: 1;
+}
+
+input[type="date"].premium-date-input {
+  color: transparent !important;
+  position: relative;
+}
+
+input[type="date"].premium-date-input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 1.25rem;
+  z-index: 2;
+  cursor: pointer;
+  filter: invert(0.5);
+}
+
+input[type="date"].premium-date-input:focus {
+  background: var(--bg-main);
+}
+
 input:focus,
 select:focus,
 textarea:focus {
@@ -229,8 +267,7 @@ label {
   display: block;
   font-size: 0.75rem;
   font-weight: 700;
-  color: #00E676;
-  /* Vivid green as requested for labels */
+  color: var(--accent);
   text-transform: uppercase;
   letter-spacing: 1px;
   margin-bottom: 0.6rem;

@@ -106,12 +106,13 @@ const CreditRequestPremium = () => {
                         </div>
                         <h1 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-1px' }}>Nova Solicitação de Crédito</h1>
                     </div>
-                    <p style={{ color: 'var(--text-muted)' }}>Cliente: <strong>{client?.name}</strong> • Score: <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{(typeof client?.creditScore === 'object' ? client.creditScore.score : client?.creditScore) || 500}</span></p>
+                    <p style={{ color: 'var(--text-muted)' }}>Cliente: <strong>{client?.name}</strong> • Nível de Confiança: <span style={{ color: 'var(--accent)', fontWeight: 800 }}>{client.confidenceAnalysis?.percentage || 50}%</span></p>
                 </header>
 
                 <div style={{ marginBottom: '2rem' }}>
                     <FinancialSimulator
                         initialAmount={requestData.amount}
+                        clientId={clientId}
                         onSimulationComplete={(data) => {
                             setRequestData(prev => ({
                                 ...prev,

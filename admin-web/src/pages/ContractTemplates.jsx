@@ -180,7 +180,7 @@ const ContractTemplateManager = () => {
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '2rem', fontFamily: 'monospace', opacity: 0.7, position: 'relative', zIndex: 1 }}>SLUG: {t.name}</p>
 
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-                                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{new Date(t.updatedAt).toLocaleDateString()}</span>
+                                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{new Date(t.updatedAt).toLocaleDateString('pt-MZ')}</span>
                                     <div style={{ display: 'flex', gap: '0.75rem' }}>
                                         <button className="btn-icon-premium" onClick={(e) => { e.stopPropagation(); setPreview(t); }} style={{ width: '40px', height: '40px' }}><FiEye size={18} /></button>
                                     </div>
@@ -461,7 +461,7 @@ const ContractTemplateManager = () => {
                             <div style={{ marginBottom: '2rem', borderBottom: '2px solid #eee', paddingBottom: '1rem' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', fontSize: '10pt', color: '#666' }}>
                                     <div>Ref: {preview.name.toUpperCase()}</div>
-                                    <div style={{ textAlign: 'right' }}>Data de Emissão: {new Date().toLocaleDateString()}</div>
+                                    <div style={{ textAlign: 'right' }}>Data de Emissão: {new Date().toLocaleDateString('pt-MZ')}</div>
                                 </div>
                             </div>
 

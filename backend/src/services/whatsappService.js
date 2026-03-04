@@ -2,7 +2,7 @@ import qrcode from 'qrcode';
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const pkg = require('whatsapp-web.js');
-const { Client, LocalAuth } = pkg;
+const { Client, LocalAuth, MessageMedia } = pkg;
 
 let client;
 let qrCodeDataUrl = null;
@@ -75,8 +75,6 @@ const sendMessage = async (to, message) => {
     if (status !== 'READY') {
         throw new Error('WhatsApp client is not ready');
     }
-    // format to: 'number@c.us'
-    // basic check, usually needs country code. Assume 'to' is like '258841234567'
     const chatId = to.includes('@c.us') ? to : `${to}@c.us`;
 
     try {
@@ -84,6 +82,26 @@ const sendMessage = async (to, message) => {
         return response;
     } catch (error) {
         console.error('Error sending WhatsApp message:', error);
+        throw error;
+    }
+};
+
+const sendFile = async (to, buffer, filename, caption = '', mimetype = 'application/pdf') => {
+    if (status !== 'READY') {
+        throw new Error('WhatsApp client is not ready');
+    }
+    const chatId = to.includes('@c.us') ? to : `${to}@c.us`;
+
+    try {
+        const media = new MessageMedia(
+            mimetype,
+            buffer.toString('base64'),
+            filename
+        );
+        const response = await client.sendMessage(chatId, media, { caption });
+        return response;
+    } catch (error) {
+        console.error('Error sending WhatsApp file:', error);
         throw error;
     }
 };
@@ -101,5 +119,6 @@ export default {
     initializeClient,
     getStatus,
     sendMessage,
+    sendFile,
     restartClient
 };

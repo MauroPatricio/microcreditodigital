@@ -7,7 +7,7 @@ import {
     FiCheckCircle, FiDollarSign, FiCreditCard, FiBarChart2, FiArrowRight
 } from 'react-icons/fi';
 
-const fmt = (v) => new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(v || 0);
+const fmt = (v) => `${new Intl.NumberFormat('pt-MZ').format(v || 0)} MT`;
 const fmtNum = (v) => new Intl.NumberFormat('pt-MZ').format(v || 0);
 
 const Dashboard = () => {
@@ -16,8 +16,9 @@ const Dashboard = () => {
     const now = new Date();
     const [stats, setStats] = useState({
         clients: { total: 0, verified: 0 },
-        portfolio: { activeCredits: 0, totalActiveAmount: 0, overdueAmount: 0 },
-        performance: { totalRevenue: 0, pendingApprovals: 0 }
+        portfolio: { activeCredits: 0, totalActiveAmount: 0, overdueAmount: 0, par: 0, totalRecovered: 0 },
+        performance: { totalRevenue: 0, pendingApprovals: 0, agentPerformance: [] },
+        monthly: { creditsIssued: 0, revenue: 0, interestIncome: 0 }
     });
     const [monthlyData, setMonthlyData] = useState(null);
     const [cashSummary, setCashSummary] = useState(null);
@@ -95,19 +96,26 @@ const Dashboard = () => {
                     onClick={() => navigate('/loans')}
                 />
                 <StatCard
-                    title="Taxa Inadimplência"
-                    value={`${taxaInadimplencia}%`}
+                    title="PAR (Portfolio At Risk)"
+                    value={`${stats.portfolio.par || 0}%`}
                     icon={FiBarChart2}
-                    color={parseFloat(taxaInadimplencia) > 10 ? 'var(--danger)' : 'var(--success)'}
-                    subtitle="Créditos em atraso / ativos"
+                    color={stats.portfolio.par > 5 ? 'var(--danger)' : 'var(--success)'}
+                    subtitle="Risco da carteira ativa"
                 />
                 <StatCard
-                    title="Lucro Bruto (Mês)"
-                    value={fmt(lucroBruto)}
-                    icon={FiDollarSign}
+                    title="Total Recuperado"
+                    value={fmt(stats.portfolio.totalRecovered)}
+                    icon={FiCheckCircle}
                     color="var(--success)"
-                    subtitle="Juros + multas arrecadadas"
-                    onClick={() => navigate('/reports/monthly')}
+                    subtitle="Volume total de reembolsos"
+                />
+                <StatCard
+                    title="Rendimento Juros"
+                    value={fmt(stats.monthly.interestIncome)}
+                    icon={FiDollarSign}
+                    color="var(--blue-highlight)"
+                    subtitle="Receita de juros (Mês)"
+                    onClick={() => navigate('/cashflow')}
                 />
                 <StatCard
                     title="Clientes Ativos"
@@ -153,26 +161,29 @@ const Dashboard = () => {
                     )}
                 </div>
 
-                {/* Quick links + monthly summary */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {[
-                        { label: 'Rel. Mensal', icon: FiBarChart2, color: '#3b82f6', path: '/reports/monthly', sub: monthlyData ? `${fmt(monthlyData.pagamentos?.totalArrecadado)} arrecadado` : 'Ver detalhes' },
-                        { label: 'Gestão de Caixa', icon: FiCreditCard, color: '#8b5cf6', path: '/cashflow', sub: cashSummary ? `Saldo: ${fmt(cashSummary.saldoFinal)}` : 'Ver saldo' },
-                        { label: 'Relatório BdM', icon: FiCheckCircle, color: '#e63946', path: '/reports/bom', sub: 'Formato oficial BdM' }
-                    ].map(lnk => (
-                        <div key={lnk.path} className="card" onClick={() => navigate(lnk.path)} style={{ cursor: 'pointer', padding: '1rem', display: 'flex', alignItems: 'center', gap: '0.85rem', transition: 'all 0.15s' }}
-                            onMouseEnter={e => e.currentTarget.style.transform = 'translateX(2px)'}
-                            onMouseLeave={e => e.currentTarget.style.transform = ''}>
-                            <div style={{ width: 36, height: 36, borderRadius: '10px', background: `${lnk.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                <lnk.icon size={16} style={{ color: lnk.color }} />
-                            </div>
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{lnk.label}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{lnk.sub}</div>
-                            </div>
-                            <FiArrowRight size={14} style={{ color: 'var(--text-muted)' }} />
-                        </div>
-                    ))}
+                {/* Ranking de Agentes */}
+                <div className="card">
+                    <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1.5rem' }}>Top Performance: Agentes</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        {stats.performance.agentPerformance?.length > 0 ? (
+                            stats.performance.agentPerformance.map(agent => (
+                                <div key={agent._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <p style={{ fontWeight: 700, fontSize: '0.88rem' }}>{agent.agentName}</p>
+                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{agent.activeLoans} créditos ativos</p>
+                                    </div>
+                                    <div style={{ textAlign: 'right' }}>
+                                        <p style={{ fontWeight: 800, color: 'var(--accent)' }}>{(agent.recoveryRate * 100).toFixed(1)}%</p>
+                                        <div style={{ width: '60px', height: '4px', background: '#333', borderRadius: '2px', marginTop: '0.2rem' }}>
+                                            <div style={{ width: `${agent.recoveryRate * 100}%`, height: '100%', background: 'var(--accent)', borderRadius: '2px' }}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))
+                        ) : (
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>Nenhum dado de agente disponível.</p>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

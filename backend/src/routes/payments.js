@@ -5,6 +5,7 @@ import Credit from '../models/Credit.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
 import smsService from '../services/sms.js';
+import CashTransaction from '../models/CashTransaction.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { paymentValidation, validate } from '../middleware/validation.js';
@@ -101,9 +102,21 @@ router.post('/', protect, auditAction('Payment', 'create', 'high'), paymentValid
             title: 'Pagamento Confirmado',
             message: `Pagamento de ${amount.toFixed(2)} MT foi processado com sucesso.`,
             metadata: {
-                paymentId: payment._id,
                 creditId: credit._id
             }
+        });
+
+        // Registrar automaticamente no Fluxo de Caixa (Cash Flow)
+        await CashTransaction.create({
+            institution: req.user.institution._id,
+            type: 'entrada',
+            category: 'parcela',
+            amount: amount,
+            description: `Recebimento de parcela - Crédito ${credit._id.toString().slice(-6).toUpperCase()}${installment ? ` (Parcela ${installment.installmentNumber})` : ''}`,
+            reference: payment._id,
+            paymentMethod: paymentMethod,
+            date: new Date(),
+            createdBy: req.user._id
         });
 
         // Enviar SMS de confirmação

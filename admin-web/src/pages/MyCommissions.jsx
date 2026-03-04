@@ -188,7 +188,7 @@ const MyCommissions = () => {
                                 commissions.map((comm) => (
                                     <tr key={comm._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                                         <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                            {new Date(comm.createdAt).toLocaleDateString()}
+                                            {new Date(comm.createdAt).toLocaleDateString('pt-MZ')}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column' }}>

@@ -77,7 +77,7 @@ const PaymentList = () => {
                                             }}>{payment.paymentMethod}</span>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                            {new Date(payment.createdAt).toLocaleDateString()}
+                                            {new Date(payment.createdAt).toLocaleDateString('pt-MZ')}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <span style={{

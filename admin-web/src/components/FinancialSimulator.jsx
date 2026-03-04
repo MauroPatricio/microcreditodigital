@@ -7,7 +7,7 @@ import {
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import api from '../api';
 
-const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, template = 'neon' }) => {
+const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, template = 'neon', clientId = null }) => {
     const [amount, setAmount] = useState(initialAmount);
     const [interestRate, setInterestRate] = useState(10);
     const [term, setTerm] = useState(1);
@@ -16,7 +16,42 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
     const [simulation, setSimulation] = useState(null);
     const [schedule, setSchedule] = useState([]);
     const [isCustomRate, setIsCustomRate] = useState(false);
-    const [clientName, setClientName] = useState(''); // Used in Agent template
+    const [clientName, setClientName] = useState('');
+    const [identityDocument, setIdentityDocument] = useState('');
+    const [phone, setPhone] = useState('');
+    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState('');
+    const [amortizationType, setAmortizationType] = useState('price');
+    const [confidence, setConfidence] = useState({
+        score: 500,
+        confidenceLevel: 3,
+        label: 'Moderado'
+    });
+    useEffect(() => {
+        const fetchClientData = async () => {
+            if (clientId) {
+                try {
+                    const res = await api.get(`/clients/${clientId}`);
+                    const client = res.data.data.client;
+                    if (client) {
+                        setClientName(client.name || '');
+                        setIdentityDocument(client.identityDocument || '');
+                        setPhone(client.phone || '');
+                        if (client.riskProfile) {
+                            setConfidence({
+                                score: client.riskProfile.score || 500,
+                                confidenceLevel: client.riskProfile.confidenceLevel || 3,
+                                label: client.riskProfile.label || 'Moderado'
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error("Erro ao buscar dados do cliente:", error);
+                }
+            }
+        };
+        fetchClientData();
+    }, [clientId]);
 
     const presets = [
         { label: 'Baixa', rate: 5, color: '#10b981' },
@@ -30,7 +65,7 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
             fetchSimulation();
         }, 500);
         return () => clearTimeout(timer);
-    }, [amount, term, periodicity, interestRate]);
+    }, [amount, term, periodicity, interestRate, amortizationType]);
 
     const fetchSimulation = async () => {
         setLoading(true);
@@ -39,11 +74,20 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                 amount,
                 term,
                 interestRate,
-                periodicity
+                periodicity,
+                startDate,
+                amortizationType
             });
             if (response.data.success) {
                 setSimulation(response.data.data);
                 setSchedule(response.data.schedule);
+
+                // Update calculated end date from simulation result if it changed
+                if (response.data.data.summary?.formattedEndDate) {
+                    const [d, m, y] = response.data.data.summary.formattedEndDate.split('/');
+                    setEndDate(`${y}-${m}-${d}`);
+                }
+
                 if (onSimulationComplete) {
                     onSimulationComplete(response.data.data);
                 }
@@ -55,36 +99,155 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
         }
     };
 
-    const handleDownloadPDF = async () => {
-        try {
-            const response = await api.post('/credits/simulate/pdf', {
-                amount,
-                term,
-                interestRate,
-                periodicity,
-                clientName,
-                template
-            }, {
-                responseType: 'arraybuffer'
-            });
+    // Helper to calculate term when end date is manualy picked
+    const calculateTermFromDates = (start, end, period) => {
+        const d1 = new Date(start);
+        const d2 = new Date(end);
+        const diffTime = Math.abs(d2 - d1);
 
-            const blob = new Blob([response.data], { type: 'application/pdf' });
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', `simulacao-${clientName || periodicity}-${Date.now()}.pdf`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (error) {
-            console.error("Erro ao baixar PDF:", error);
+        switch (period) {
+            case 'daily': return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            case 'weekly': return Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7));
+            case 'biweekly': return Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 14));
+            case 'monthly':
+                return (d2.getFullYear() - d1.getFullYear()) * 12 + (d2.getMonth() - d1.getMonth());
+            default: return 1;
         }
     };
 
-    const handleWhatsAppShare = () => {
-        const message = `Olá${clientName ? ' ' + clientName : ''},\n\nAqui está a simulação de crédito solicitado:\n👑 *Valor:* ${amount.toLocaleString()} MT\n📅 *Prazo:* ${term} ${periodLabels[periodicity]}\n📉 *Parcela:* ${simulation?.paymentAmount?.toLocaleString()} MT\n💰 *Total a Pagar:* ${simulation?.totalPayable?.toLocaleString()} MT\n\nPodemos avançar com o pedido?`;
-        const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-        window.open(url, '_blank');
+    const handleEndDateChange = (val) => {
+        setEndDate(val);
+        const newTerm = calculateTermFromDates(startDate, val, periodicity);
+        if (newTerm > 0) setTerm(newTerm);
+    };
+
+    // Helper para exibir data em dd/mm/yyyy
+    const CustomDateInput = ({ value, onChange, label, style, labelStyle }) => {
+        const displayDate = value ? value.split('-').reverse().join('/') : '';
+
+        return (
+            <div style={{ position: 'relative', width: '100%', ...style }}>
+                {label && <label style={{ display: 'block', fontSize: '0.7rem', opacity: 0.8, marginBottom: '0.4rem', ...labelStyle }}>{label}</label>}
+                <div style={{ position: 'relative' }}>
+                    <input
+                        type="text"
+                        readOnly
+                        value={displayDate}
+                        placeholder="dd/mm/aaaa"
+                        style={{
+                            width: '100%',
+                            height: '40px',
+                            background: 'rgba(255,255,255,0.05)',
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            color: 'white',
+                            padding: '0 0.75rem',
+                            borderRadius: '8px',
+                            fontSize: '1rem',
+                            cursor: 'pointer',
+                            ...style
+                        }}
+                        onClick={(e) => e.target.nextSibling.showPicker()}
+                    />
+                    <input
+                        type="date"
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            opacity: 0,
+                            pointerEvents: 'none'
+                        }}
+                    />
+                </div>
+            </div>
+        );
+    };
+
+    const handleDownloadPDF = async () => {
+        setLoading(true);
+        try {
+            // 1. Salvar a simulação primeiro para ter um ID e número sequencial
+            const saveResponse = await api.post('/simulations', {
+                amount,
+                term,
+                rate: interestRate,
+                period: periodicity,
+                start: startDate,
+                clientName,
+                identityDocument,
+                phone,
+                client: clientId, // Link para o cliente se fornecido
+                amortizationType,
+                riskProfile: confidence
+            });
+
+            if (saveResponse.data.success) {
+                const simulationId = saveResponse.data.data._id;
+
+                // 2. Baixar o PDF usando o ID da simulação salva
+                const pdfResponse = await api.get(`/simulations/${simulationId}/pdf`, {
+                    responseType: 'arraybuffer'
+                });
+
+                const blob = new Blob([pdfResponse.data], { type: 'application/pdf' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', `Simulacao_${saveResponse.data.data.simulationNumber}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+        } catch (error) {
+            console.error("Erro ao gerar/baixar PDF Profissional:", error);
+            alert("Erro ao gerar PDF. Certifique-se que os dados estão corretos.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleWhatsAppShare = async () => {
+        setLoading(true);
+        try {
+            // 1. Salvar ou obter a simulação
+            const saveResponse = await api.post('/simulations', {
+                amount,
+                term,
+                rate: interestRate,
+                period: periodicity,
+                start: startDate,
+                clientName,
+                identityDocument,
+                phone,
+                amortizationType,
+                riskProfile: confidence
+            });
+
+            if (saveResponse.data.success) {
+                const simulationId = saveResponse.data.data._id;
+
+                // 2. Solicitar ao backend para enviar o PDF via WhatsApp
+                const sendResponse = await api.post(`/simulations/${simulationId}/send`);
+
+                if (sendResponse.data.success) {
+                    alert('Simulação enviada com sucesso ao WhatsApp do cliente!');
+                }
+            }
+        } catch (error) {
+            console.error("Erro ao enviar via WhatsApp:", error);
+            alert("Erro ao enviar WhatsApp. Verifique se o telefone está correto e o serviço está ativo.");
+
+            // Fallback para o link manual se o serviço falhar
+            const message = `Olá ${clientName},\n\nAqui está a sua simulação de ${amount.toLocaleString()} MT.\nPrestação: ${simulation?.paymentAmount?.toLocaleString()} MT`;
+            const url = `https://wa.me/${phone?.replace(/\s/g, '') || ''}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const periodLabels = {
@@ -117,7 +280,7 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
         <div className="glass-panel" style={{ padding: '2rem', borderRadius: '16px', color: 'white' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <FiPieChart className="text-accent" /> Simulador Multi-Taxa
+                    <FiPieChart className="text-accent" /> Simulador de crédito
                 </h2>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <span style={{ padding: '0.25rem 0.75rem', borderRadius: '20px', background: `${risk.color}20`, color: risk.color, fontSize: '0.75rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
@@ -167,6 +330,51 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                             </div>
                         </div>
                     </div>
+
+                    {/* Tipo de Amortização */}
+                    <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <label style={{ fontSize: '0.7rem', opacity: 0.8, display: 'block', marginBottom: '0.75rem' }}>Tipo de Amortização</label>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '0.4rem' }}>
+                            {[
+                                { id: 'price', label: 'Price', desc: 'Fixas' },
+                                { id: 'sac', label: 'SAC', desc: 'Decrescente' },
+                                { id: 'flat', label: 'Flat', desc: 'Capital orig.' },
+                                { id: 'simples', label: 'Simples', desc: 'Juros no fim' },
+                                { id: 'composto', label: 'Composto', desc: 'Balloon' },
+                            ].map(t => (
+                                <button
+                                    key={t.id}
+                                    onClick={() => setAmortizationType(t.id)}
+                                    style={{
+                                        padding: '0.55rem 0.3rem',
+                                        borderRadius: '10px',
+                                        border: amortizationType === t.id ? '2px solid var(--accent)' : '1px solid rgba(255,255,255,0.1)',
+                                        background: amortizationType === t.id ? 'rgba(0,230,118,0.12)' : 'rgba(255,255,255,0.04)',
+                                        color: amortizationType === t.id ? 'var(--accent)' : 'rgba(255,255,255,0.7)',
+                                        cursor: 'pointer',
+                                        transition: 'all 0.2s',
+                                        textAlign: 'center'
+                                    }}
+                                >
+                                    <div style={{ fontSize: '0.68rem', fontWeight: 700 }}>{t.label}</div>
+                                    <div style={{ fontSize: '0.58rem', opacity: 0.7, marginTop: '0.1rem' }}>{t.desc}</div>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', background: 'rgba(255,255,255,0.02)', padding: '1.25rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                        <CustomDateInput
+                            label="Data Início"
+                            value={startDate}
+                            onChange={setStartDate}
+                        />
+                        <CustomDateInput
+                            label="Data Fim (Opcional)"
+                            value={endDate}
+                            onChange={handleEndDateChange}
+                        />
+                    </div>
                 </div>
 
                 <div style={{ background: 'rgba(0,0,0,0.3)', borderRadius: '16px', padding: '1.75rem', display: 'flex', flexDirection: 'column', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -178,7 +386,7 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', margin: '1.5rem 0' }}>
                                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '12px' }}>
-                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total Pago</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Total a pagar</p>
                                     <p style={{ fontSize: '1.15rem', fontWeight: 800 }}>{simulation.totalPayable?.toLocaleString()} MT</p>
                                 </div>
                                 <div style={{ background: 'rgba(0,255,0,0.03)', padding: '1rem', borderRadius: '12px' }}>
@@ -227,6 +435,22 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                                 <option value="monthly">Mensal</option><option value="weekly">Semanal</option>
                             </select>
                         </div>
+                    </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <CustomDateInput
+                            label="Data Início"
+                            labelStyle={{ color: '#475569', fontWeight: 650, fontSize: '0.85rem' }}
+                            value={startDate}
+                            onChange={setStartDate}
+                            style={{ background: 'white', border: '1.5px solid #cbd5e1', color: '#1e293b' }}
+                        />
+                        <CustomDateInput
+                            label="Data Fim"
+                            labelStyle={{ color: '#475569', fontWeight: 650, fontSize: '0.85rem' }}
+                            value={endDate}
+                            onChange={handleEndDateChange}
+                            style={{ background: 'white', border: '1.5px solid #cbd5e1', color: '#1e293b' }}
+                        />
                     </div>
                 </div>
                 <div style={{ background: '#f8fafc', padding: '2rem', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
@@ -287,6 +511,20 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                         <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Valor</label><input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} style={{ width: '100%', padding: '0.85rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white' }} /></div>
                         <div><label style={{ fontSize: '0.8rem', color: '#94a3b8' }}>Taxa (%)</label><input type="number" value={interestRate} onChange={(e) => setInterestRate(Number(e.target.value))} style={{ width: '100%', padding: '0.85rem', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'white', textAlign: 'center' }} /></div>
                     </div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                        <CustomDateInput
+                            label="Início"
+                            value={startDate}
+                            onChange={setStartDate}
+                            style={{ border: '1.5px solid rgba(255,255,255,0.1)' }}
+                        />
+                        <CustomDateInput
+                            label="Fim"
+                            value={endDate}
+                            onChange={handleEndDateChange}
+                            style={{ border: '1.5px solid rgba(255,255,255,0.1)' }}
+                        />
+                    </div>
                 </div>
                 <div style={{ background: 'rgba(59, 130, 246, 0.04)', borderRadius: '24px', padding: '2rem', border: '1px solid rgba(59, 130, 246, 0.1)', textAlign: 'center' }}>
                     <p style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Parcela</p>
@@ -317,23 +555,35 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
 
             <div style={{ marginBottom: '2.5rem' }}>
                 <h3 style={{ background: '#f1f5f9', padding: '8px 12px', fontSize: '0.9rem', fontWeight: 800, border: '1px solid #000', marginBottom: '0' }}>1. IDENTIFICAÇÃO DO CLIENTE</h3>
-                <div style={{ border: '1px solid #000', borderTop: 'none', padding: '1.5rem', display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '2rem' }}>
+                <div style={{ border: '1px solid #000', borderTop: 'none', padding: '1.5rem', display: 'grid', gridTemplateColumns: '1.5fr 1fr 1fr', gap: '1.5rem' }}>
                     <div>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#64748b' }}>NOME COMPLETO</label>
                         <input
                             type="text"
                             value={clientName}
                             onChange={(e) => setClientName(e.target.value)}
-                            style={{ width: '100%', border: 'none', borderBottom: '1px solid #000', padding: '5px 0', fontSize: '1.1rem', fontWeight: 600, outline: 'none' }}
-                            placeholder="...................................................................................."
+                            style={{ width: '100%', border: 'none', borderBottom: '1px solid #000', padding: '5px 0', fontSize: '1rem', fontWeight: 600, outline: 'none' }}
+                            placeholder="Ex: João Silva"
                         />
                     </div>
                     <div>
                         <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#64748b' }}>BI / NUIT</label>
                         <input
                             type="text"
-                            style={{ width: '100%', border: 'none', borderBottom: '1px solid #000', padding: '5px 0', fontSize: '1.1rem', fontWeight: 600, outline: 'none' }}
-                            placeholder="...................................."
+                            value={identityDocument}
+                            onChange={(e) => setIdentityDocument(e.target.value)}
+                            style={{ width: '100%', border: 'none', borderBottom: '1px solid #000', padding: '5px 0', fontSize: '1rem', fontWeight: 600, outline: 'none' }}
+                            placeholder="Documento"
+                        />
+                    </div>
+                    <div>
+                        <label style={{ fontSize: '0.75rem', fontWeight: 700, display: 'block', color: '#64748b' }}>CONTACTO</label>
+                        <input
+                            type="text"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            style={{ width: '100%', border: 'none', borderBottom: '1px solid #000', padding: '5px 0', fontSize: '1rem', fontWeight: 600, outline: 'none' }}
+                            placeholder="84/85/82/87..."
                         />
                     </div>
                 </div>
@@ -367,6 +617,26 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                                         <option value="biweekly">Pagamentos Quinzenais</option>
                                         <option value="monthly">Pagamentos Mensais</option>
                                     </select>
+                                </td>
+                            </tr>
+                            <tr style={{ borderTop: '1px solid #000' }}>
+                                <td style={{ padding: '1rem', borderRight: '1px solid #000' }}>
+                                    <CustomDateInput
+                                        label="DATA INÍCIO"
+                                        labelStyle={{ color: '#64748b', fontWeight: 700 }}
+                                        value={startDate}
+                                        onChange={setStartDate}
+                                        style={{ background: 'transparent', border: 'none', color: '#000', fontWeight: 700, height: 'auto', padding: 0 }}
+                                    />
+                                </td>
+                                <td style={{ padding: '1rem' }}>
+                                    <CustomDateInput
+                                        label="DATA FIM (PERSONALIZADA)"
+                                        labelStyle={{ color: '#64748b', fontWeight: 700 }}
+                                        value={endDate}
+                                        onChange={handleEndDateChange}
+                                        style={{ background: 'transparent', border: 'none', color: '#000', fontWeight: 700, height: 'auto', padding: 0 }}
+                                    />
                                 </td>
                             </tr>
                         </tbody>
@@ -412,8 +682,20 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
             </div>
 
             <div className="no-print" style={{ marginTop: '3rem', display: 'flex', justifyContent: 'center', gap: '1rem', borderTop: '1px dashed #cbd5e1', paddingTop: '2rem' }}>
-                <button onClick={handleWhatsAppShare} style={{ padding: '0.8rem 2rem', background: '#22c55e', color: 'white', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FiShare2 /> WhatsApp</button>
-                <button onClick={handleDownloadPDF} style={{ padding: '0.8rem 2rem', background: '#000', color: 'white', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><FiDownload /> Baixar PDF Oficial</button>
+                <button
+                    disabled={loading}
+                    onClick={handleWhatsAppShare}
+                    style={{ padding: '0.8rem 2rem', background: '#22c55e', color: 'white', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: loading ? 0.7 : 1 }}
+                >
+                    <FiShare2 /> WhatsApp
+                </button>
+                <button
+                    disabled={loading}
+                    onClick={handleDownloadPDF}
+                    style={{ padding: '0.8rem 2rem', background: '#000', color: 'white', borderRadius: '8px', fontWeight: 700, border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: loading ? 0.7 : 1 }}
+                >
+                    <FiDownload /> {loading ? 'Gerando...' : 'Baixar PDF Profissional'}
+                </button>
             </div>
         </div>
     );

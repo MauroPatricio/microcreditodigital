@@ -132,7 +132,7 @@ const AuditLogs = () => {
                                 logs.map((log) => (
                                     <tr key={log._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                                         <td style={{ padding: '1.25rem 1.5rem', whiteSpace: 'nowrap' }}>
-                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{new Date(log.timestamp).toLocaleDateString()}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{new Date(log.timestamp).toLocaleDateString('pt-MZ')}</div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(log.timestamp).toLocaleTimeString()}</div>
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem' }}>

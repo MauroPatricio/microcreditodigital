@@ -114,57 +114,82 @@ const GlobalDashboard = () => {
                     </div>
                 </div>
 
-                <div className="card glass" style={{ padding: '2.5rem', borderRadius: '24px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                        <div>
-                            <h3 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.5px' }}>Performance por Instituição</h3>
-                            <p style={{ color: 'var(--text-muted)' }}>Métricas de adesão e volume financeiro comparado.</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1.8fr 1.2fr', gap: '2rem' }}>
+                    <div className="card glass" style={{ padding: '2.5rem', borderRadius: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
+                            <div>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.5px' }}>Performance por Instituição</h3>
+                                <p style={{ color: 'var(--text-muted)' }}>Métricas de adesão e volume financeiro comparado.</p>
+                            </div>
+                        </div>
+
+                        <div style={{ height: '350px', width: '100%' }}>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
+                                    <defs>
+                                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.8} />
+                                            <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.2} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
+                                    <XAxis
+                                        dataKey="name"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}
+                                    />
+                                    <Tooltip
+                                        cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                                        content={({ active, payload }) => {
+                                            if (active && payload && payload.length) {
+                                                return (
+                                                    <div className="glass" style={{ padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}>
+                                                        <p style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '0.25rem' }}>{payload[0].payload.name}</p>
+                                                        <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent)' }}>Confiança: {payload[0].value}%</p>
+                                                    </div>
+                                                );
+                                            }
+                                            return null;
+                                        }}
+                                    />
+                                    <Bar dataKey="value" radius={[12, 12, 0, 0]} barSize={40}>
+                                        {data.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} opacity={0.8} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
 
-                    <div style={{ height: '450px', width: '100%' }}>
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                                <defs>
-                                    <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.8} />
-                                        <stop offset="95%" stopColor="var(--accent)" stopOpacity={0.2} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255,255,255,0.05)" />
-                                <XAxis
-                                    dataKey="name"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: 'var(--text-muted)', fontSize: 13, fontWeight: 500 }}
-                                />
-                                <Tooltip
-                                    cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
-                                    content={({ active, payload }) => {
-                                        if (active && payload && payload.length) {
-                                            return (
-                                                <div className="glass" style={{ padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}>
-                                                    <p style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '0.25rem' }}>{payload[0].payload.name}</p>
-                                                    <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent)' }}>Score: {payload[0].value}</p>
-                                                </div>
-                                            );
-                                        }
-                                        return null;
-                                    }}
-                                />
-                                <Bar dataKey="value" radius={[12, 12, 0, 0]} barSize={40}>
-                                    {data.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} opacity={0.8} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
+                    <div className="card glass" style={{ padding: '2.5rem', borderRadius: '24px' }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 900, marginBottom: '2rem' }}>Distribuição de Carteira</h3>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                            {[
+                                { label: 'Nível 5 — Muito Confiável', val: 15, color: '#16A34A' },
+                                { label: 'Nível 4 — Confiável', val: 25, color: '#2563EB' },
+                                { label: 'Nível 3 — Moderado', val: 30, color: '#EAB308' },
+                                { label: 'Nível 2 — Arriscado', val: 18, color: '#F97316' },
+                                { label: 'Nível 1 — Muito Arriscado', val: 12, color: '#DC2626' }
+                            ].map((item, idx) => (
+                                <div key={idx}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem' }}>
+                                        <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.label}</span>
+                                        <span style={{ fontWeight: 800, color: item.color }}>{item.val}%</span>
+                                    </div>
+                                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <div style={{ width: `${item.val}%`, height: '100%', background: item.color, borderRadius: '4px' }}></div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>

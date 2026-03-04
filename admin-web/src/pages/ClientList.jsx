@@ -4,6 +4,7 @@ import Layout from '../components/Layout';
 import api from '../api';
 import { FiSearch, FiUserPlus, FiMoreVertical, FiCheckCircle, FiXCircle, FiArrowRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
+import ConfidenceIndicator from '../components/ConfidenceIndicator';
 
 const ClientList = () => {
     const [clients, setClients] = useState([]);
@@ -70,7 +71,7 @@ const ClientList = () => {
                             <tr style={{ background: 'var(--bg-main)' }}>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>CLIENTE</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>STATUS</th>
-                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>SCORE</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>NÍVEL DE CONFIANÇA</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>DATA CADASTRO</th>
                                 <th style={{ padding: '1rem 1.5rem', textAlign: 'right' }}></th>
                             </tr>
@@ -108,20 +109,16 @@ const ClientList = () => {
                                                 }}><FiXCircle /> Pendente</span>
                                             )}
                                         </td>
-                                        <td style={{ padding: '1rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                <div style={{
-                                                    width: '100px', height: '6px', background: 'var(--bg-main)', borderRadius: '10px', overflow: 'hidden'
-                                                }}>
-                                                    <div style={{
-                                                        width: `${((typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500) / 10}%`, height: '100%', background: 'var(--accent)'
-                                                    }}></div>
-                                                </div>
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>{(typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500}</span>
-                                            </div>
+                                        <td style={{ padding: '1rem 1.5rem', minWidth: '180px' }}>
+                                            <ConfidenceIndicator
+                                                level={client.confidenceAnalysis?.level || 3}
+                                                label={client.confidenceAnalysis?.label}
+                                                percentage={client.confidenceAnalysis?.percentage || 50}
+                                                showScore={false}
+                                            />
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                            {new Date(client.createdAt).toLocaleDateString()}
+                                            {new Date(client.createdAt).toLocaleDateString('pt-MZ')}
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
                                             <Link to={`/clients/${client._id}`} style={{ color: '#38bdf8', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>Ver Detalhes <FiArrowRight /></Link>

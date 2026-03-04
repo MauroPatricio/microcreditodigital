@@ -2,13 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
-import { FiSearch, FiFilter, FiCheckCircle, FiXCircle, FiClock, FiDollarSign, FiPlus, FiUser, FiArrowRight, FiX } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiCheckCircle, FiXCircle, FiClock, FiDollarSign, FiPlus, FiUser, FiArrowRight, FiX, FiActivity, FiDownload, FiFileText } from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
+import ConfidenceIndicator from '../components/ConfidenceIndicator';
+import * as XLSX from 'xlsx';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
 
 const LoanList = () => {
     const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
     const [statusFilter, setStatusFilter] = useState('');
+    const [riskFilter, setRiskFilter] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [clientSearch, setClientSearch] = useState('');
     const [clients, setClients] = useState([]);
@@ -38,7 +43,12 @@ const LoanList = () => {
     useEffect(() => {
         const fetchLoans = async () => {
             try {
-                const res = await api.get('/credits', { params: { status: statusFilter } });
+                const res = await api.get('/credits', {
+                    params: {
+                        status: statusFilter,
+                        riskCategory: riskFilter
+                    }
+                });
                 if (res.data.success) {
                     setLoans(res.data.data.credits);
                 }
@@ -50,17 +60,50 @@ const LoanList = () => {
         };
 
         fetchLoans();
-    }, [statusFilter]);
+    }, [statusFilter, riskFilter]);
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'active': return { bg: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)' };
-            case 'paid': return { bg: 'rgba(16, 185, 129, 0.1)', color: 'var(--success)' };
-            case 'pending': return { bg: 'rgba(245, 158, 11, 0.1)', color: 'var(--warning)' };
-            case 'rejected': return { bg: 'rgba(239, 68, 68, 0.1)', color: 'var(--danger)' };
-            case 'overdue': return { bg: 'rgba(239, 68, 68, 0.2)', color: '#ff4444' };
-            default: return { bg: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-muted)' };
+            case 'active': return { bg: 'rgba(59, 130, 246, 1)', color: 'white', label: 'Ativo' };
+            case 'paid': return { bg: 'rgba(16, 185, 129, 1)', color: 'white', label: 'Liquidado' };
+            case 'pending': return { bg: 'rgba(245, 158, 11, 1)', color: 'white', label: 'Pendente' };
+            case 'rejected': return { bg: 'rgba(239, 68, 68, 1)', color: 'white', label: 'Rejeitado' };
+            case 'overdue': return { bg: '#ef4444', color: 'white', label: 'Em Atraso' };
+            default: return { bg: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)', label: status };
         }
+    };
+
+    const exportToExcel = () => {
+        const data = loans.map(l => ({
+            'ID': l._id,
+            'Nº': l.loanNumber || 'N/A',
+            'Cliente': l.client?.name,
+            'Valor': l.amount,
+            'Saldo Devedor': l.remainingBalance || (l.totalPayable - l.totalPaid),
+            'Status': l.status,
+            'Confiança': l.riskProfile?.label || 'N/A',
+            'Data': new Date(l.createdAt).toLocaleDateString()
+        }));
+        const ws = XLSX.utils.json_to_sheet(data);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Empréstimos");
+        XLSX.writeFile(wb, "Relatorio_Emprestimos.xlsx");
+    };
+
+    const exportToPDF = () => {
+        const doc = new jsPDF();
+        doc.text("Relatório de Empréstimos - Fintech Digital", 14, 15);
+        const tableColumn = ["ID", "Cliente", "Valor", "Saldo", "Status", "Data"];
+        const tableRows = loans.map(l => [
+            l.loanNumber || l._id.substring(0, 8),
+            l.client?.name,
+            `${l.amount.toLocaleString()} MT`,
+            `${(l.remainingBalance || (l.totalPayable - l.totalPaid)).toLocaleString()} MT`,
+            l.status.toUpperCase(),
+            new Date(l.createdAt).toLocaleDateString()
+        ]);
+        doc.autoTable(tableColumn, tableRows, { startY: 20 });
+        doc.save("Relatorio_Emprestimos.pdf");
     };
 
     return (
@@ -70,33 +113,60 @@ const LoanList = () => {
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Gestão de Empréstimos</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Acompanhe solicitações, aprovações e o status da carteira.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <FiFilter style={{ position: 'absolute', left: '0.75rem', color: 'var(--text-muted)' }} />
+                        <select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                            style={{
+                                padding: '0.75rem 0.75rem 0.75rem 2.2rem',
+                                background: 'var(--bg-card)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: '8px',
+                                color: 'var(--text-main)',
+                                fontSize: '0.85rem'
+                            }}
+                        >
+                            <option value="">Status: Todos</option>
+                            <option value="pending">Pendentes</option>
+                            <option value="approved">Aprovados</option>
+                            <option value="active">Ativos</option>
+                            <option value="paid">Liquidados</option>
+                            <option value="overdue">Em Atraso</option>
+                        </select>
+                    </div>
                     <select
-                        value={statusFilter}
-                        onChange={(e) => setStatusFilter(e.target.value)}
+                        value={riskFilter}
+                        onChange={(e) => setRiskFilter(e.target.value)}
                         style={{
-                            padding: '0.75rem 1rem',
+                            padding: '0.75rem',
                             background: 'var(--bg-card)',
                             border: '1px solid rgba(255,255,255,0.1)',
                             borderRadius: '8px',
                             color: 'var(--text-main)',
-                            fontSize: '0.9rem'
+                            fontSize: '0.85rem'
                         }}
                     >
-                        <option value="">Todos os Status</option>
-                        <option value="pending">Pendentes</option>
-                        <option value="approved">Aprovados</option>
-                        <option value="active">Ativos</option>
-                        <option value="paid">Liquidados</option>
-                        <option value="overdue">Em Atraso</option>
-                        <option value="rejected">Rejeitados</option>
+                        <option value="">Risco: Todos</option>
+                        <option value="low">Baixo</option>
+                        <option value="medium">Médio</option>
+                        <option value="high">Alto</option>
                     </select>
+
+                    <button onClick={exportToExcel} className="btn-secondary" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center' }} title="Exportar Excel">
+                        <FiDownload />
+                    </button>
+                    <button onClick={exportToPDF} className="btn-secondary" style={{ padding: '0.75rem', display: 'flex', alignItems: 'center' }} title="Exportar PDF">
+                        <FiFileText />
+                    </button>
+
                     <button
                         onClick={() => setIsModalOpen(true)}
                         className="btn-primary"
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', whiteSpace: 'nowrap' }}
                     >
-                        <FiPlus /> Novo Empréstimo
+                        <FiPlus /> Novo
                     </button>
                 </div>
             </div>
@@ -106,11 +176,11 @@ const LoanList = () => {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ background: 'var(--bg-main)' }}>
-                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>CLIENTE</th>
-                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>VALOR</th>
-                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>PRAZO</th>
-                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>STATUS</th>
-                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.85rem' }}>DATA</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Protocolo / Cliente</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Vl. Original</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Saldo Devedor</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Status / Risco</th>
+                                <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase' }}>Atraso / Prox. Pv</th>
                                 <th style={{ padding: '1rem 1.5rem', textAlign: 'right' }}></th>
                             </tr>
                         </thead>
@@ -125,29 +195,53 @@ const LoanList = () => {
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{
-                                                    width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary-light)',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '0.8rem'
+                                                    width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: 'var(--accent)'
                                                 }}>{loan.client?.name?.charAt(0)}</div>
-                                                <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{loan.client?.name}</p>
+                                                <div>
+                                                    <p style={{ fontWeight: 800, fontSize: '0.9rem' }}>{loan.client?.name}</p>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>#{loan.loanNumber || loan._id.substring(loan._id.length - 8).toUpperCase()}</p>
+                                                </div>
                                             </div>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
-                                            <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>{loan.amount.toLocaleString()} MT</p>
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem', fontSize: '0.9rem' }}>
-                                            {loan.term} meses
+                                            <p style={{ fontWeight: 800, fontSize: '0.9rem' }}>{loan.amount.toLocaleString()} MT</p>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{loan.term} meses</p>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
-                                            <span style={{
-                                                display: 'inline-block', padding: '0.25rem 0.6rem', borderRadius: '6px', fontSize: '0.7rem', fontWeight: 800,
-                                                background: getStatusStyle(loan.status).bg, color: getStatusStyle(loan.status).color, textTransform: 'uppercase'
-                                            }}>{loan.status}</span>
+                                            <p style={{ fontWeight: 900, fontSize: '0.95rem', color: loan.status === 'overdue' ? 'var(--danger)' : 'var(--text-main)' }}>
+                                                {(loan.remainingBalance || (loan.totalPayable - loan.totalPaid)).toLocaleString()} <span style={{ fontSize: '0.7rem' }}>MT</span>
+                                            </p>
                                         </td>
-                                        <td style={{ padding: '1rem 1.5rem', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                                            {new Date(loan.createdAt).toLocaleDateString()}
+                                        <td style={{ padding: '1rem 1.5rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                <span style={{
+                                                    display: 'inline-block', padding: '0.2rem 0.6rem', borderRadius: '6px', fontSize: '0.65rem', fontWeight: 900, width: 'fit-content',
+                                                    background: getStatusStyle(loan.status).bg, color: getStatusStyle(loan.status).color, textTransform: 'uppercase'
+                                                }}>{getStatusStyle(loan.status).label}</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: loan.riskProfile?.confidenceLevel > 3 ? 'var(--success)' : 'var(--warning)' }}></div>
+                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 700 }}>{loan.riskProfile?.label || 'Moderado'}</span>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.5rem' }}>
+                                            {loan.status === 'overdue' ? (
+                                                <p style={{ color: 'var(--danger)', fontWeight: 800, fontSize: '0.85rem' }}>{loan.overdueDays || 0} dias atraso</p>
+                                            ) : (
+                                                <p style={{ fontSize: '0.85rem', fontWeight: 700 }}>{loan.nextDueDate ? new Date(loan.nextDueDate).toLocaleDateString('pt-MZ') : new Date(loan.createdAt).toLocaleDateString('pt-MZ')}</p>
+                                            )}
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 600 }}>Término: {loan.endDate ? new Date(loan.endDate).toLocaleDateString('pt-MZ') : '---'}</p>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Agente: {loan.agent?.name || 'Sistema'}</p>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                                            <Link to={`/credits/${loan._id}`} style={{ color: 'var(--accent)', textDecoration: 'none', fontSize: '0.85rem', fontWeight: 600 }}>Gerenciar</Link>
+                                            <button
+                                                onClick={() => navigate(`/credits/${loan._id}`)}
+                                                className="btn-secondary"
+                                                style={{ padding: '0.5rem', borderRadius: '8px' }}
+                                            >
+                                                <FiArrowRight />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))
@@ -239,7 +333,9 @@ const LoanList = () => {
                                                 </div>
                                                 <div>
                                                     <p style={{ fontWeight: 600, fontSize: '0.9rem' }}>{client.name}</p>
-                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Score: {(typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500}</p>
+                                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                        <FiActivity size={12} /> Confiança: {client.confidenceAnalysis?.label || 'Moderado'}
+                                                    </p>
                                                 </div>
                                             </div>
                                             <FiArrowRight size={16} color="var(--accent)" />

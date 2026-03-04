@@ -181,7 +181,7 @@ const ContractViewer = ({ creditId, onUpdate }) => {
                         <FiCheckCircle fontSize="1.2rem" />
                         <div>
                             <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Contrato assinado digitalmente</p>
-                            <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>Assinado em {new Date(contract.signedAt).toLocaleString()}</p>
+                            <p style={{ fontSize: '0.8rem', opacity: 0.8 }}>Assinado em {new Date(contract.signedAt).toLocaleString('pt-MZ')}</p>
                         </div>
                     </div>
                 </div>

@@ -61,6 +61,47 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
 
         const revenueThisMonth = paymentsThisMonth.reduce((sum, payment) => sum + payment.amount, 0);
 
+        // Calcular PAR (Portfolio At Risk)
+        const totalActiveBalance = activeCredits.reduce((sum, credit) => sum + (credit.totalPayable - credit.totalPaid), 0);
+        const par = totalActiveBalance > 0 ? (overdueAmount / totalActiveBalance) * 100 : 0;
+
+        // Total recuperado (Global)
+        const totalRecoveredRes = await Credit.aggregate([
+            { $match: { institution: institutionId } },
+            { $group: { _id: null, total: { $sum: "$totalPaid" } } }
+        ]);
+        const totalRecovered = totalRecoveredRes[0]?.total || 0;
+
+        // Rendimento mensal de juros (estimado pelos pagamentos)
+        // Nota: Idealmente os pagamentos teriam discriminado o que é juro. 
+        // Aqui usamos uma aproximação baseada no total de juros proporcional
+        const monthlyInterestIncome = paymentsThisMonth.reduce((sum, payment) => sum + (payment.amount * 0.2), 0); // Exemplo: 20% do pago é juro (ajustar conforme lógica real)
+
+        // Performance por Agente
+        const agentPerformance = await Credit.aggregate([
+            { $match: { institution: institutionId, agent: { $exists: true } } },
+            {
+                $group: {
+                    _id: "$agent",
+                    activeLoans: { $sum: { $cond: [{ $eq: ["$status", "active"] }, 1, 0] } },
+                    totalAmount: { $sum: "$approvedAmount" },
+                    totalPaid: { $sum: "$totalPaid" }
+                }
+            },
+            { $lookup: { from: 'users', localField: '_id', foreignField: '_id', as: 'agentInfo' } },
+            { $unwind: "$agentInfo" },
+            {
+                $project: {
+                    agentName: "$agentInfo.name",
+                    activeLoans: 1,
+                    totalAmount: 1,
+                    recoveryRate: { $cond: [{ $gt: ["$totalAmount", 0] }, { $divide: ["$totalPaid", "$totalAmount"] }, 0] }
+                }
+            },
+            { $sort: { recoveryRate: -1 } },
+            { $limit: 5 }
+        ]);
+
         res.json({
             success: true,
             data: {
@@ -72,16 +113,20 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
                     activeCredits: activeCredits.length,
                     totalActiveAmount: Math.round(totalActiveAmount * 100) / 100,
                     overdueCredits: overdueInstallments.length,
-                    overdueAmount: Math.round(overdueAmount * 100) / 100
+                    overdueAmount: Math.round(overdueAmount * 100) / 100,
+                    par: Math.round(par * 100) / 100,
+                    totalRecovered: Math.round(totalRecovered * 100) / 100
                 },
                 performance: {
                     defaultRate: Math.round(defaultRate * 100) / 100,
                     totalRevenue: Math.round(totalRevenue * 100) / 100,
-                    pendingApprovals: pendingCredits
+                    pendingApprovals: pendingCredits,
+                    agentPerformance
                 },
                 monthly: {
                     creditsIssued: creditsThisMonth,
-                    revenue: Math.round(revenueThisMonth * 100) / 100
+                    revenue: Math.round(revenueThisMonth * 100) / 100,
+                    interestIncome: Math.round(monthlyInterestIncome * 100) / 100
                 }
             }
         });

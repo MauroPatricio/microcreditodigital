@@ -212,7 +212,7 @@ const SmsLogs = () => {
                                             </p>
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
-                                            {new Date(log.sentAt).toLocaleString()}
+                                            {new Date(log.sentAt).toLocaleString('pt-MZ')}
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem' }}>
                                             <span style={{

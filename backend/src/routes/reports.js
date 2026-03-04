@@ -262,13 +262,13 @@ router.get('/client-statistics', async (req, res) => {
             status: 'approved'
         });
 
-        // Distribuição por score de crédito
-        const scoreDistribution = await User.aggregate([
+        // Distribuição por nível de confiança (Score 0-1000)
+        const confidenceDistribution = await User.aggregate([
             { $match: { ...match, role: 'client' } },
             {
                 $bucket: {
-                    groupBy: '$creditScore',
-                    boundaries: [0, 300, 500, 700, 850],
+                    groupBy: { $ifNull: ['$riskProfile.score', 500] },
+                    boundaries: [0, 200, 400, 600, 800, 1001],
                     default: 'outros',
                     output: { count: { $sum: 1 } }
                 }
@@ -281,7 +281,7 @@ router.get('/client-statistics', async (req, res) => {
                 totalClients,
                 newClients,
                 activeClients: activeClients.length,
-                scoreDistribution
+                confidenceDistribution
             }
         });
     } catch (error) {

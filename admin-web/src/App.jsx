@@ -67,6 +67,10 @@ import CashFlow from './pages/CashFlow';
 import MonthlyReport from './pages/MonthlyReport';
 import QuarterlyReport from './pages/QuarterlyReport';
 import BomReport from './pages/BomReport';
+import CommunicationDashboard from './pages/CommunicationDashboard.jsx';
+import MessageScheduler from './pages/MessageScheduler.jsx';
+import CommunicationTemplates from './pages/CommunicationTemplates.jsx';
+import CommunicationHistory from './pages/CommunicationHistory.jsx';
 
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -106,6 +110,12 @@ function App() {
             <Route path="/reports/monthly" element={<ProtectedRoute><MonthlyReport /></ProtectedRoute>} />
             <Route path="/reports/quarterly" element={<ProtectedRoute><QuarterlyReport /></ProtectedRoute>} />
             <Route path="/reports/bom" element={<ProtectedRoute><BomReport /></ProtectedRoute>} />
+
+            <Route path="/communication" element={<ProtectedRoute><CommunicationDashboard /></ProtectedRoute>} />
+            <Route path="/communication/send" element={<ProtectedRoute><MessageScheduler /></ProtectedRoute>} />
+            <Route path="/communication/schedules" element={<ProtectedRoute><CommunicationHistory status="pending" /></ProtectedRoute>} />
+            <Route path="/communication/templates" element={<ProtectedRoute><CommunicationTemplates /></ProtectedRoute>} />
+            <Route path="/communication/history" element={<ProtectedRoute><CommunicationHistory /></ProtectedRoute>} />
 
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>

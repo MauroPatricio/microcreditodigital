@@ -23,8 +23,14 @@ const CATEGORIES = {
 
 const PAYMENT_METHODS = ['dinheiro', 'mpesa', 'emola', 'transferencia', 'outro'];
 
-const formatMT = (v) => new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(v || 0);
+const formatMT = (v) => `${(v || 0).toLocaleString('pt-MZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} MT`;
 const monthNames = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+
+const formatDateDisplay = (dateString) => {
+    if (!dateString) return 'DD/MM/AAAA';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-MZ');
+};
 
 const CashFlow = () => {
     const now = new Date();
@@ -38,6 +44,9 @@ const CashFlow = () => {
     const [filterType, setFilterType] = useState('');
     const [loading, setLoading] = useState(true);
     const [showModal, setShowModal] = useState(false);
+    const [showBalanceModal, setShowBalanceModal] = useState(false);
+    const [newInitialBalance, setNewInitialBalance] = useState(0);
+    const [savingBalance, setSavingBalance] = useState(false);
     const [editTx, setEditTx] = useState(null);
     const [form, setForm] = useState({ type: 'entrada', category: 'parcela', amount: '', description: '', paymentMethod: 'dinheiro', date: new Date().toISOString().split('T')[0], reference: '' });
     const [saving, setSaving] = useState(false);
@@ -60,7 +69,7 @@ const CashFlow = () => {
             if (txRes.data.success) { setTransactions(txRes.data.data.transactions); setTotal(txRes.data.data.total); }
             if (dailyRes.data.success) {
                 setDailyData(dailyRes.data.data.map(d => ({
-                    name: `${d._id.day}/${d._id.month}`,
+                    name: `${String(d._id.day).padStart(2, '0')}/${String(d._id.month).padStart(2, '0')}/${year}`,
                     entradas: d.entradas,
                     saidas: d.saidas,
                     saldo: d.entradas - d.saidas
@@ -84,6 +93,20 @@ const CashFlow = () => {
         if (!window.confirm('Eliminar esta transação?')) return;
         try { await api.delete(`/cashflow/transaction/${id}`); load(); } catch (e) { console.error(e); }
     };
+    const handleSavingBalance = async () => {
+        setSavingBalance(true);
+        try {
+            await api.put('/cashflow/initial-balance', { initialBalance: newInitialBalance });
+            setShowBalanceModal(false);
+            load();
+        } catch (e) {
+            console.error(e);
+            alert('Erro ao definir saldo inicial: ' + (e.response?.data?.message || e.message));
+        } finally {
+            setSavingBalance(false);
+        }
+    };
+
     const handleSave = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -135,12 +158,28 @@ const CashFlow = () => {
                 {/* Summary Cards */}
                 {summary && (
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
-                        <SummaryCard label="Saldo Inicial" value={formatMT(summary.saldoInicial)} icon={FiDollarSign} color="#8b5cf6" />
+                        {/* Saldo Inicial — clicável para configurar */}
+                        <div
+                            className="glass"
+                            style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '3px solid #8b5cf6', flex: 1, minWidth: '200px', cursor: 'pointer', position: 'relative' }}
+                            onClick={() => { setNewInitialBalance(summary.baseInitialBalance || 0); setShowBalanceModal(true); }}
+                            title="Clique para configurar o saldo inicial"
+                        >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Saldo Inicial</span>
+                                <div style={{ width: 36, height: 36, borderRadius: '10px', background: '#8b5cf622', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <FiEdit2 size={16} style={{ color: '#8b5cf6' }} />
+                                </div>
+                            </div>
+                            <div style={{ fontSize: '1.7rem', fontWeight: 800, color: '#8b5cf6' }}>{formatMT(summary.saldoInicial)}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Base: {formatMT(summary.baseInitialBalance)} · Clique para editar</div>
+                        </div>
                         <SummaryCard label="Total Entradas" value={formatMT(summary.totalEntradas)} icon={FiArrowUpCircle} color="#10b981" sub={`${summary.entradasByCategory?.length || 0} categorias`} />
                         <SummaryCard label="Total Saídas" value={formatMT(summary.totalSaidas)} icon={FiArrowDownCircle} color="#ef4444" sub={`${summary.saidasByCategory?.length || 0} categorias`} />
                         <SummaryCard label="Saldo Final" value={formatMT(summary.saldoFinal)} icon={FiTrendingUp} color={summary.saldoFinal >= 0 ? '#10b981' : '#ef4444'} sub={monthNames[month - 1] + ' ' + year} />
                     </div>
                 )}
+
 
                 {/* Daily Chart */}
                 {dailyData.length > 0 && (
@@ -218,7 +257,32 @@ const CashFlow = () => {
                     )}
                 </div>
 
-                {/* Modal */}
+                {/* Modal: Configurar Saldo Inicial */}
+                {showBalanceModal && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div className="glass" style={{ width: '90%', maxWidth: '420px', padding: '2rem', borderRadius: '20px', position: 'relative' }}>
+                            <button onClick={() => setShowBalanceModal(false)} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><FiX size={20} /></button>
+                            <h2 style={{ fontWeight: 800, marginBottom: '0.5rem' }}>💰 Saldo Inicial de Caixa</h2>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Define o valor do dinheiro em caixa antes de qualquer transação registada no sistema. Este valor é persistido e afecta todos os meses.</p>
+                            <label style={labelStyle}>Montante (MT)</label>
+                            <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={newInitialBalance}
+                                onChange={e => setNewInitialBalance(e.target.value)}
+                                style={{ ...inputStyle, fontSize: '1.4rem', fontWeight: 800, color: '#8b5cf6', marginBottom: '1.5rem', textAlign: 'right' }}
+                                autoFocus
+                            />
+                            <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                <button onClick={() => setShowBalanceModal(false)} style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', background: 'var(--bg-main)', color: 'var(--text-muted)', border: 'none', cursor: 'pointer', fontWeight: 600 }}>Cancelar</button>
+                                <button onClick={handleSavingBalance} className="btn-primary" style={{ flex: 2, padding: '0.75rem' }} disabled={savingBalance}>{savingBalance ? 'Guardando...' : 'Confirmar'}</button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Modal: Nova / Editar Transação */}
                 {showModal && (
                     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <div className="glass" style={{ width: '90%', maxWidth: '500px', padding: '2rem', borderRadius: '20px', position: 'relative' }}>
@@ -257,7 +321,16 @@ const CashFlow = () => {
                                     </div>
                                     <div>
                                         <label style={labelStyle}>Data</label>
-                                        <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required style={inputStyle} />
+                                        <div className="date-input-wrapper" data-date={formatDateDisplay(form.date)}>
+                                            <input
+                                                type="date"
+                                                className="premium-date-input"
+                                                value={form.date}
+                                                onChange={e => setForm({ ...form, date: e.target.value })}
+                                                required
+                                                style={{ ...inputStyle, background: 'transparent' }}
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>

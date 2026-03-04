@@ -22,10 +22,15 @@ import commissionRoutes from './src/routes/commissions.js';
 import smsRoutes from './src/routes/sms.js';
 import contractTemplateRoutes from './src/routes/contractTemplates.js';
 import cashflowRoutes from './src/routes/cashflow.js';
+import communicationRoutes from './src/routes/communicationRoutes.js';
+import confidenceRoutes from './src/routes/confidence.js';
+import simulationRoutes from './src/routes/simulations.js';
+import contractRoutes from './src/routes/contracts.js';
 
 // Services
 import whatsappService from './src/services/whatsappService.js';
 import whatsappJobs from './src/jobs/whatsappJobs.js';
+import { messageQueueJob, automatedRemindersJob } from './src/jobs/messageWorker.js';
 
 // Config
 dotenv.config();
@@ -61,6 +66,10 @@ app.use('/api/commissions', commissionRoutes);
 app.use('/api/sms', smsRoutes);
 app.use('/api/contract-templates', contractTemplateRoutes);
 app.use('/api/cashflow', cashflowRoutes);
+app.use('/api/communication', communicationRoutes);
+app.use('/api/confidence', confidenceRoutes);
+app.use('/api/simulations', simulationRoutes);
+app.use('/api/contracts', contractRoutes);
 
 // Root
 app.get('/', (req, res) => {
@@ -99,11 +108,14 @@ app.use((err, req, res, next) => {
 
 // Start Services
 try {
+    import('./src/services/communicationService.js').then(m => m.default.seedTemplates());
     whatsappService.initializeClient();
     whatsappJobs.start();
-    console.log('   ✓ Serviços de WhatsApp iniciados');
+    messageQueueJob.start();
+    automatedRemindersJob.start();
+    console.log('   ✓ Serviços de Comunicação e WhatsApp iniciados');
 } catch (error) {
-    console.error('Falha ao iniciar serviços WhatsApp:', error);
+    console.error('Falha ao iniciar serviços de comunicação:', error);
 }
 
 const PORT = process.env.PORT || 5000;

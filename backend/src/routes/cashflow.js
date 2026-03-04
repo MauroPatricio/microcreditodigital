@@ -1,6 +1,7 @@
 import express from 'express';
 import CashTransaction from '../models/CashTransaction.js';
-import { protect } from '../middleware/auth.js';
+import Institution from '../models/Institution.js';
+import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
 router.use(protect);
@@ -17,26 +18,18 @@ router.get('/summary', async (req, res) => {
         const startOfMonth = new Date(y, m - 1, 1);
         const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
 
-        // Saldo inicial = soma de todas as entradas - todas as saídas ANTES do mês
-        const beforeMonth = await CashTransaction.aggregate([
-            { $match: { institution: req.user.institution, date: { $lt: startOfMonth } } },
-            {
-                $group: {
-                    _id: null,
-                    entradas: {
-                        $sum: { $cond: [{ $eq: ['$type', 'entrada'] }, '$amount', 0] }
-                    },
-                    saidas: {
-                        $sum: { $cond: [{ $eq: ['$type', 'saida'] }, '$amount', 0] }
-                    }
-                }
-            }
-        ]);
-        const saldoInicial = (beforeMonth[0]?.entradas || 0) - (beforeMonth[0]?.saidas || 0);
+        // Resolve o ObjectId correcto (req.institutionId é definido pelo middleware auth)
+        const institutionId = req.institutionId || req.user.institution._id || req.user.institution;
 
-        // Transações do mês
+        // Saldo Inicial = valor de abertura configurado pela instituição (caixa no início)
+        // NÃO acumula transações de meses anteriores — isso seria um duplo registo
+        const institution = await Institution.findById(institutionId).select('settings.initialBalance');
+        const baseInitialBalance = institution?.settings?.initialBalance || 0;
+        const saldoInicial = baseInitialBalance;
+
+        // Transações do mês corrente
         const monthTx = await CashTransaction.aggregate([
-            { $match: { institution: req.user.institution, date: { $gte: startOfMonth, $lte: endOfMonth } } },
+            { $match: { institution: institutionId, date: { $gte: startOfMonth, $lte: endOfMonth } } },
             {
                 $group: {
                     _id: null,
@@ -58,7 +51,7 @@ router.get('/summary', async (req, res) => {
         const entradasByCategory = await CashTransaction.aggregate([
             {
                 $match: {
-                    institution: req.user.institution,
+                    institution: institutionId,
                     type: 'entrada',
                     date: { $gte: startOfMonth, $lte: endOfMonth }
                 }
@@ -70,7 +63,7 @@ router.get('/summary', async (req, res) => {
         const saidasByCategory = await CashTransaction.aggregate([
             {
                 $match: {
-                    institution: req.user.institution,
+                    institution: institutionId,
                     type: 'saida',
                     date: { $gte: startOfMonth, $lte: endOfMonth }
                 }
@@ -83,6 +76,7 @@ router.get('/summary', async (req, res) => {
             data: {
                 period: { month: m, year: y },
                 saldoInicial,
+                baseInitialBalance: baseInitialBalance,
                 totalEntradas,
                 totalSaidas,
                 saldoFinal,
@@ -95,12 +89,43 @@ router.get('/summary', async (req, res) => {
     }
 });
 
+// @route   PUT /api/cashflow/initial-balance
+// @desc    Configurar saldo inicial de caixa
+// @access  Private (Owner/Manager)
+router.put('/initial-balance', protect, authorize('owner', 'manager', 'super_admin'), async (req, res) => {
+    try {
+        const { initialBalance } = req.body;
+
+        if (initialBalance === undefined || initialBalance === null || isNaN(parseFloat(initialBalance))) {
+            return res.status(400).json({ success: false, message: 'Saldo inicial inválido' });
+        }
+
+        const institution = await Institution.findByIdAndUpdate(
+            req.institutionId || req.user.institution._id || req.user.institution,
+            { 'settings.initialBalance': parseFloat(initialBalance) },
+            { new: true, select: 'settings.initialBalance name' }
+        );
+
+        if (!institution) {
+            return res.status(404).json({ success: false, message: 'Instituição não encontrada' });
+        }
+
+        res.json({
+            success: true,
+            message: `Saldo inicial definido em ${parseFloat(initialBalance).toLocaleString()} MT`,
+            data: { initialBalance: institution.settings.initialBalance }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao definir saldo inicial', error: error.message });
+    }
+});
+
 // @route   GET /api/cashflow/transactions
 // @desc    Listar transações com filtros
 router.get('/transactions', async (req, res) => {
     try {
         const { page = 1, limit = 30, type, category, startDate, endDate } = req.query;
-        const query = { institution: req.user.institution };
+        const query = { institution: req.institutionId || req.user.institution._id || req.user.institution };
 
         if (type) query.type = type;
         if (category) query.category = category;
@@ -140,7 +165,7 @@ router.post('/transaction', async (req, res) => {
         }
 
         const tx = await CashTransaction.create({
-            institution: req.user.institution,
+            institution: req.institutionId || req.user.institution._id || req.user.institution,
             type,
             category,
             amount: parseFloat(amount),
@@ -162,7 +187,7 @@ router.post('/transaction', async (req, res) => {
 router.put('/transaction/:id', async (req, res) => {
     try {
         const tx = await CashTransaction.findOneAndUpdate(
-            { _id: req.params.id, institution: req.user.institution },
+            { _id: req.params.id, institution: req.institutionId || req.user.institution._id || req.user.institution },
             req.body,
             { new: true, runValidators: true }
         );
@@ -177,7 +202,7 @@ router.put('/transaction/:id', async (req, res) => {
 // @desc    Eliminar transação
 router.delete('/transaction/:id', async (req, res) => {
     try {
-        const tx = await CashTransaction.findOneAndDelete({ _id: req.params.id, institution: req.user.institution });
+        const tx = await CashTransaction.findOneAndDelete({ _id: req.params.id, institution: req.institutionId || req.user.institution._id || req.user.institution });
         if (!tx) return res.status(404).json({ success: false, message: 'Transação não encontrada' });
         res.json({ success: true, message: 'Transação eliminada' });
     } catch (error) {
@@ -197,7 +222,7 @@ router.get('/daily-balance', async (req, res) => {
         const txs = await CashTransaction.aggregate([
             {
                 $match: {
-                    institution: req.user.institution,
+                    institution: req.institutionId || req.user.institution._id || req.user.institution,
                     date: { $gte: start, $lte: end }
                 }
             },

@@ -226,7 +226,7 @@ const PendingDocuments = () => {
                                         width: 'fit-content'
                                     }}>
                                         <FiClock size={14} color="var(--accent)" />
-                                        <span>Enviado em <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{new Date(doc.createdAt).toLocaleDateString()}</strong></span>
+                                        <span>Enviado em <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{new Date(doc.createdAt).toLocaleDateString('pt-MZ')}</strong></span>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>

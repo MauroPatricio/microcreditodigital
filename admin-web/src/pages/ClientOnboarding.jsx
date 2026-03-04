@@ -18,6 +18,12 @@ const steps = [
     { id: 6, title: 'Revisão', icon: <FiShield /> }
 ];
 
+const formatDateDisplay = (dateString) => {
+    if (!dateString) return 'DD/MM/AAAA';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-MZ');
+};
+
 const ClientOnboarding = () => {
     const navigate = useNavigate();
     const [currentStep, setCurrentStep] = useState(1);
@@ -130,7 +136,16 @@ const ClientOnboarding = () => {
                             </div>
                             <div className="form-group">
                                 <label>Data de Nascimento</label>
-                                <input type="date" name="dateOfBirth" value={formData.dateOfBirth} onChange={handleChange} required />
+                                <div className="date-input-wrapper" data-date={formatDateDisplay(formData.dateOfBirth)}>
+                                    <input
+                                        type="date"
+                                        name="dateOfBirth"
+                                        className="premium-date-input"
+                                        value={formData.dateOfBirth}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -244,11 +259,11 @@ const ClientOnboarding = () => {
                             </div>
                         </div>
 
-                        <div className="scoring-preview glass" style={{ marginTop: '2rem', padding: '1.5rem', textAlign: 'center' }}>
+                        <div className="confidence-preview glass" style={{ marginTop: '2rem', padding: '1.5rem', textAlign: 'center' }}>
                             <FiActivity size={32} color="var(--accent)" style={{ marginBottom: '1rem' }} />
-                            <h4 style={{ fontWeight: 800 }}>Simulação de Score Inicial</h4>
+                            <h4 style={{ fontWeight: 800 }}>Simulação de Confiança Inicial</h4>
                             <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>Com base nos dados fornecidos, o sistema estima um perfil de confiança médio.</p>
-                            <div style={{ marginTop: '1rem', fontSize: '2rem', fontWeight: 900, color: 'var(--accent)' }}>500 / 1000</div>
+                            <div style={{ marginTop: '1rem', fontSize: '2rem', fontWeight: 900, color: 'var(--accent)' }}>50%</div>
                         </div>
                     </div>
                 );
@@ -387,7 +402,7 @@ const ClientOnboarding = () => {
                     from { opacity: 0; transform: translateY(15px); }
                     to { opacity: 1; transform: translateY(0); }
                 }
-                .scoring-preview {
+                .confidence-preview {
                     border: 1px solid rgba(59, 130, 246, 0.2);
                 }
             `}</style>

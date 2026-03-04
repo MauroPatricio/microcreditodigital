@@ -10,7 +10,7 @@ import { protect, authorize } from '../middleware/auth.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
-import { calculateScore } from '../services/scoringService.js';
+import { calculateConfidence } from '../services/confidenceService.js';
 import simulationService from '../services/simulationService.js';
 
 const router = express.Router();
@@ -20,7 +20,7 @@ const router = express.Router();
 // @access  Private (Client)
 router.post('/simulate', protect, async (req, res) => {
     try {
-        const { amount, term, interestRate, periodicity, startDate } = req.body;
+        const { amount, term, interestRate, periodicity, startDate, amortizationType } = req.body;
 
         if (!amount || !term) {
             return res.status(400).json({
@@ -33,8 +33,9 @@ router.post('/simulate', protect, async (req, res) => {
         // Default to monthly if not specified, for backward compatibility
         const period = periodicity || 'monthly';
         const start = startDate || new Date();
+        const amortType = amortizationType || 'price';
 
-        const simulation = simulationService.calculateSimulation(amount, term, rate, period, start);
+        const simulation = simulationService.calculateSimulation(amount, term, rate, period, start, amortType);
 
         res.json({
             success: true,
@@ -56,7 +57,7 @@ router.post('/simulate', protect, async (req, res) => {
 // @access  Private
 router.post('/simulate/pdf', protect, async (req, res) => {
     try {
-        const { amount, term, interestRate, periodicity, startDate, clientName, template } = req.body;
+        const { amount, term, interestRate, periodicity, startDate, clientName, template, amortizationType } = req.body;
 
         if (!amount || !term) {
             return res.status(400).json({ success: false, message: 'Dados incompletos' });
@@ -65,9 +66,10 @@ router.post('/simulate/pdf', protect, async (req, res) => {
         const rate = interestRate || req.user.institution.settings?.interestRates?.default || 10;
         const period = periodicity || 'monthly';
         const start = startDate || new Date();
+        const amortType = amortizationType || 'price';
 
         // Usar o serviço para garantir que os cálculos batem com a tela
-        const simulation = simulationService.calculateSimulation(amount, term, rate, period, start);
+        const simulation = simulationService.calculateSimulation(amount, term, rate, period, start, amortType);
 
         // Incluir metadados para o PDF
         simulation.summary.clientName = clientName;
@@ -94,7 +96,7 @@ router.post('/simulate/pdf', protect, async (req, res) => {
 // @access  Private (Agent/Client)
 router.post('/request', protect, auditAction('Credit', 'request', 'medium'), creditRequestValidation, validate, async (req, res) => {
     try {
-        const { amount, term, purpose, collateral, clientId, periodicity, interestRate } = req.body;
+        const { amount, term, purpose, collateral, clientId, periodicity, interestRate, amortizationType } = req.body;
 
         // Se um clientId for passado (por um agente), usamos ele. Caso contrário, usamos o req.user._id
         const effectiveClientId = (['agent', 'manager', 'owner'].includes(req.user.role) && clientId) ? clientId : req.user._id;
@@ -125,9 +127,9 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
             });
         }
 
-        // Calcular Score Automático
+        // Calcular Confiança Automática
         const allClientCredits = await Credit.find({ client: effectiveClientId });
-        const scoringData = await calculateScore(client, allClientCredits);
+        const confidenceData = await calculateConfidence(client, allClientCredits);
 
         // Criar solicitação de crédito
         const credit = await Credit.create({
@@ -136,12 +138,13 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
             amount,
             term,
             periodicity: periodicity || 'monthly',
+            amortizationType: amortizationType || 'price',
             interestRate: interestRate || req.user.institution.settings?.interestRates?.default || 15,
             purpose,
             collateral,
             status: 'pending',
             currentStage: 'submission',
-            scoring: scoringData,
+            confidenceAnalysis: confidenceData,
             workflowHistory: [{
                 stage: 'submission',
                 action: 'submitted',
@@ -280,6 +283,13 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
         }
 
         if (credit.status !== 'pending') {
+            if (credit.status === 'approved' || credit.status === 'active') {
+                return res.json({
+                    success: true,
+                    message: 'Este crédito já se encontra aprovado',
+                    data: { credit }
+                });
+            }
             return res.status(400).json({
                 success: false,
                 message: 'Apenas créditos pendentes podem ser aprovados'
@@ -312,20 +322,28 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
         // O pre-save hook do Mongoose calculará monthlyPayment e totalPayable automaticamente
         await credit.save();
 
-        // Gerar parcelas
-        const installments = [];
-        for (let i = 1; i <= credit.term; i++) {
-            const dueDate = addMonths(new Date(), i);
+        // Gerar parcelas via Simulation Service garantindo matemática idêntica
+        const simulation = simulationService.calculateSimulation(
+            credit.approvedAmount,
+            credit.term,
+            credit.interestRate || 15,
+            credit.periodicity || 'monthly',
+            new Date(),
+            credit.amortizationType || 'price'
+        );
 
+        const installments = [];
+        for (let i = 0; i < simulation.schedule.length; i++) {
+            const row = simulation.schedule[i];
             const installment = await Installment.create({
                 credit: credit._id,
                 institution: credit.institution,
-                installmentNumber: i,
-                dueDate,
-                amount: credit.monthlyPayment,
-                principal: credit.approvedAmount / credit.term,
-                interest: credit.monthlyPayment - (credit.approvedAmount / credit.term),
-                totalAmount: credit.monthlyPayment,
+                installmentNumber: row.number,
+                dueDate: row.dueDate,
+                amount: row.amount,
+                principal: row.principal,
+                interest: row.interest,
+                totalAmount: row.amount,
                 status: 'pending'
             });
 
@@ -473,10 +491,14 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
             });
         }
 
+        console.log(`[DEBUG DISBURSE] Credit ID: ${credit._id}`);
+        console.log(`[DEBUG DISBURSE] Status: ${credit.status}`);
+        console.log(`[DEBUG DISBURSE] Contract Status: ${credit.contractStatus}`);
+
         if (credit.status !== 'approved' || credit.contractStatus !== 'signed') {
             return res.status(400).json({
                 success: false,
-                message: 'Crédito deve estar aprovado e contrato assinado para desembolso'
+                message: `Crédito deve estar aprovado e contrato assinado para desembolso. Atual: status=${credit.status}, contractStatus=${credit.contractStatus}`
             });
         }
 
@@ -592,6 +614,130 @@ router.post('/:id/sign-contract', protect, auditAction('Credit', 'sign_contract'
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// @route   PUT /api/credits/:id/installments/:installmentId/toggle-status
+// @desc    Alternar estado da parcela entre pago e pendente
+// @access  Private (Agent/Manager/Owner)
+router.put('/:id/installments/:installmentId/toggle-status', protect, authorize('owner', 'manager', 'agent'), async (req, res) => {
+    try {
+        const { id, installmentId } = req.params;
+        const credit = await Credit.findById(id);
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        const installment = await Installment.findById(installmentId);
+        if (!installment || installment.credit.toString() !== id) {
+            return res.status(404).json({ success: false, message: 'Parcela não encontrada' });
+        }
+
+        const oldStatus = installment.status;
+        const amount = installment.totalAmount;
+
+        if (oldStatus === 'paid') {
+            // Reverter para pendente
+            installment.status = 'pending';
+            installment.paidAt = undefined;
+            installment.paidAmount = 0;
+            credit.totalPaid = Math.max(0, credit.totalPaid - amount);
+            if (credit.status === 'paid') credit.status = 'active';
+        } else {
+            // Marcar como pago
+            installment.status = 'paid';
+            installment.paidAt = new Date();
+            installment.paidAmount = amount;
+            credit.totalPaid += amount;
+            if (credit.totalPaid >= credit.totalPayable) credit.status = 'paid';
+        }
+
+        await installment.save();
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: `Parcela ${installment.installmentNumber} marcada como ${installment.status === 'paid' ? 'Paga' : 'Pendente'}`,
+            data: { installment, credit }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// @route   PUT /api/credits/:id/restructure
+// @desc    Reestruturação de um crédito (alteração de prazos/valores)
+// @access  Private (Manager/Owner)
+router.put('/:id/restructure', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+    try {
+        const { newTerm, newAmount, reason } = req.body;
+        const credit = await Credit.findById(req.params.id);
+
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        // Backup do estado anterior na auditoria
+        credit.workflowHistory.push({
+            stage: 'analysis',
+            action: 'restructured',
+            performedBy: req.user._id,
+            timestamp: new Date(),
+            comment: `Reestruturação: ${reason || 'Sem motivo especificado'}. Termo anterior: ${credit.term}, Valor: ${credit.amount}`
+        });
+
+        if (newTerm) credit.term = newTerm;
+        if (newAmount) credit.approvedAmount = newAmount;
+
+        credit.status = 'restructured';
+        // O pre-save hook do modelo Credit irá recalcular o totalPayable e monthlyPayment
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            data: { credit }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao reestruturar crédito', error: error.message });
+    }
+});
+
+// @route   PUT /api/credits/:id/liquidate
+// @desc    Liquidação antecipada de um crédito
+// @access  Private (Manager/Owner)
+router.put('/:id/liquidate', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id);
+        if (!credit) {
+            return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+        }
+
+        if (credit.status !== 'active' && credit.status !== 'overdue') {
+            return res.status(400).json({ success: false, message: 'Apenas créditos ativos ou em atraso podem ser liquidados' });
+        }
+
+        const remainingBalance = credit.totalPayable - credit.totalPaid;
+
+        // Registrar o pagamento final (Simulado ou real dependendo da integração)
+        credit.totalPaid = credit.totalPayable;
+        credit.remainingBalance = 0;
+        credit.status = 'paid';
+        credit.lastPaymentDate = new Date();
+
+        // Adicionar ao histórico de auditoria
+        credit.workflowHistory.push({
+            stage: 'disbursement',
+            action: 'liquidated_early',
+            performedBy: req.user._id,
+            timestamp: new Date(),
+            comment: `Liquidação antecipada efetuada. Valor: ${remainingBalance} MT`
+        });
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            data: { credit }
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao liquidar crédito', error: error.message });
     }
 });
 

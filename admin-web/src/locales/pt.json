@@ -25,10 +25,10 @@
         "identity": "BI / NUIT",
         "birth_date": "Data de Nascimento",
         "address": "Endereço",
-        "risk_profile": "Perfil de Risco",
-        "credit_score": "Score Atual",
-        "score_range": "(0 - 1000)",
-        "risk": "RISCO",
+        "risk_profile": "Nível de Confiança",
+        "confidence_level": "Nível Atual",
+        "score_range": "(0% - 100%)",
+        "risk": "CLASSIFICAÇÃO",
         "loan_history": "Histórico de Empréstimos",
         "no_loans": "Nenhum empréstimo registrado para este cliente.",
         "contract": "Contrato",
@@ -41,6 +41,8 @@
         },
         "contract_status": {
             "draft": "Rascunho",
+            "pending": "Aguarda Envio",
+            "pending_signature": "Aguarda Assinatura",
             "sent": "Enviado",
             "signed": "Assinado",
             "expired": "Expirado"

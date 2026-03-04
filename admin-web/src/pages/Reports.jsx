@@ -42,7 +42,7 @@ const Reports = () => {
         {
             id: 'client-statistics',
             title: 'Estatísticas de Clientes',
-            description: 'Novos clientes e scores',
+            description: 'Novos clientes e níveis de confiança',
             icon: FiUsers,
             color: '#8b5cf6'
         },
@@ -98,6 +98,12 @@ const Reports = () => {
         return new Intl.NumberFormat('pt-MZ').format(value || 0);
     };
 
+    const formatDateDisplay = (dateString) => {
+        if (!dateString) return 'DD/MM/AAAA';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('pt-MZ');
+    };
+
     return (
         <Layout>
             <div style={{
@@ -122,7 +128,7 @@ const Reports = () => {
                         { label: 'Relatório Trimestral', desc: 'Consolidado 3 meses + comparativo', icon: FiTrendingUp, color: '#f59e0b', path: '/reports/quarterly' },
                         { label: 'Relatório BdM', desc: 'Formato Banco de Moçambique oficial', icon: FiCheckCircle, color: '#e63946', path: '/reports/bom' }
                     ].map(card => (
-                        <button key={card.path} onClick={() => navigate(card.path)} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0 }}>
+                        <button key={card.path} onClick={() => navigate(card.path)} style={{ background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: 0, color: 'var(--text-main)' }}>
                             <div className="glass" style={{ padding: '1.4rem', borderRadius: '14px', borderTop: `3px solid ${card.color}`, transition: 'all 0.2s', display: 'flex', flexDirection: 'column', gap: '0.5rem', height: '100%' }}
                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
                                 onMouseLeave={e => e.currentTarget.style.background = ''}
@@ -133,7 +139,7 @@ const Reports = () => {
                                     </div>
                                     <FiArrowRight size={15} style={{ color: 'var(--text-muted)' }} />
                                 </div>
-                                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{card.label}</div>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-main)' }}>{card.label}</div>
                                 <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.4 }}>{card.desc}</div>
                             </div>
                         </button>
@@ -155,33 +161,43 @@ const Reports = () => {
                     <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
                         Período:
                     </label>
-                    <input
-                        type="date"
-                        value={dateRange.startDate}
-                        onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'var(--bg-main)',
-                            color: 'var(--text-main)',
-                            fontSize: '0.9rem'
-                        }}
-                    />
+                    <div className="date-input-wrapper" data-date={formatDateDisplay(dateRange.startDate)}>
+                        <input
+                            type="date"
+                            className="premium-date-input"
+                            value={dateRange.startDate}
+                            onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-light)',
+                                background: 'var(--bg-main)',
+                                color: 'var(--text-main)',
+                                fontSize: '0.9rem',
+                                height: '38px',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
                     <span style={{ color: 'var(--text-muted)' }}>até</span>
-                    <input
-                        type="date"
-                        value={dateRange.endDate}
-                        onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: '8px',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'var(--bg-main)',
-                            color: 'var(--text-main)',
-                            fontSize: '0.9rem'
-                        }}
-                    />
+                    <div className="date-input-wrapper" data-date={formatDateDisplay(dateRange.endDate)}>
+                        <input
+                            type="date"
+                            className="premium-date-input"
+                            value={dateRange.endDate}
+                            onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                            style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                border: '1px solid var(--border-light)',
+                                background: 'var(--bg-main)',
+                                color: 'var(--text-main)',
+                                fontSize: '0.9rem',
+                                height: '38px',
+                                outline: 'none'
+                            }}
+                        />
+                    </div>
                     {activeReport && (
                         <button
                             onClick={() => loadReport(activeReport)}
@@ -189,7 +205,8 @@ const Reports = () => {
                             style={{
                                 marginLeft: 'auto',
                                 padding: '0.5rem 1rem',
-                                fontSize: '0.9rem'
+                                fontSize: '0.9rem',
+                                color: '#000'
                             }}
                         >
                             Aplicar Filtro
@@ -255,11 +272,14 @@ const Reports = () => {
                                 setActiveReport(null);
                                 setReportData(null);
                             }}
-                            className="btn-primary"
+                            className="btn-secondary"
                             style={{
                                 marginBottom: '1.5rem',
-                                background: 'var(--bg-main)',
-                                padding: '0.5rem 1rem'
+                                padding: '0.5rem 1rem',
+                                color: 'var(--text-main)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
                             }}
                         >
                             ← Voltar aos Relatórios
@@ -339,7 +359,8 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
             const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
 
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`relatorio-${reportId}-${new Date().toISOString().split('T')[0]}.pdf`);
+            const dateStr = new Date().toLocaleDateString('pt-MZ').replace(/\//g, '-');
+            pdf.save(`relatorio-${reportId}-${dateStr}.pdf`);
         } catch (error) {
             console.error('Erro ao exportar PDF:', error);
         }
@@ -400,17 +421,17 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         </h3>
                         <ResponsiveContainer width="100%" height={300}>
                             <LineChart data={data.timeline.map(t => ({
-                                name: `${t._id.month}/${t._id.year}`,
+                                name: `${String(t._id.day || 1).padStart(2, '0')}/${String(t._id.month).padStart(2, '0')}/${t._id.year}`,
                                 creditos: t.count,
                                 valor: t.amount / 1000000
                             }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis dataKey="name" stroke="#fff" />
-                                <YAxis stroke="#fff" />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                                <XAxis dataKey="name" stroke="var(--text-muted)" />
+                                <YAxis stroke="var(--text-muted)" />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '8px'
                                     }}
                                 />
@@ -432,13 +453,13 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                                 quantidade: s.count,
                                 valor: s.totalAmount / 1000000
                             }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis dataKey="name" stroke="#fff" />
-                                <YAxis stroke="#fff" />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                                <XAxis dataKey="name" stroke="var(--text-muted)" />
+                                <YAxis stroke="var(--text-muted)" />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '8px'
                                     }}
                                 />
@@ -486,13 +507,13 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                                 range,
                                 total: count
                             }))}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis dataKey="range" stroke="#fff" />
-                                <YAxis stroke="#fff" />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                                <XAxis dataKey="range" stroke="var(--text-muted)" />
+                                <YAxis stroke="var(--text-muted)" />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '8px'
                                     }}
                                 />
@@ -556,7 +577,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '8px'
                                     }}
                                     formatter={(value) => formatCurrency(value)}
@@ -593,32 +614,33 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     </div>
 
                     {/* Bar Chart - Score Distribution */}
-                    {data.scoreDistribution && data.scoreDistribution.length > 0 && (
-                        <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
-                                Distribuição por Score de Crédito
-                            </h3>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <BarChart data={data.scoreDistribution.map(s => ({
-                                    range: `${s._id}-${s._id + 200}`,
-                                    clientes: s.count
-                                }))}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                    <XAxis dataKey="range" stroke="#fff" />
-                                    <YAxis stroke="#fff" />
-                                    <Tooltip
-                                        contentStyle={{
-                                            backgroundColor: '#1e293b',
-                                            border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRadius: '8px'
-                                        }}
-                                    />
-                                    <Legend />
-                                    <Bar dataKey="clientes" fill={config.color} name="Clientes" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    )}
+                    <div className="glass" style={{ padding: '2rem', borderRadius: '16px', minWidth: 0 }}>
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
+                            Distribuição por Nível de Confiança
+                        </h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                            <BarChart data={data.confidenceDistribution.map(s => ({
+                                range: s._id === 0 ? '0-20%' :
+                                    s._id === 21 ? '21-40%' :
+                                        s._id === 41 ? '41-60%' :
+                                            s._id === 61 ? '61-80%' : '81-100%',
+                                clientes: s.count
+                            }))}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                                <XAxis dataKey="range" stroke="var(--text-muted)" />
+                                <YAxis stroke="var(--text-muted)" />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: '#1e293b',
+                                        border: '1px solid var(--border-light)',
+                                        borderRadius: '8px'
+                                    }}
+                                />
+                                <Legend />
+                                <Bar dataKey="clientes" fill={config.color} name="Clientes" />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             )}
 
@@ -635,13 +657,13 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                                 data={data.steps}
                                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                             >
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-                                <XAxis type="number" stroke="#fff" />
-                                <YAxis dataKey="name" type="category" stroke="#fff" width={100} />
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" />
+                                <XAxis type="number" stroke="var(--text-muted)" />
+                                <YAxis dataKey="name" type="category" stroke="var(--text-muted)" width={100} />
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '8px'
                                     }}
                                 />
@@ -677,7 +699,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <div style={{ overflowX: 'auto' }}>
                             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                 <thead>
-                                    <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <tr style={{ borderBottom: '1px solid var(--border-light)' }}>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Agente</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Cadastros</th>
                                         <th style={{ padding: '1rem', color: 'var(--text-muted)' }}>Créditos</th>
@@ -687,14 +709,14 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                                 </thead>
                                 <tbody>
                                     {data.map((agent, idx) => (
-                                        <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                        <tr key={idx} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                             <td style={{ padding: '1rem', fontWeight: 600 }}>{agent.name}</td>
                                             <td style={{ padding: '1rem' }}>{formatNumber(agent.clientCount)}</td>
                                             <td style={{ padding: '1rem' }}>{formatNumber(agent.creditCount)}</td>
                                             <td style={{ padding: '1rem', color: 'var(--accent)' }}>{formatCurrency(agent.totalVolume)}</td>
                                             <td style={{ padding: '1rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                    <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px' }}>
+                                                    <div style={{ flex: 1, height: '6px', background: 'var(--border-light)', borderRadius: '3px' }}>
                                                         <div style={{
                                                             height: '100%',
                                                             width: `${(agent.creditCount / (agent.clientCount || 1) * 100)}%`,
@@ -768,7 +790,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                                 <Tooltip
                                     contentStyle={{
                                         backgroundColor: '#1e293b',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '8px'
                                     }}
                                 />

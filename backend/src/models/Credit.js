@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { calculateSimulation } from '../services/simulationService.js';
 
 const creditSchema = new mongoose.Schema({
     client: {
@@ -11,6 +12,16 @@ const creditSchema = new mongoose.Schema({
         ref: 'Institution',
         required: true
     },
+    loanNumber: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
+    agent: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    branchId: String,
     amount: {
         type: Number,
         required: [true, 'Valor do crédito é obrigatório'],
@@ -36,6 +47,27 @@ const creditSchema = new mongoose.Schema({
         enum: ['daily', 'weekly', 'biweekly', 'monthly'],
         default: 'monthly'
     },
+    amortizationType: {
+        type: String,
+        enum: ['price', 'sac', 'simples', 'composto', 'flat'],
+        default: 'price'
+    },
+    interestType: {
+        type: String,
+        enum: ['simple', 'compound', 'flat'],
+        default: 'simple'
+    },
+    totalInterest: {
+        type: Number,
+        default: 0
+    },
+    gracePeriod: {
+        type: Number,
+        default: 0
+    },
+    startDate: Date,
+    firstDueDate: Date,
+    endDate: Date,
     monthlyPayment: {
         type: Number,
         default: 0
@@ -48,9 +80,39 @@ const creditSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    delayPenalties: {
+        type: Number,
+        default: 0
+    },
+    fines: {
+        type: Number,
+        default: 0
+    },
+    arrearsInterest: {
+        type: Number,
+        default: 0
+    },
+    remainingBalance: {
+        type: Number,
+        default: 0
+    },
+    overdueDays: {
+        type: Number,
+        default: 0
+    },
+    lateFee: {
+        type: Number,
+        default: 0
+    },
+    penaltyFee: {
+        type: Number,
+        default: 0
+    },
+    lastPaymentDate: Date,
+    nextDueDate: Date,
     status: {
         type: String,
-        enum: ['draft', 'pending', 'under_analysis', 'waiting_documents', 'approved', 'rejected', 'active', 'paid', 'defaulted', 'restructured', 'cancelled'],
+        enum: ['draft', 'pending', 'under_analysis', 'waiting_documents', 'approved', 'rejected', 'active', 'paid', 'overdue', 'defaulted', 'restructured', 'cancelled'],
         default: 'pending'
     },
     currentStage: {
@@ -65,17 +127,69 @@ const creditSchema = new mongoose.Schema({
         timestamp: { type: Date, default: Date.now },
         comment: String
     }],
-    scoring: {
-        score: { type: Number, default: 0 },
-        riskLevel: { type: String, enum: ['low', 'medium', 'high'] },
-        indicators: {
-            paymentHistory: Number,
-            incomeScore: Number,
-            stabilityScore: Number,
-            referenceScore: Number
+    riskProfile: {
+        score: { type: Number, default: 500 },
+        confidenceLevel: { type: Number, min: 1, max: 5 },
+        label: { type: String },
+        metrics: {
+            defaultRate: Number,
+            lateDaysAverage: Number,
+            totalPaidVolume: Number,
+            loanFrequency: Number
         },
         calculatedAt: Date
     },
+    riskCategory: {
+        type: String,
+        enum: ['low', 'medium', 'high', 'baixo', 'médio', 'alto'],
+        default: 'medium'
+    },
+    paymentPerformanceScore: {
+        type: Number,
+        default: 100
+    },
+    timesLate: {
+        type: Number,
+        default: 0
+    },
+    defaultFlag: {
+        type: Boolean,
+        default: false
+    },
+    revenueInterestGenerated: {
+        type: Number,
+        default: 0
+    },
+    provisionForLoss: {
+        type: Number,
+        default: 0
+    },
+    writeOffFlag: {
+        type: Boolean,
+        default: false
+    },
+    writeOffAmount: {
+        type: Number,
+        default: 0
+    },
+    accountingEntryId: String,
+    lastSmsSent: Date,
+    lastWhatsappSent: Date,
+    communicationStatus: String,
+    remindersSentCount: {
+        type: Number,
+        default: 0
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    modifiedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    modificationReason: String,
+    auditLogId: String,
     collateral: [{
         type: { type: String, enum: ['vehicle', 'real_estate', 'guarantor', 'equipment', 'other'] },
         description: String,
@@ -139,25 +253,48 @@ const creditSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Middleware para gerar loanNumber sequencial/único
+creditSchema.pre('save', async function (next) {
+    if (this.isNew || !this.loanNumber) {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+
+        // Contar quantos empréstimos existem no mês atual para esta instituição
+        const count = await this.constructor.countDocuments({
+            institution: this.institution,
+            createdAt: {
+                $gte: new Date(year, date.getMonth(), 1),
+                $lt: new Date(year, date.getMonth() + 1, 1)
+            }
+        });
+
+        const sequence = String(count + 1).padStart(4, '0');
+        this.loanNumber = `LOAN-${year}${month}-${sequence}`;
+    }
+    next();
+});
+
 // Calcular total a pagar antes de salvar
 creditSchema.pre('save', function (next) {
-    if (this.isModified('approvedAmount') || this.isModified('interestRate') || this.isModified('term') || this.isModified('amount') || this.isModified('periodicity')) {
+    if (this.isModified('approvedAmount') || this.isModified('interestRate') || this.isModified('term') || this.isModified('amount') || this.isModified('periodicity') || this.isModified('amortizationType')) {
         const baseAmount = this.approvedAmount || this.amount;
-        // A taxa agora é tratada POR PERÍODO (conforme simulador)
-        const ratePerPeriod = (this.interestRate || 10) / 100;
         const numberOfPayments = this.term;
 
         if (baseAmount > 0 && numberOfPayments > 0) {
-            // Fórmula de amortização (Price)
-            if (ratePerPeriod > 0) {
-                this.monthlyPayment = baseAmount *
-                    (ratePerPeriod * Math.pow(1 + ratePerPeriod, numberOfPayments)) /
-                    (Math.pow(1 + ratePerPeriod, numberOfPayments) - 1);
-            } else {
-                this.monthlyPayment = baseAmount / numberOfPayments;
-            }
+            // Utiliza o serviço de simulação para garantir que a BD, o PDF e a UI usam a mesma matemática exata
+            const simulation = calculateSimulation(
+                baseAmount,
+                this.term,
+                this.interestRate || 15,
+                this.periodicity || 'monthly',
+                new Date(),
+                this.amortizationType || 'price'
+            );
 
-            this.totalPayable = this.monthlyPayment * this.term;
+            this.monthlyPayment = simulation.summary.paymentAmount; // Para referências simples (Primeira Parcela no SAC)
+            this.totalPayable = simulation.summary.totalPayable;
+            this.endDate = simulation.summary.endDate;
         }
     }
     next();

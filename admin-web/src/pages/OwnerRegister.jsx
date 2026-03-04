@@ -3,6 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { FiUser, FiMail, FiPhone, FiLock, FiTrendingUp, FiFileText, FiCalendar, FiMapPin, FiBriefcase, FiArrowLeft, FiCheck, FiEye, FiEyeOff } from 'react-icons/fi';
 import api from '../api';
 
+const formatDateDisplay = (dateString) => {
+    if (!dateString) return 'DD/MM/AAAA';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('pt-MZ');
+};
+
 const OwnerRegister = () => {
     const navigate = useNavigate();
     const [step, setStep] = useState(1);
@@ -279,15 +285,18 @@ const OwnerRegister = () => {
 
                         <div style={{ position: 'relative' }}>
                             <FiCalendar style={iconStyle} />
-                            <input
-                                type="date"
-                                name="dateOfBirth"
-                                placeholder="Data de nascimento"
-                                value={formData.dateOfBirth}
-                                onChange={handleChange}
-                                required
-                                style={inputStyle}
-                            />
+                            <div className="date-input-wrapper" data-date={formatDateDisplay(formData.dateOfBirth)}>
+                                <input
+                                    type="date"
+                                    name="dateOfBirth"
+                                    className="premium-date-input"
+                                    placeholder="Data de nascimento"
+                                    value={formData.dateOfBirth}
+                                    onChange={handleChange}
+                                    required
+                                    style={{ ...inputStyle, background: 'transparent' }}
+                                />
+                            </div>
                         </div>
 
                         <div style={{ position: 'relative' }}>

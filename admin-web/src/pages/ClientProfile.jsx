@@ -11,6 +11,7 @@ import {
     FiUserCheck, FiBriefcase, FiDollarSign,
     FiEdit3, FiFile, FiFolder, FiLayers, FiAlertCircle
 } from 'react-icons/fi';
+import ConfidenceIndicator from '../components/ConfidenceIndicator';
 
 const ClientProfile = () => {
     const { t } = useTranslation();
@@ -18,6 +19,7 @@ const ClientProfile = () => {
     const navigate = useNavigate();
     const [client, setClient] = useState(null);
     const [credits, setCredits] = useState([]);
+    const [simulations, setSimulations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
@@ -42,6 +44,12 @@ const ClientProfile = () => {
                 if (res.data.success) {
                     setClient(res.data.data.client);
                     setCredits(res.data.data.credits);
+                }
+
+                // Buscar simulações
+                const simRes = await api.get(`/simulations?clientId=${id}`);
+                if (simRes.data.success) {
+                    setSimulations(simRes.data.data);
                 }
             } catch (error) {
                 console.error("Error fetching client details", error);
@@ -194,7 +202,7 @@ const ClientProfile = () => {
                                 <FiCalendar style={{ color: 'var(--text-muted)' }} />
                                 <div>
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>{t('client_profile.birth_date')}</p>
-                                    <p style={{ fontWeight: 600 }}>{new Date(client.dateOfBirth).toLocaleDateString()}</p>
+                                    <p style={{ fontWeight: 600 }}>{new Date(client.dateOfBirth).toLocaleDateString('pt-MZ')}</p>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -211,17 +219,15 @@ const ClientProfile = () => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <FiTrendingUp style={{ color: 'var(--accent)' }} /> {t('client_profile.risk_profile')}
                         </h3>
-                        <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                            <div style={{ fontSize: '3rem', fontWeight: 800, color: 'var(--accent)', marginBottom: '0.5rem' }}>{(typeof client.creditScore === 'object' ? client.creditScore.score : client.creditScore) || 500}</div>
-                            <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '1.5rem' }}>{t('client_profile.credit_score')} {t('client_profile.score_range')}</p>
-                            <div style={{
-                                padding: '0.5rem', borderRadius: '8px',
-                                background: (client.creditScore?.riskLevel || client.riskProfile) === 'low' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                                color: (client.creditScore?.riskLevel || client.riskProfile) === 'low' ? 'var(--success)' : 'var(--warning)',
-                                fontWeight: 700, fontSize: '0.85rem'
-                            }}>
-                                {t('client_profile.risk')}: {(client.creditScore?.riskLevel || client.riskProfile || 'medium').toUpperCase()}
-                            </div>
+                        <div style={{ padding: '1rem 0' }}>
+                            <ConfidenceIndicator
+                                level={client.confidenceAnalysis?.level || 3}
+                                label={client.confidenceAnalysis?.label}
+                                percentage={client.confidenceAnalysis?.percentage || 50}
+                            />
+                            <p style={{ marginTop: '1.25rem', fontSize: '0.8rem', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                                {t('client_profile.score_range')}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -248,7 +254,18 @@ const ClientProfile = () => {
                                                 display: 'block', fontSize: '0.75rem', fontWeight: 700,
                                                 color: credit.contractStatus === 'signed' ? 'var(--success)' : 'var(--warning)',
                                                 textTransform: 'uppercase', marginBottom: '0.25rem'
-                                            }}>{t('client_profile.contract')}: {t(`client_profile.contract_status.${credit.contractStatus}`)}</span>
+                                            }}>{t('client_profile.contract')}: {(() => {
+                                                const key = `client_profile.contract_status.${credit.contractStatus}`;
+                                                const translated = t(key);
+                                                // Se a chave não existir, i18next devolve a própria chave — mostrar legível
+                                                if (translated === key || translated.includes('.')) {
+                                                    return credit.contractStatus
+                                                        ?.split('_')
+                                                        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+                                                        .join(' ') || '—';
+                                                }
+                                                return translated;
+                                            })()}</span>
                                             <button
                                                 onClick={async () => {
                                                     try {
@@ -273,6 +290,44 @@ const ClientProfile = () => {
                             <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                                 <FiLayers style={{ fontSize: '2.5rem', marginBottom: '1rem', opacity: 0.3 }} />
                                 <p>{t('client_profile.no_loans')}</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Simulações Recentes */}
+                    <div className="card">
+                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <FiActivity style={{ color: 'var(--accent)' }} /> Simulações Realizadas
+                        </h3>
+                        {simulations.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {simulations.map(sim => (
+                                    <div key={sim._id} style={{
+                                        padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)',
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                    }}>
+                                        <div>
+                                            <p style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--accent)' }}>{sim.simulationNumber}</p>
+                                            <p style={{ fontWeight: 700, fontSize: '1rem' }}>{sim.amount.toLocaleString()} MT</p>
+                                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{sim.term} {sim.periodicity} | {new Date(sim.createdAt).toLocaleDateString('pt-MZ')}</p>
+                                        </div>
+                                        <button
+                                            onClick={() => window.open(`${api.defaults.baseURL}/simulations/${sim._id}/pdf`, '_blank')}
+                                            className="btn-icon"
+                                            style={{
+                                                width: '36px', height: '36px', borderRadius: '10px',
+                                                background: 'rgba(255, 255, 255, 0.05)', color: 'var(--text-main)',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}
+                                        >
+                                            <FiDownload size={18} />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
+                                <p style={{ fontSize: '0.85rem' }}>Nenhuma simulação registrada para este cliente.</p>
                             </div>
                         )}
                     </div>
@@ -378,53 +433,55 @@ const ClientProfile = () => {
             </div>
 
             {/* Modal de Upload */}
-            {showUploadModal && (
-                <div style={{
-                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    zIndex: 1000, backdropFilter: 'blur(10px)'
-                }}>
-                    <div className="card glass" style={{ width: '400px', padding: '2rem' }}>
-                        <h3 style={{ marginBottom: '1.5rem', fontWeight: 800 }}>{t('client_profile.upload_title')}</h3>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
-                            {t('client_profile.file')}: <strong>{selectedFile?.name}</strong>
-                        </p>
+            {
+                showUploadModal && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 1000, backdropFilter: 'blur(10px)'
+                    }}>
+                        <div className="card glass" style={{ width: '400px', padding: '2rem' }}>
+                            <h3 style={{ marginBottom: '1.5rem', fontWeight: 800 }}>{t('client_profile.upload_title')}</h3>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                                {t('client_profile.file')}: <strong>{selectedFile?.name}</strong>
+                            </p>
 
-                        <div className="form-group" style={{ marginBottom: '2rem' }}>
-                            <label>{t('client_profile.doc_type')}</label>
-                            <select
-                                value={docType}
-                                onChange={(e) => setDocType(e.target.value)}
-                                style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}
-                            >
-                                {Object.keys(t('client_profile.doc_types', { returnObjects: true })).map(key => (
-                                    <option key={key} value={key}>{t(`client_profile.doc_types.${key}`)}</option>
-                                ))}
-                            </select>
-                        </div>
+                            <div className="form-group" style={{ marginBottom: '2rem' }}>
+                                <label>{t('client_profile.doc_type')}</label>
+                                <select
+                                    value={docType}
+                                    onChange={(e) => setDocType(e.target.value)}
+                                    style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}
+                                >
+                                    {Object.keys(t('client_profile.doc_types', { returnObjects: true })).map(key => (
+                                        <option key={key} value={key}>{t(`client_profile.doc_types.${key}`)}</option>
+                                    ))}
+                                </select>
+                            </div>
 
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                            <button
-                                className="btn-secondary"
-                                style={{ flex: 1 }}
-                                onClick={() => setShowUploadModal(false)}
-                                disabled={uploading}
-                            >
-                                {t('common.cancel')}
-                            </button>
-                            <button
-                                className="btn-primary"
-                                style={{ flex: 1 }}
-                                onClick={handleUpload}
-                                disabled={uploading}
-                            >
-                                {uploading ? t('client_profile.uploading') : t('common.confirm')}
-                            </button>
+                            <div style={{ display: 'flex', gap: '1rem' }}>
+                                <button
+                                    className="btn-secondary"
+                                    style={{ flex: 1 }}
+                                    onClick={() => setShowUploadModal(false)}
+                                    disabled={uploading}
+                                >
+                                    {t('common.cancel')}
+                                </button>
+                                <button
+                                    className="btn-primary"
+                                    style={{ flex: 1 }}
+                                    onClick={handleUpload}
+                                    disabled={uploading}
+                                >
+                                    {uploading ? t('client_profile.uploading') : t('common.confirm')}
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </Layout>
+                )
+            }
+        </Layout >
     );
 };
 

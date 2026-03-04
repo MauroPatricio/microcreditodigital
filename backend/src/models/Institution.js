@@ -33,6 +33,7 @@ const institutionSchema = new mongoose.Schema({
     },
     settings: {
         currency: { type: String, default: 'MT' },
+        initialBalance: { type: Number, default: 0 }, // Saldo Inicial de Caixa
         loanLimits: {
             min: { type: Number, default: 1000 },
             max: { type: Number, default: 50000 }

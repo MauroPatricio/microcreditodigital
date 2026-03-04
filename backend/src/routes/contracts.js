@@ -73,6 +73,20 @@ router.post('/:id/send-for-signature', protect, authorize('manager', 'owner', 's
             });
         }
 
+        if (!contract.client) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cliente não associado a este contrato'
+            });
+        }
+
+        if (!contract.client.email) {
+            return res.status(400).json({
+                success: false,
+                message: 'O cliente não possui um endereço de e-mail registado para assinatura digital'
+            });
+        }
+
         // Simular envio
         const signatureInfo = await contractService.sendForSignature(contract._id, contract.client.email);
 
