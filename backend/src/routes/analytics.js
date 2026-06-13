@@ -102,6 +102,33 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
             { $limit: 5 }
         ]);
 
+        // Total de utilizadores (excluindo clientes)
+        const totalUsers = await User.countDocuments({ institution: institutionId, role: { $ne: 'client' } });
+        const activeUsers = await User.countDocuments({ institution: institutionId, role: { $ne: 'client' }, isBlocked: false });
+        const activeAgents = await User.countDocuments({ institution: institutionId, role: 'agent', isBlocked: false });
+        const activeRepresentatives = await User.countDocuments({ institution: institutionId, role: 'representative', isBlocked: false });
+        const newClients = await User.countDocuments({ institution: institutionId, role: 'client', createdAt: { $gte: startOfMonth } });
+
+        // Produção por agente (soma de créditos ativos/pagos por agente)
+        const agentProduction = await Credit.aggregate([
+            { $match: { institution: institutionId, status: { $in: ['active', 'paid'] } } },
+            { $lookup: { from: 'users', localField: 'agent', foreignField: '_id', as: 'agentInfo' } },
+            { $unwind: "$agentInfo" },
+            { $match: { "agentInfo.role": "agent" } },
+            { $group: { _id: "$agent", name: { $first: "$agentInfo.name" }, total: { $sum: "$approvedAmount" } } },
+            { $sort: { total: -1 } }
+        ]);
+
+        // Produção por representante (soma de créditos ativos/pagos por criador representante)
+        const representativeProduction = await Credit.aggregate([
+            { $match: { institution: institutionId, status: { $in: ['active', 'paid'] } } },
+            { $lookup: { from: 'users', localField: 'createdBy', foreignField: '_id', as: 'repInfo' } },
+            { $unwind: "$repInfo" },
+            { $match: { "repInfo.role": "representative" } },
+            { $group: { _id: "$createdBy", name: { $first: "$repInfo.name" }, total: { $sum: "$approvedAmount" } } },
+            { $sort: { total: -1 } }
+        ]);
+
         res.json({
             success: true,
             data: {
@@ -127,6 +154,15 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
                     creditsIssued: creditsThisMonth,
                     revenue: Math.round(revenueThisMonth * 100) / 100,
                     interestIncome: Math.round(monthlyInterestIncome * 100) / 100
+                },
+                adminMetrics: {
+                    totalUsers,
+                    activeUsers,
+                    activeAgents,
+                    activeRepresentatives,
+                    newClients,
+                    agentProduction,
+                    representativeProduction
                 }
             }
         });

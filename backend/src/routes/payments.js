@@ -92,8 +92,6 @@ router.post('/', protect, auditAction('Payment', 'create', 'high'), paymentValid
             credit.status = 'paid';
         }
 
-        await credit.save();
-
         // Criar notificação
         await Notification.create({
             user: req.user._id,
@@ -107,17 +105,26 @@ router.post('/', protect, auditAction('Payment', 'create', 'high'), paymentValid
         });
 
         // Registrar automaticamente no Fluxo de Caixa (Cash Flow)
+        const creditClient = await User.findById(credit.client);
+        const clientName = creditClient ? creditClient.name : 'Cliente';
+        const isFullLiquidation = credit.totalPaid >= credit.totalPayable;
+        const txDescription = isFullLiquidation 
+            ? `Liquidação do empréstimo de ${clientName}`
+            : `Pagamento de parcela do empréstimo de ${clientName}${installment ? ` (Parcela ${installment.installmentNumber})` : ''}`;
+
         await CashTransaction.create({
-            institution: req.user.institution._id,
+            institution: credit.institution,
             type: 'entrada',
-            category: 'parcela',
+            category: 'reembolso_emprestimo',
             amount: amount,
-            description: `Recebimento de parcela - Crédito ${credit._id.toString().slice(-6).toUpperCase()}${installment ? ` (Parcela ${installment.installmentNumber})` : ''}`,
-            reference: payment._id,
+            description: txDescription,
+            reference: credit.loanNumber || credit._id.toString(),
             paymentMethod: paymentMethod,
             date: new Date(),
             createdBy: req.user._id
         });
+
+        await credit.save();
 
         // Enviar SMS de confirmação
         const client = await User.findById(req.user._id);

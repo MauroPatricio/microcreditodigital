@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import {
     FiArrowLeft, FiUser, FiPhone, FiMail, FiMapPin,
     FiCalendar, FiTrendingUp, FiShield, FiFileText,
@@ -25,6 +27,33 @@ const ClientProfile = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [docType, setDocType] = useState('identity_card');
+    const [generatingReport, setGeneratingReport] = useState(false);
+    const clientRef = useRef(null);
+
+    const handleGenerateReport = async () => {
+        if (!clientRef.current) return;
+        setGeneratingReport(true);
+        try {
+            const canvas = await html2canvas(clientRef.current, {
+                backgroundColor: '#0f172a',
+                scale: 2
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            const dateStr = new Date().toLocaleDateString('pt-MZ').replace(/\//g, '-');
+            pdf.save(`relatorio-cliente-${client.name.replace(/\s+/g, '-')}-${dateStr}.pdf`);
+        } catch (error) {
+            console.error('Erro ao exportar PDF:', error);
+            alert('Erro ao gerar relatório PDF.');
+        } finally {
+            setGeneratingReport(false);
+        }
+    };
 
     const getDocIcon = (type) => {
         const iconStyle = { color: 'var(--accent)', filter: 'drop-shadow(0 0 3px rgba(0, 255, 0, 0.2))' };
@@ -125,51 +154,49 @@ const ClientProfile = () => {
                 >
                     <FiArrowLeft /> {t('common.back')}
                 </button>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
-                        <div style={{
-                            width: '80px', height: '80px', borderRadius: '24px', background: 'var(--primary-light)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800, color: 'var(--accent)'
-                        }}>{client.name?.charAt(0)}</div>
-                        <div>
-                            <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.25rem' }}>{client.name}</h1>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <span style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>{t('client_profile.id')}: {client._id.slice(-8).toUpperCase()}</span>
-                                {client.isVerified ? (
-                                    <span style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <FiCheckCircle /> {t('client_profile.verified')}
-                                    </span>
-                                ) : (
-                                    <button onClick={handleVerify} style={{
-                                        background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', border: 'none', padding: '0.25rem 0.75rem',
-                                        borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700
-                                    }}>{t('client_profile.verify_now')}</button>
-                                )}
+                <div ref={clientRef} style={{ padding: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                            <div style={{
+                                width: '80px', height: '80px', borderRadius: '24px', background: 'var(--primary-light)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 800, color: 'var(--accent)'
+                            }}>{client.name?.charAt(0)}</div>
+                            <div>
+                                <h1 style={{ fontSize: '2.2rem', fontWeight: 800, marginBottom: '0.25rem' }}>{client.name}</h1>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                    <span style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>{t('client_profile.id')}: {client._id.slice(-8).toUpperCase()}</span>
+                                    {client.isVerified ? (
+                                        <span style={{ color: 'var(--success)', fontSize: '0.85rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                            <FiCheckCircle /> {t('client_profile.verified')}
+                                        </span>
+                                    ) : (
+                                        <button onClick={handleVerify} style={{
+                                            background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', border: 'none', padding: '0.25rem 0.75rem',
+                                            borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700
+                                        }}>{t('client_profile.verify_now')}</button>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                        <Link to={`/clients/${id}/request-credit`}>
-                            <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <FiPlus /> {t('client_profile.new_loan')}
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <Link to={`/clients/${id}/request-credit`}>
+                                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FiPlus /> {t('client_profile.new_loan')}
+                                </button>
+                            </Link>
+                            <button 
+                                onClick={handleGenerateReport}
+                                disabled={generatingReport}
+                                style={{
+                                padding: '0.75rem 1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: generatingReport ? 'not-allowed' : 'pointer'
+                            }}>
+                                {generatingReport ? <FiActivity className="spin" /> : <FiDownload />} {t('client_profile.generate_report')}
                             </button>
-                        </Link>
-                        <button style={{
-                            padding: '0.75rem 1.25rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)',
-                            background: 'var(--bg-main)', color: 'var(--text-main)', fontWeight: 600
-                        }}>{t('client_profile.generate_report')}</button>
-                        <button
-                            onClick={() => navigate(`/clients/${id}/request-credit`)}
-                            className="btn-primary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                        >
-                            <FiPlus /> Solicitar Empréstimo
-                        </button>
+                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
                 {/* Lado Esquerdo - Info Pessoal */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     <div className="card">
@@ -430,6 +457,8 @@ const ClientProfile = () => {
                         )}
                     </div>
                 </div>
+            </div>
+            </div>
             </div>
 
             {/* Modal de Upload */}

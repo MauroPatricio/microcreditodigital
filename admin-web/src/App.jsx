@@ -71,6 +71,8 @@ import CommunicationDashboard from './pages/CommunicationDashboard.jsx';
 import MessageScheduler from './pages/MessageScheduler.jsx';
 import CommunicationTemplates from './pages/CommunicationTemplates.jsx';
 import CommunicationHistory from './pages/CommunicationHistory.jsx';
+import UserList from './pages/UserList.jsx';
+import UserForm from './pages/UserForm.jsx';
 
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -98,12 +100,12 @@ function App() {
             <Route path="/agent-performance" element={<ProtectedRoute><AgentPerformance /></ProtectedRoute>} />
             <Route path="/my-commissions" element={<ProtectedRoute><MyCommissions /></ProtectedRoute>} />
             <Route path="/sms-logs" element={<ProtectedRoute><SmsLogs /></ProtectedRoute>} />
-            <Route path="/audit-logs" element={<ProtectedRoute roles={['owner']}><AuditLogs /></ProtectedRoute>} />
+            <Route path="/audit-logs" element={<ProtectedRoute roles={['owner', 'admin']}><AuditLogs /></ProtectedRoute>} />
             <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
             <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
             <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager']}><ContractTemplates /></ProtectedRoute>} />
             <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner']}><GlobalDashboard /></ProtectedRoute>} />
-            <Route path="/settings" element={<ProtectedRoute><InstitutionSettings /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute roles={['owner', 'admin']}><InstitutionSettings /></ProtectedRoute>} />
             <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
             <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
             <Route path="/cashflow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
@@ -116,6 +118,10 @@ function App() {
             <Route path="/communication/schedules" element={<ProtectedRoute><CommunicationHistory status="pending" /></ProtectedRoute>} />
             <Route path="/communication/templates" element={<ProtectedRoute><CommunicationTemplates /></ProtectedRoute>} />
             <Route path="/communication/history" element={<ProtectedRoute><CommunicationHistory /></ProtectedRoute>} />
+
+            <Route path="/users" element={<ProtectedRoute roles={['owner', 'admin', 'supervisor', 'manager']}><UserList /></ProtectedRoute>} />
+            <Route path="/users/new" element={<ProtectedRoute roles={['owner', 'admin']}><UserForm /></ProtectedRoute>} />
+            <Route path="/users/:id" element={<ProtectedRoute roles={['owner', 'admin']}><UserForm /></ProtectedRoute>} />
 
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>

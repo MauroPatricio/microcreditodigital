@@ -13,7 +13,7 @@ const CashTransactionSchema = new mongoose.Schema({
     },
     category: {
         type: String,
-        enum: ['parcela', 'juros', 'multa', 'despesa_operacional', 'emprestimo_desembolso', 'outro'],
+        enum: ['parcela', 'juros', 'multa', 'despesa_operacional', 'emprestimo_desembolso', 'emprestimo_concedido', 'reembolso_emprestimo', 'outro'],
         required: true
     },
     amount: {

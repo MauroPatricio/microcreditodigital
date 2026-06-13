@@ -212,6 +212,7 @@ const LoanList = () => {
                                             <p style={{ fontWeight: 900, fontSize: '0.95rem', color: loan.status === 'overdue' ? 'var(--danger)' : 'var(--text-main)' }}>
                                                 {(loan.remainingBalance || (loan.totalPayable - loan.totalPaid)).toLocaleString()} <span style={{ fontSize: '0.7rem' }}>MT</span>
                                             </p>
+                                            <p style={{ fontSize: '0.7rem', color: 'var(--success)', marginTop: '0.2rem', fontWeight: 600 }}>Pago: {loan.totalPaid?.toLocaleString() || 0} MT</p>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>

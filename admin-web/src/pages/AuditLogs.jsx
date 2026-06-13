@@ -151,6 +151,12 @@ const AuditLogs = () => {
                                                 <FiLayers /> {log.action.toUpperCase()}
                                             </div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{log.entityType} ID: {log.entityId}</div>
+                                            {log.changes && (log.changes.before || log.changes.after) && (
+                                                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', padding: '0.5rem', background: 'var(--bg-main)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)', maxWidth: '400px' }}>
+                                                    {log.changes.before && <div style={{ marginBottom: '0.25rem', overflowX: 'auto' }}><strong style={{ color: 'var(--danger)' }}>Anterior:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{typeof log.changes.before === 'object' ? JSON.stringify(log.changes.before) : String(log.changes.before)}</span></div>}
+                                                    {log.changes.after && <div style={{ overflowX: 'auto' }}><strong style={{ color: 'var(--accent)' }}>Atualizado:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{typeof log.changes.after === 'object' ? JSON.stringify(log.changes.after) : String(log.changes.after)}</span></div>}
+                                                </div>
+                                            )}
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem' }}>
                                             {getSeverityBadge(log.severity)}

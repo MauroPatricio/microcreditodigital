@@ -226,6 +226,8 @@ const LoanDetail = () => {
     if (loading) return <Layout><div style={{ color: 'var(--accent)', padding: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}><FiActivity className="spin" /> Carregando detalhes do crédito...</div></Layout>;
     if (!loan) return <Layout><div style={{ padding: '2rem' }}>Crédito não encontrado.</div></Layout>;
 
+    const hasPopulatedInstallments = loan.installments && loan.installments.length > 0 && typeof loan.installments[0] === 'object';
+
     return (
         <Layout>
             <>
@@ -315,25 +317,24 @@ const LoanDetail = () => {
                             </div>
                             <div className="card glass" style={{ padding: '1.5rem' }}>
                                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 700 }}>Data de Término</p>
-                                <p style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--accent)' }}>
+                                <p style={{ fontSize: '1.4rem', fontWeight: 900, color: 'var(--text-main)' }}>
                                     {loan.endDate ? new Date(loan.endDate).toLocaleDateString('pt-MZ') :
-                                        loan.installments?.length > 0 ? new Date(loan.installments[loan.installments.length - 1].dueDate).toLocaleDateString('pt-MZ') :
+                                        hasPopulatedInstallments ? new Date(loan.installments[loan.installments.length - 1].dueDate).toLocaleDateString('pt-MZ') :
                                             '---'}
                                 </p>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Previsão de Liquidação</p>
                             </div>
                             <div className="card glass" style={{ padding: '1.5rem' }}>
                                 <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '0.5rem', fontWeight: 700 }}>Estado do Processo</p>
-                                <span style={{
-                                    display: 'inline-flex', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800,
-                                    background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)', textTransform: 'uppercase'
+                                <span className="badge-green" style={{
+                                    display: 'inline-flex', padding: '0.3rem 0.75rem', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 800, textTransform: 'uppercase'
                                 }}>{loan.status}</span>
                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>Fase: {loan.currentStage}</p>
                             </div>
                         </div>
 
                         {/* Plano de Amortização (Parcelas) */}
-                        {loan.installments?.length > 0 && (
+                        {hasPopulatedInstallments && (
                             <div className="card" style={{ padding: '2rem' }}>
                                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem' }}>Plano de Amortização</h3>
                                 <div style={{ overflowX: 'auto' }}>
@@ -349,14 +350,16 @@ const LoanDetail = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {loan.installments.map(inst => (
-                                                <tr key={inst._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                    <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 700 }}>{inst.installmentNumber}</td>
-                                                    <td style={{ padding: '1rem', fontSize: '0.85rem' }}>{new Date(inst.dueDate).toLocaleDateString('pt-MZ')}</td>
-                                                    <td style={{ padding: '1rem', fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent)' }}>{inst.totalAmount?.toLocaleString()} MT</td>
-                                                    <td style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                        {inst.principal?.toLocaleString()} / {inst.interest?.toLocaleString()}
-                                                    </td>
+                                            {loan.installments.map(inst => {
+                                                if (!inst || typeof inst === 'string') return null;
+                                                return (
+                                                    <tr key={inst._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                                        <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 700 }}>{inst.installmentNumber}</td>
+                                                        <td style={{ padding: '1rem', fontSize: '0.85rem' }}>{new Date(inst.dueDate).toLocaleDateString('pt-MZ')}</td>
+                                                        <td style={{ padding: '1rem', fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent)' }}>{inst.totalAmount?.toLocaleString()} MT</td>
+                                                        <td style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            {inst.principal?.toLocaleString()} / {inst.interest?.toLocaleString()}
+                                                        </td>
                                                     <td style={{ padding: '1rem' }}>
                                                         <button
                                                             onClick={() => handleToggleStatus(inst)}
@@ -391,7 +394,8 @@ const LoanDetail = () => {
                                                         )}
                                                     </td>
                                                 </tr>
-                                            ))}
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>

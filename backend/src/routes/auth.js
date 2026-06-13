@@ -4,13 +4,14 @@ import Institution from '../models/Institution.js';
 import { protect, authorize, generateToken, generateRefreshToken, verifyRefreshToken } from '../middleware/auth.js';
 import { registerValidation, loginValidation, validate } from '../middleware/validation.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
+import upload from '../middleware/uploadMiddleware.js';
 
 const router = express.Router();
 
 // @route   POST /api/auth/register
 // @desc    Registrar novo usuário (Cliente ou Owner)
 // @access  Public
-router.post('/register', auditAction('User', 'register', 'high'), registerValidation, validate, async (req, res) => {
+router.post('/register', upload.single('logo'), auditAction('User', 'register', 'high'), registerValidation, validate, async (req, res) => {
     try {
         const {
             name, email, phone, password, identityDocument,
@@ -22,9 +23,17 @@ router.post('/register', auditAction('User', 'register', 'high'), registerValida
         const userRole = role === 'owner' ? 'owner' : 'client';
 
         // Verificar se usuário já existe
-        const matchCriteria = [{ phone }, { identityDocument }];
-        if (email) matchCriteria.push({ email });
+        if (email) {
+            const existingEmail = await User.findOne({ email });
+            if (existingEmail) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Conta já existe'
+                });
+            }
+        }
 
+        const matchCriteria = [{ phone }, { identityDocument }];
         const existingUser = await User.findOne({
             $or: matchCriteria
         });
@@ -32,7 +41,7 @@ router.post('/register', auditAction('User', 'register', 'high'), registerValida
         if (existingUser) {
             return res.status(400).json({
                 success: false,
-                message: 'Usuário já existe com este email, telefone ou BI'
+                message: 'Já existe um utilizador com este telefone ou BI'
             });
         }
 
@@ -62,12 +71,23 @@ router.post('/register', auditAction('User', 'register', 'high'), registerValida
                 });
             }
 
-            const institution = await Institution.create({
+            const institutionData = {
                 name: institutionName,
                 nuit: institutionNuit,
                 email: email,
                 owner: user._id
-            });
+            };
+
+            if (req.file) {
+                // Configurar o logoUrl no appearance settings
+                institutionData.settings = {
+                    appearance: {
+                        logoUrl: `/uploads/logos/${req.file.filename}`
+                    }
+                };
+            }
+
+            const institution = await Institution.create(institutionData);
 
             user.institution = institution._id;
         }

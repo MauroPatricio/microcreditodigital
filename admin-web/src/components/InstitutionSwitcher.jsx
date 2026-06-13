@@ -69,10 +69,21 @@ const InstitutionSwitcher = () => {
                         alignItems: 'center',
                         justifyContent: 'center',
                         flexShrink: 0,
+                        overflow: 'hidden',
                         color: 'white',
                         fontWeight: 'bold'
                     }}>
-                        <FiRepeat size={16} />
+                        {activeInst?.settings?.appearance?.logoUrl ? (
+                            <img
+                                src={`${api.defaults.baseURL.replace('/api', '')}${activeInst.settings.appearance.logoUrl}`}
+                                alt="Logo"
+                                style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                            />
+                        ) : (
+                            <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>
+                                {(activeInst?.name || 'I').charAt(0).toUpperCase()}
+                            </span>
+                        )}
                     </div>
                     <div style={{ textAlign: 'left', overflow: 'hidden' }}>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '2px', fontWeight: 500, transition: 'var(--theme-transition)' }}>Instituição Ativa</p>

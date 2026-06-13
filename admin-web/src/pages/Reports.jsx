@@ -149,69 +149,96 @@ const Reports = () => {
                 <div style={{ fontWeight: 700, fontSize: '1rem', marginBottom: '1rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Relatórios Analíticos</div>
 
                 <div className="glass" style={{
-                    padding: '1.5rem',
+                    padding: '2rem',
                     borderRadius: '16px',
                     marginBottom: '2rem',
                     display: 'flex',
-                    gap: '1rem',
-                    alignItems: 'center',
-                    flexWrap: 'wrap'
+                    flexDirection: 'column',
+                    gap: '1rem'
                 }}>
-                    <FiCalendar size={20} style={{ color: 'var(--accent)' }} />
-                    <label style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                        Período:
-                    </label>
-                    <div className="date-input-wrapper" data-date={formatDateDisplay(dateRange.startDate)}>
-                        <input
-                            type="date"
-                            className="premium-date-input"
-                            value={dateRange.startDate}
-                            onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
-                            style={{
-                                padding: '0.5rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border-light)',
-                                background: 'var(--bg-main)',
-                                color: 'var(--text-main)',
-                                fontSize: '0.9rem',
-                                height: '38px',
-                                outline: 'none'
-                            }}
-                        />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                        <FiCalendar size={20} style={{ color: 'var(--accent)' }} />
+                        <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: 0, color: 'var(--text-main)' }}>Filtro de Período</h3>
                     </div>
-                    <span style={{ color: 'var(--text-muted)' }}>até</span>
-                    <div className="date-input-wrapper" data-date={formatDateDisplay(dateRange.endDate)}>
-                        <input
-                            type="date"
-                            className="premium-date-input"
-                            value={dateRange.endDate}
-                            onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
-                            style={{
-                                padding: '0.5rem 1rem',
-                                borderRadius: '8px',
-                                border: '1px solid var(--border-light)',
-                                background: 'var(--bg-main)',
-                                color: 'var(--text-main)',
-                                fontSize: '0.9rem',
-                                height: '38px',
-                                outline: 'none'
-                            }}
-                        />
+                    
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1.5rem', alignItems: 'flex-end' }}>
+                        <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Data Inicial</label>
+                            <input
+                                type="date"
+                                value={dateRange.startDate}
+                                onChange={(e) => setDateRange({ ...dateRange, startDate: e.target.value })}
+                                style={{
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: '10px',
+                                    border: '1px solid var(--border-light)',
+                                    background: 'var(--bg-main)',
+                                    color: 'var(--text-main)',
+                                    fontSize: '0.95rem',
+                                    outline: 'none',
+                                    width: '100%',
+                                    fontFamily: 'inherit'
+                                }}
+                            />
+                        </div>
+                        
+                        <div style={{ flex: '1 1 200px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: 600 }}>Data Final</label>
+                            <input
+                                type="date"
+                                value={dateRange.endDate}
+                                onChange={(e) => setDateRange({ ...dateRange, endDate: e.target.value })}
+                                style={{
+                                    padding: '0.8rem 1rem',
+                                    borderRadius: '10px',
+                                    border: '1px solid var(--border-light)',
+                                    background: 'var(--bg-main)',
+                                    color: 'var(--text-main)',
+                                    fontSize: '0.95rem',
+                                    outline: 'none',
+                                    width: '100%',
+                                    fontFamily: 'inherit'
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                            <button
+                                onClick={() => activeReport ? loadReport(activeReport) : alert('Por favor, selecione um relatório abaixo primeiro para aplicar o filtro.')}
+                                className="btn-primary"
+                                style={{
+                                    padding: '0.8rem 1.5rem',
+                                    fontSize: '0.95rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '0.5rem',
+                                    height: '46px'
+                                }}
+                            >
+                                <span style={{ transform: 'rotate(-45deg)' }}>&#9906;</span> Pesquisar
+                            </button>
+
+                            {activeReport && (
+                                <button
+                                    onClick={() => document.getElementById('btn-export-pdf')?.click()}
+                                    className="btn-secondary"
+                                    style={{
+                                        padding: '0.8rem 1.5rem',
+                                        fontSize: '0.95rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem',
+                                        height: '46px',
+                                        background: 'rgba(59, 130, 246, 0.1)',
+                                        color: '#3b82f6',
+                                        border: '1px solid #3b82f6'
+                                    }}
+                                >
+                                    <FiDownload size={18} /> Download PDF
+                                </button>
+                            )}
+                        </div>
                     </div>
-                    {activeReport && (
-                        <button
-                            onClick={() => loadReport(activeReport)}
-                            className="btn-primary"
-                            style={{
-                                marginLeft: 'auto',
-                                padding: '0.5rem 1rem',
-                                fontSize: '0.9rem',
-                                color: '#000'
-                            }}
-                        >
-                            Aplicar Filtro
-                        </button>
-                    )}
                 </div>
 
                 {!activeReport && (
@@ -380,9 +407,10 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                     {config.title}
                 </h2>
                 <button
+                    id="btn-export-pdf"
                     onClick={exportToPDF}
                     className="btn-primary"
-                    style={{ padding: '0.5rem 1rem' }}
+                    style={{ padding: '0.5rem 1rem', display: 'none' }}
                 >
                     <FiDownload size={16} style={{ marginRight: '0.5rem' }} />
                     Exportar PDF

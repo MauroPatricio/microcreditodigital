@@ -29,14 +29,14 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['client', 'agent', 'manager', 'owner', 'super_admin'],
+        enum: ['client', 'agent', 'manager', 'owner', 'super_admin', 'admin', 'representative', 'supervisor'],
         default: 'client'
     },
     institution: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Institution',
         required: function () {
-            return this.role !== 'super_admin' && this.role !== 'owner';
+            return !['super_admin', 'owner', 'admin'].includes(this.role);
         }
     },
     activeInstitution: {

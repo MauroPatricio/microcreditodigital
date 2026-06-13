@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
-import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin, FiUpload, FiImage } from 'react-icons/fi';
+import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin, FiUpload, FiImage, FiUser, FiPhone, FiMail } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import WhatsAppConnect from '../components/WhatsAppConnect';
 
@@ -25,6 +25,7 @@ const InstitutionSettings = () => {
             currency: 'MT'
         }
     });
+    const [ownerData, setOwnerData] = useState({ name: '', email: '', phone: '' });
 
     useEffect(() => {
         const fetchInstitution = async () => {
@@ -33,6 +34,12 @@ const InstitutionSettings = () => {
                 if (res.data.success) {
                     setInstitution(res.data.data);
                     setFormData(res.data.data);
+                }
+                // Fetch owner/representative profile
+                const userRes = await api.get('/auth/me');
+                if (userRes.data.success) {
+                    const u = userRes.data.data.user;
+                    setOwnerData({ name: u.name || '', email: u.email || '', phone: u.phone || '' });
                 }
             } catch (error) {
                 console.error("Error fetching institution", error);
@@ -152,50 +159,58 @@ const InstitutionSettings = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                         {/* Identidade */}
                         <div className="card">
-                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 700 }}>
                                 <FiBriefcase style={{ color: 'var(--accent)' }} /> Identidade Corporativa
                             </h3>
 
-                            {/* Logo Upload Section */}
-                            <div>
-                                <div style={{
-                                    width: '100px',
-                                    height: '100px',
-                                    borderRadius: '12px',
-                                    background: 'var(--bg-main)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    border: '2px dashed rgba(255,255,255,0.1)',
-                                    overflow: 'hidden',
-                                    position: 'relative'
-                                }}>
+                            {/* Logo Upload — Large Centered Square */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.75rem' }}>
+                                <input type="file" id="logo-settings-upload" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
+                                <label
+                                    htmlFor="logo-settings-upload"
+                                    style={{
+                                        width: '140px',
+                                        height: '140px',
+                                        borderRadius: '16px',
+                                        background: 'var(--bg-main)',
+                                        border: '2px dashed rgba(255,255,255,0.12)',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: uploadingLogo ? 'not-allowed' : 'pointer',
+                                        overflow: 'hidden',
+                                        position: 'relative',
+                                        transition: 'border-color 0.2s',
+                                        color: 'var(--text-muted)'
+                                    }}
+                                    onMouseEnter={(e) => { if (!uploadingLogo) e.currentTarget.style.borderColor = 'var(--accent)'; }}
+                                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'; }}
+                                >
                                     {(logoPreview || formData.settings?.appearance?.logoUrl) ? (
                                         <img
-                                            src={logoPreview || `${api.defaults.baseURL.replace('/api', '')}/${formData.settings?.appearance?.logoUrl}`}
-                                            alt="Logo Preview"
-                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                            src={logoPreview || `${api.defaults.baseURL.replace('/api', '')}${formData.settings?.appearance?.logoUrl}`}
+                                            alt="Logo"
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '0.75rem' }}
                                         />
                                     ) : (
-                                        <FiImage size={32} color="var(--text-muted)" />
-                                    )}
-                                    {uploadingLogo && (
-                                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <div className="spinner-small" style={{ width: '20px', height: '20px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%' }}></div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', padding: '1rem' }}>
+                                            <FiImage size={30} />
+                                            <span style={{ fontSize: '0.75rem', textAlign: 'center', fontWeight: 500 }}>Clique para
+uplodar logo</span>
                                         </div>
                                     )}
-                                </div>
-                                <div>
-                                    <p style={{ fontWeight: 700, marginBottom: '0.5rem', fontSize: '1rem' }}>Logo da Instituição</p>
-                                    <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>PNG ou JPEG, máx 2MB. Recomendado 400x400px.</p>
-                                    <label className="btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 1rem', cursor: 'pointer', fontSize: '0.85rem' }}>
-                                        <FiUpload /> {uploadingLogo ? 'Enviando...' : 'Alterar Logo'}
-                                        <input type="file" hidden accept="image/*" onChange={handleLogoUpload} disabled={uploadingLogo} />
-                                    </label>
-                                </div>
+                                    {uploadingLogo && (
+                                        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <div style={{ width: '20px', height: '20px', border: '2px solid white', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }}></div>
+                                        </div>
+                                    )}
+                                </label>
+                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.75rem', textAlign: 'center' }}>PNG ou JPEG, máx 2MB. Recomendado 400×400px.</p>
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+
                                 <div>
                                     <label style={{ display: 'block', fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Nome da Instituição</label>
                                     <input
@@ -267,6 +282,38 @@ const InstitutionSettings = () => {
                                         <div>
                                             <p style={{ fontWeight: 700, fontSize: '0.9rem' }}>{formData.settings?.appearance?.primaryColor || '#0A2540'}</p>
                                             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Esta cor será usada em botões, ícones e destaques.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Dados do Representante */}
+                        <div className="card">
+                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem', fontWeight: 700 }}>
+                                <FiUser style={{ color: 'var(--accent)' }} /> Dados do Representante
+                            </h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                <div>
+                                    <label>Nome Completo</label>
+                                    <div style={{ position: 'relative' }}>
+                                        <FiUser style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }} />
+                                        <input type="text" value={ownerData.name} onChange={(e) => setOwnerData({ ...ownerData, name: e.target.value })} style={{ paddingLeft: '2.5rem' }} placeholder="Nome do representante" />
+                                    </div>
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                    <div>
+                                        <label>Email</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <FiMail style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }} />
+                                            <input type="email" value={ownerData.email} onChange={(e) => setOwnerData({ ...ownerData, email: e.target.value })} style={{ paddingLeft: '2.5rem' }} placeholder="email@empresa.com" />
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label>Telefone</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <FiPhone style={{ position: 'absolute', left: '0.85rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', fontSize: '0.9rem' }} />
+                                            <input type="text" value={ownerData.phone} onChange={(e) => setOwnerData({ ...ownerData, phone: e.target.value })} style={{ paddingLeft: '2.5rem' }} placeholder="+258 8x xxx xxxx" />
                                         </div>
                                     </div>
                                 </div>

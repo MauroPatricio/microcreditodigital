@@ -1,6 +1,7 @@
 import express from 'express';
 import CashTransaction from '../models/CashTransaction.js';
 import Institution from '../models/Institution.js';
+import cashflowService from '../services/cashflowService.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -21,11 +22,12 @@ router.get('/summary', async (req, res) => {
         // Resolve o ObjectId correcto (req.institutionId é definido pelo middleware auth)
         const institutionId = req.institutionId || req.user.institution._id || req.user.institution;
 
-        // Saldo Inicial = valor de abertura configurado pela instituição (caixa no início)
-        // NÃO acumula transações de meses anteriores — isso seria um duplo registo
+        // Saldo Inicial = Base da Instituição + todas as entradas até ao início do mês - todas as saídas
         const institution = await Institution.findById(institutionId).select('settings.initialBalance');
         const baseInitialBalance = institution?.settings?.initialBalance || 0;
-        const saldoInicial = baseInitialBalance;
+        
+        // Obter o saldo acumulado (rollover) até ao primeiro segundo do mês corrente
+        const saldoInicial = await cashflowService.getCurrentBalance(institutionId, startOfMonth);
 
         // Transações do mês corrente
         const monthTx = await CashTransaction.aggregate([

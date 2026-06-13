@@ -7,7 +7,7 @@ const router = express.Router();
 // @route   GET /api/audit/logs
 // @desc    Listar logs de auditoria
 // @access  Private (Owner/SuperAdmin)
-router.get('/logs', protect, authorize('owner', 'super_admin'), async (req, res) => {
+router.get('/logs', protect, authorize('owner', 'super_admin', 'admin'), async (req, res) => {
     try {
         const { user, entityType, action, severity, page = 1, limit = 20 } = req.query;
 

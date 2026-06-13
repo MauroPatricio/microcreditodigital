@@ -26,6 +26,7 @@ import communicationRoutes from './src/routes/communicationRoutes.js';
 import confidenceRoutes from './src/routes/confidence.js';
 import simulationRoutes from './src/routes/simulations.js';
 import contractRoutes from './src/routes/contracts.js';
+import userRoutes from './src/routes/users.js';
 
 // Services
 import whatsappService from './src/services/whatsappService.js';
@@ -70,6 +71,7 @@ app.use('/api/communication', communicationRoutes);
 app.use('/api/confidence', confidenceRoutes);
 app.use('/api/simulations', simulationRoutes);
 app.use('/api/contracts', contractRoutes);
+app.use('/api/users', userRoutes);
 
 // Root
 app.get('/', (req, res) => {

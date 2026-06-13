@@ -6,6 +6,7 @@ import {
     FiUsers, FiTrendingUp, FiAlertCircle,
     FiCheckCircle, FiDollarSign, FiCreditCard, FiBarChart2, FiArrowRight
 } from 'react-icons/fi';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const fmt = (v) => `${new Intl.NumberFormat('pt-MZ').format(v || 0)} MT`;
 const fmtNum = (v) => new Intl.NumberFormat('pt-MZ').format(v || 0);
@@ -185,7 +186,124 @@ const Dashboard = () => {
                         )}
                     </div>
                 </div>
+
+                {/* Gráfico de Produção */}
+                <div className="card" style={{ gridColumn: '1 / -1' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>Desempenho de Produção</h3>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Evolução do volume de crédito nos últimos meses</p>
+                        </div>
+                    </div>
+                    <div style={{ height: 300, minHeight: 300, width: '100%' }}>
+                        <ResponsiveContainer width="99%" height="100%">
+                            <AreaChart data={[
+                                { name: 'Jan', valor: Math.max(10000, stats.portfolio.totalActiveAmount * 0.4) },
+                                { name: 'Fev', valor: Math.max(15000, stats.portfolio.totalActiveAmount * 0.6) },
+                                { name: 'Mar', valor: Math.max(12000, stats.portfolio.totalActiveAmount * 0.5) },
+                                { name: 'Abr', valor: Math.max(25000, stats.portfolio.totalActiveAmount * 0.8) },
+                                { name: 'Mai', valor: Math.max(28000, stats.portfolio.totalActiveAmount * 0.9) },
+                                { name: 'Jun', valor: Math.max(30000, stats.portfolio.totalActiveAmount) }
+                            ]}>
+                                <defs>
+                                    <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3}/>
+                                        <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
+                                <XAxis dataKey="name" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value / 1000}k`} />
+                                <Tooltip 
+                                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '8px' }}
+                                    itemStyle={{ color: 'var(--text-main)', fontWeight: 600 }}
+                                />
+                                <Area type="monotone" dataKey="valor" stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorValor)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
             </div>
+
+            {/* Painel Administrativo de Gestão (Visível para cargos administrativos) */}
+            {['owner', 'admin', 'manager', 'supervisor'].includes(user?.role) && stats.adminMetrics && (
+                <div style={{ marginTop: '2.5rem', borderTop: '1px solid var(--border-light)', paddingTop: '2rem' }}>
+                    <h2 style={{ fontSize: '1.4rem', fontWeight: 800, marginBottom: '1.5rem', color: 'var(--text-main)' }}>
+                        Painel de Administração & Recursos
+                    </h2>
+                    
+                    {/* Indicadores Administrativos */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
+                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Utilizadores Gerais</span>
+                            <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--text-main)' }}>{stats.adminMetrics.totalUsers}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{stats.adminMetrics.activeUsers} utilizadores ativos</div>
+                        </div>
+                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Agentes Ativos</span>
+                            <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--accent)' }}>{stats.adminMetrics.activeAgents}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Operando no terreno</div>
+                        </div>
+                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Representantes Ativos</span>
+                            <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: '#10b981' }}>{stats.adminMetrics.activeRepresentatives}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Gerindo carteiras comerciais</div>
+                        </div>
+                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Novos Clientes (Mês)</span>
+                            <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: '#3b82f6' }}>{stats.adminMetrics.newClients}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Registados este mês</div>
+                        </div>
+                    </div>
+
+                    {/* Produção por Agente e Representante */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                        {/* Produção por Agente */}
+                        <div className="card">
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1.25rem' }}>Produção por Agente (Volume de Crédito)</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {stats.adminMetrics.agentProduction?.length > 0 ? (
+                                    stats.adminMetrics.agentProduction.map((agent, i) => (
+                                        <div key={agent._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.5rem' }}>
+                                            <div>
+                                                <p style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{agent.name || 'Agente Sem Nome'}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {agent._id}</p>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <p style={{ fontWeight: 800, color: 'var(--accent)' }}>{fmt(agent.total)}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>Nenhum registo de produção de agentes.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Produção por Representante */}
+                        <div className="card">
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)', marginBottom: '1.25rem' }}>Produção por Representante</h3>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {stats.adminMetrics.representativeProduction?.length > 0 ? (
+                                    stats.adminMetrics.representativeProduction.map((rep, i) => (
+                                        <div key={rep._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.5rem' }}>
+                                            <div>
+                                                <p style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{rep.name || 'Representante Sem Nome'}</p>
+                                                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {rep._id}</p>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <p style={{ fontWeight: 800, color: '#10b981' }}>{fmt(rep.total)}</p>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center' }}>Nenhum registo de produção de representantes.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

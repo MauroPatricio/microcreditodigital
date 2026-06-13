@@ -12,6 +12,8 @@ import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
 import { calculateConfidence } from '../services/confidenceService.js';
 import simulationService from '../services/simulationService.js';
+import cashflowService from '../services/cashflowService.js';
+import CashTransaction from '../models/CashTransaction.js';
 
 const router = express.Router();
 
@@ -305,6 +307,15 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
             });
         }
 
+        // Validar saldo em caixa (Controlo Automático de Caixa)
+        const currentBalance = await cashflowService.getCurrentBalance(credit.institution);
+        if (finalApprovedAmount > currentBalance) {
+            return res.status(400).json({
+                success: false,
+                message: 'Saldo insuficiente em caixa para conceder este empréstimo.'
+            });
+        }
+
         // Atualizar crédito
         credit.approvedAmount = finalApprovedAmount;
         credit.status = 'approved';
@@ -352,6 +363,20 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
 
         credit.installments = installments;
         await credit.save();
+
+        // Criar transação de saída no caixa automaticamente (Controlo Automático de Caixa)
+        const clientForTx = await User.findById(credit.client);
+        await CashTransaction.create({
+            institution: credit.institution,
+            type: 'saida',
+            category: 'emprestimo_concedido',
+            amount: credit.approvedAmount,
+            description: `Empréstimo aprovado para ${clientForTx ? clientForTx.name : 'Cliente'}`,
+            reference: credit.loanNumber || credit._id.toString(),
+            paymentMethod: 'dinheiro', // Default, a alteração de método pode ser no desembolso
+            date: new Date(),
+            createdBy: req.user._id
+        });
 
         // Calcular comissão do agente automaticamente
         const client = await User.findById(credit.client);
@@ -728,6 +753,21 @@ router.put('/:id/liquidate', protect, authorize('manager', 'owner', 'super_admin
             performedBy: req.user._id,
             timestamp: new Date(),
             comment: `Liquidação antecipada efetuada. Valor: ${remainingBalance} MT`
+        });
+
+        // Registrar automaticamente no Fluxo de Caixa (Caixa)
+        const creditClient = await User.findById(credit.client);
+        const clientName = creditClient ? creditClient.name : 'Cliente';
+        await CashTransaction.create({
+            institution: credit.institution,
+            type: 'entrada',
+            category: 'reembolso_emprestimo',
+            amount: remainingBalance,
+            description: `Liquidação antecipada do empréstimo de ${clientName}`,
+            reference: credit.loanNumber || credit._id.toString(),
+            paymentMethod: 'dinheiro', // Ou o método usado na liquidação
+            date: new Date(),
+            createdBy: req.user._id
         });
 
         await credit.save();

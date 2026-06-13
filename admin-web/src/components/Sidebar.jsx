@@ -39,50 +39,51 @@ const Sidebar = () => {
     const sections = [
         {
             title: 'Principal',
-            roles: ['owner', 'manager', 'agent'],
+            roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'],
             items: [
-                { name: 'Global View', icon: <FiBarChart2 />, path: '/global-dashboard', roles: ['owner'] },
-                { name: 'Dashboard', icon: <FiHome />, path: '/dashboard', roles: ['owner', 'manager', 'agent'] },
-                { name: 'Caixa', icon: <FiCreditCard />, path: '/cashflow', roles: ['owner', 'manager'] },
-                { name: 'Clientes', icon: <FiUsers />, path: '/clients', roles: ['owner', 'manager', 'agent'] },
-                { name: 'Documentos', icon: <FiFileText />, path: '/pending-documents', roles: ['owner', 'manager'] },
-                { name: 'Empréstimos', icon: <FiBriefcase />, path: '/loans', roles: ['owner', 'manager', 'agent'] },
-                { name: 'Contratos', icon: <FiFileText />, path: '/contract-templates', roles: ['owner', 'manager'] },
-                { name: 'Cobranças', icon: <FiDollarSign />, path: '/payments', roles: ['owner', 'manager', 'agent'] },
+                { name: 'Global View', icon: <FiBarChart2 />, path: '/global-dashboard', roles: ['owner', 'super_admin'] },
+                { name: 'Dashboard', icon: <FiHome />, path: '/dashboard', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Caixa', icon: <FiCreditCard />, path: '/cashflow', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Clientes', icon: <FiUsers />, path: '/clients', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Documentos', icon: <FiFileText />, path: '/pending-documents', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Empréstimos', icon: <FiBriefcase />, path: '/loans', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Contratos', icon: <FiFileText />, path: '/contract-templates', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Cobranças', icon: <FiDollarSign />, path: '/payments', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
             ]
         },
         {
             title: 'Relatórios',
-            roles: ['owner', 'manager'],
+            roles: ['owner', 'manager', 'supervisor', 'representative', 'admin'],
             items: [
-                { name: 'Relatórios', icon: <FiTrendingUp />, path: '/reports', roles: ['owner', 'manager'] },
-                { name: 'Rel. Mensal', icon: <FiBarChart2 />, path: '/reports/monthly', roles: ['owner', 'manager'] },
-                { name: 'Rel. Trimestral', icon: <FiBarChart2 />, path: '/reports/quarterly', roles: ['owner', 'manager'] },
-                { name: 'Rel. BdM', icon: <FiFileText />, path: '/reports/bom', roles: ['owner', 'manager'] },
-                { name: 'Comissões', icon: <FiDollarSign />, path: '/commissions', roles: ['owner', 'manager'] },
-                { name: 'Meus Ganhos', icon: <FiTrendingUp />, path: '/my-commissions', roles: ['agent'] },
+                { name: 'Relatórios', icon: <FiTrendingUp />, path: '/reports', roles: ['owner', 'manager', 'admin', 'supervisor', 'representative'] },
+                { name: 'Rel. Mensal', icon: <FiBarChart2 />, path: '/reports/monthly', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Rel. Trimestral', icon: <FiBarChart2 />, path: '/reports/quarterly', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Rel. BdM', icon: <FiFileText />, path: '/reports/bom', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Comissões', icon: <FiDollarSign />, path: '/commissions', roles: ['owner', 'manager', 'admin', 'supervisor'] },
+                { name: 'Meus Ganhos', icon: <FiTrendingUp />, path: '/my-commissions', roles: ['agent', 'representative'] },
             ]
         },
         {
             title: 'Comunicação',
-            roles: ['owner', 'manager', 'agent'],
+            roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'],
             items: [
-                { name: 'Dashboard', icon: <FiBarChart />, path: '/communication', roles: ['owner', 'manager', 'agent'] },
-                { name: 'Enviar', icon: <FiSend />, path: '/communication/send', roles: ['owner', 'manager', 'agent'] },
-                { name: 'Agendamentos', icon: <FiCalendar />, path: '/communication/schedules', roles: ['owner', 'manager', 'agent'] },
-                { name: 'Templates', icon: <FiMail />, path: '/communication/templates', roles: ['owner', 'manager'] },
-                { name: 'Histórico', icon: <FiActivity />, path: '/communication/history', roles: ['owner', 'manager', 'agent'] },
+                { name: 'Dashboard', icon: <FiBarChart />, path: '/communication', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Enviar', icon: <FiSend />, path: '/communication/send', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Agendamentos', icon: <FiCalendar />, path: '/communication/schedules', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Templates', icon: <FiMail />, path: '/communication/templates', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Histórico', icon: <FiActivity />, path: '/communication/history', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
             ]
         },
         {
             title: 'Sistema',
-            roles: ['owner', 'manager'],
+            roles: ['owner', 'manager', 'admin', 'supervisor'],
             items: [
-                { name: 'WhatsApp', icon: <FiMessageCircle />, path: '/whatsapp-settings', roles: ['owner', 'manager'] },
-                { name: 'SMS Logs', icon: <FiSmartphone />, path: '/sms-logs', roles: ['owner', 'manager'] },
-                { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner'] },
-                { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager'] },
-                { name: 'Configurações', icon: <FiSettings />, path: '/settings', roles: ['owner'] },
+                { name: 'Utilizadores', icon: <FiUsers />, path: '/users', roles: ['owner', 'admin', 'supervisor', 'manager'] },
+                { name: 'WhatsApp', icon: <FiMessageCircle />, path: '/whatsapp-settings', roles: ['owner', 'manager', 'admin'] },
+                { name: 'SMS Logs', icon: <FiSmartphone />, path: '/sms-logs', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner', 'admin'] },
+                { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager', 'supervisor', 'admin'] },
+                { name: 'Configurações', icon: <FiSettings />, path: '/settings', roles: ['owner', 'admin'] },
             ]
         }
     ];
@@ -117,18 +118,28 @@ const Sidebar = () => {
             }}>
                 {!isCollapsed && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                        <div style={{
+                    <div style={{
                             width: '32px',
                             height: '32px',
-                            background: 'var(--accent)',
                             borderRadius: '6px',
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                            background: 'var(--accent)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            color: 'white', // Icon inside accent box is always white
-                            flexShrink: 0
                         }}>
-                            <FiTrendingUp size={18} />
+                            {user?.institution?.settings?.appearance?.logoUrl ? (
+                                <img
+                                    src={`${api.defaults.baseURL.replace('/api', '')}${user.institution.settings.appearance.logoUrl}`}
+                                    alt="Logo"
+                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                />
+                            ) : (
+                                <span style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>
+                                    {(user?.institution?.name || 'M').charAt(0).toUpperCase()}
+                                </span>
+                            )}
                         </div>
                         <span style={{ fontWeight: 700, fontSize: '1rem', whiteSpace: 'nowrap', color: 'var(--text-main)', transition: 'var(--theme-transition)' }}>
                             {user?.institution?.name || 'Microcrédito'}
