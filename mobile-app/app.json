@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "mobile-app",
-    "slug": "mobile-app",
+    "name": "CrediSmart",
+    "slug": "credismart",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -13,17 +13,67 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.microcreditodigital.mobileapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Microcrédito Digital precisa aceder à sua câmara para envio de documentos.",
+        "NSPhotoLibraryUsageDescription": "Microcrédito Digital precisa aceder às suas fotos para envio de documentos."
+      }
     },
     "android": {
+      "package": "com.microcreditodigital.mobileapp",
+      "googleServicesFile": "./google-services.json",
+      "useNextNotificationsApi": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "INTERNET",
+        "POST_NOTIFICATIONS",
+        "VIBRATE",
+        "RECEIVE_BOOT_COMPLETED",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permita que o Microcrédito Digital aceda à câmara para enviar fotos de documentos."
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "softwareKeyboardLayoutMode": "pan",
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "buildToolsVersion": "35.0.0"
+          },
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      "@react-native-community/datetimepicker",
+      "./withCustomGradleHook"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "b51017dc-cee0-41fc-9e35-740e1a50512b"
+      }
+    },
+    "owner": "mpatricio"
   }
 }
