@@ -13,6 +13,14 @@ import InstitutionSwitcher from './InstitutionSwitcher';
 const Sidebar = () => {
     const { user, logout } = useAuth();
     const [isCollapsed, setIsCollapsed] = React.useState(false);
+    const [pendingSubsCount, setPendingSubsCount] = React.useState(0);
+
+    // Calculate subscription status
+    const subscription = user?.institution?.subscription;
+    const expiresAt = subscription?.expiresAt ? new Date(subscription.expiresAt) : null;
+    const now = new Date();
+    const remainingDays = expiresAt ? Math.ceil((expiresAt - now) / (1000 * 60 * 60 * 24)) : 0;
+    const isExpired = (subscription?.status === 'expired' || remainingDays <= 0) && user?.role !== 'super_admin';
 
     // Auto-collapse on smaller screens
     React.useEffect(() => {
@@ -29,6 +37,18 @@ const Sidebar = () => {
 
         return () => window.removeEventListener('resize', handleResize);
     }, []);
+
+    React.useEffect(() => {
+        if (user?.role === 'super_admin') {
+            api.get('/institutions/subscription-requests/all')
+                .then(res => {
+                    if (res.data.success) {
+                        setPendingSubsCount(res.data.data.length);
+                    }
+                })
+                .catch(err => console.error('Erro ao buscar pedidos:', err));
+        }
+    }, [user]);
 
     // Update CSS variable for layout stability
     React.useEffect(() => {
@@ -83,7 +103,17 @@ const Sidebar = () => {
                 { name: 'SMS Logs', icon: <FiSmartphone />, path: '/sms-logs', roles: ['owner', 'manager', 'admin'] },
                 { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner', 'admin'] },
                 { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager', 'supervisor', 'admin'] },
+                { name: 'Minha Subscrição', icon: <FiCreditCard />, path: '/my-subscription', roles: ['owner'] },
                 { name: 'Configurações', icon: <FiSettings />, path: '/settings', roles: ['owner', 'admin'] },
+            ]
+        },
+        {
+            title: 'Super Admin',
+            roles: ['super_admin'],
+            items: [
+                { name: 'Dashboard Global', icon: <FiBarChart2 />, path: '/global-dashboard', roles: ['super_admin'] },
+                { name: 'Instituições', icon: <FiServer />, path: '/institution-management', roles: ['super_admin'] },
+                { name: 'Utilizadores', icon: <FiUsers />, path: '/users', roles: ['super_admin'] },
             ]
         }
     ];
@@ -136,7 +166,7 @@ const Sidebar = () => {
                                     style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                                 />
                             ) : (
-                                <span style={{ color: 'white', fontWeight: 700, fontSize: '0.9rem' }}>
+                                <span style={{ color: 'var(--text-heading)', fontWeight: 700, fontSize: '0.9rem' }}>
                                     {(user?.institution?.name || 'M').charAt(0).toUpperCase()}
                                 </span>
                             )}
@@ -200,6 +230,11 @@ const Sidebar = () => {
                                     <li key={item.path}>
                                         <NavLink
                                             to={item.path}
+                                            onClick={(e) => {
+                                                if (isExpired && item.path !== '/my-subscription') {
+                                                    e.preventDefault();
+                                                }
+                                            }}
                                             style={({ isActive }) => ({
                                                 display: 'flex',
                                                 alignItems: 'center',
@@ -208,12 +243,14 @@ const Sidebar = () => {
                                                 padding: '0.75rem 1rem',
                                                 borderRadius: '8px',
                                                 textDecoration: 'none',
-                                                color: isActive ? 'var(--text-main)' : 'var(--text-muted)',
+                                                color: (isExpired && item.path !== '/my-subscription') ? 'var(--text-disabled)' : (isActive ? 'var(--text-main)' : 'var(--text-muted)'),
                                                 background: isActive ? 'var(--sidebar-active-bg)' : 'transparent',
                                                 transition: 'all 0.2s ease, var(--theme-transition)',
                                                 fontWeight: isActive ? 600 : 500,
                                                 fontSize: '0.9rem',
-                                                position: 'relative'
+                                                position: 'relative',
+                                                opacity: (isExpired && item.path !== '/my-subscription') ? 0.5 : 1,
+                                                cursor: (isExpired && item.path !== '/my-subscription') ? 'not-allowed' : 'pointer'
                                             })}
                                             className={({ isActive }) => isActive ? 'sidebar-link active' : 'sidebar-link'}
                                         >
@@ -271,7 +308,7 @@ const Sidebar = () => {
                         justifyContent: 'center',
                         fontSize: '0.9rem',
                         fontWeight: 700,
-                        color: 'white',
+                        color: 'var(--text-heading)',
                         flexShrink: 0
                     }}>{user?.name?.charAt(0)}</div>
                     {!isCollapsed && (

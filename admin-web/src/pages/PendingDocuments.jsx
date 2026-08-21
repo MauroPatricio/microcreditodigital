@@ -85,7 +85,7 @@ const PendingDocuments = () => {
                     </p>
                 </header>
 
-                <div className="glass" style={{ padding: '1.5rem', marginBottom: '3rem', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.08)' }}>
+                <div className="glass" style={{ padding: '1.5rem', marginBottom: '3rem', borderRadius: '24px', border: '1px solid var(--border-light)' }}>
                     <div style={{ position: 'relative' }}>
                         <FiSearch size={20} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)', opacity: 0.7 }} />
                         <input
@@ -97,7 +97,7 @@ const PendingDocuments = () => {
                                 width: '100%',
                                 padding: '1.1rem 1.1rem 1.1rem 3.5rem',
                                 borderRadius: '16px',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                border: '1px solid var(--border-light)',
                                 background: 'var(--bg-main)',
                                 color: 'var(--text-main)',
                                 fontSize: '1rem',
@@ -115,7 +115,7 @@ const PendingDocuments = () => {
                         <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Sincronizando documentos...</p>
                     </div>
                 ) : filteredDocs.length === 0 ? (
-                    <div className="glass fadeIn" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '32px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="glass fadeIn" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '32px', border: '1px solid var(--border-light)' }}>
                         <div style={{
                             width: '100px',
                             height: '100px',
@@ -140,7 +140,7 @@ const PendingDocuments = () => {
                             <div key={doc._id} className="glass card-doc-premium fadeIn" style={{
                                 padding: '2rem',
                                 borderRadius: '28px',
-                                border: '1px solid rgba(255,255,255,0.08)',
+                                border: '1px solid var(--border-light)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -169,8 +169,8 @@ const PendingDocuments = () => {
                                                 height: '40px',
                                                 borderRadius: '12px',
                                                 background: 'var(--bg-main)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                color: 'rgba(255,255,255,0.6)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-muted)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -189,8 +189,8 @@ const PendingDocuments = () => {
                                                 height: '40px',
                                                 borderRadius: '12px',
                                                 background: 'var(--bg-main)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                color: 'rgba(255,255,255,0.6)',
+                                                border: '1px solid var(--border-light)',
+                                                color: 'var(--text-muted)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -209,7 +209,7 @@ const PendingDocuments = () => {
                                     <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.5rem', letterSpacing: '-0.3px' }}>
                                         {docTypeLabels[doc.type] || doc.type}
                                     </h3>
-                                    <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.25rem' }}>
+                                    <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
                                         Cliente: <strong style={{ color: 'var(--text-main)', fontWeight: 700 }}>{doc.client?.name}</strong>
                                     </p>
 
@@ -226,7 +226,7 @@ const PendingDocuments = () => {
                                         width: 'fit-content'
                                     }}>
                                         <FiClock size={14} color="var(--accent)" />
-                                        <span>Enviado em <strong style={{ color: 'rgba(255,255,255,0.8)' }}>{new Date(doc.createdAt).toLocaleDateString('pt-MZ')}</strong></span>
+                                        <span>Enviado em <strong style={{ color: 'var(--text-muted)' }}>{new Date(doc.createdAt).toLocaleDateString('pt-MZ')}</strong></span>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
@@ -318,7 +318,7 @@ const PendingDocuments = () => {
                         }}
                         onClick={e => e.stopPropagation()}
                     >
-                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontWeight: 800 }}>Visualizar: {docTypeLabels[previewDoc.type] || previewDoc.type}</h3>
                             <button
                                 onClick={() => setPreviewDoc(null)}

@@ -142,20 +142,20 @@ const QuarterlyReport = () => {
 
                         {/* Monthly Detail Table */}
                         <div className="glass" style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-light)' }}>
                                 <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>📋 Detalhe por Mês</h3>
                             </div>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ background: 'var(--bg-main)' }}>
                                         {['Mês', 'Créditos Concedidos', 'Volume', 'Arrecadado', 'Em Atraso'].map(h => (
-                                            <th key={h} style={{ padding: '0.85rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                                            <th key={h} style={{ padding: '0.85rem 1.25rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
                                         ))}
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {data.monthlyBreakdown.map(m => (
-                                        <tr key={m.month} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                        <tr key={m.month} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                             <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700 }}>{MONTH_NAMES[m.month - 1]}</td>
                                             <td style={{ padding: '0.85rem 1.25rem', color: '#3b82f6', fontWeight: 700 }}>{fmtNum(m.creditsConceded)}</td>
                                             <td style={{ padding: '0.85rem 1.25rem' }}>{fmt(m.volumeConceded)}</td>

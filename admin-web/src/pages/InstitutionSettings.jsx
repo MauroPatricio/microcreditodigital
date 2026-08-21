@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Layout from '../components/Layout';
 import api from '../api';
-import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin, FiUpload, FiImage, FiUser, FiPhone, FiMail } from 'react-icons/fi';
+import { FiSave, FiSettings, FiBriefcase, FiPercent, FiGlobe, FiMapPin, FiUpload, FiImage, FiUser, FiPhone, FiMail, FiDollarSign } from 'react-icons/fi';
 import Modal from '../components/Modal';
 import WhatsAppConnect from '../components/WhatsAppConnect';
+import TwoFactorSetup from '../components/TwoFactorSetup';
 
 const InstitutionSettings = () => {
     const { user, updateUser } = useAuth();
@@ -22,7 +23,14 @@ const InstitutionSettings = () => {
         address: { street: '', city: '' },
         settings: {
             interestRates: { default: 15, management: 2, late: 10 },
-            currency: 'MT'
+            currency: 'MT',
+            paymentAccounts: [],
+            guaranteeSettings: { isRequired: false, requiredDocuments: [] },
+            notificationSettings: {
+                channels: { sms: true, email: true, push: true },
+                remindersBeforeDue: [7, 3, 1],
+                overdueReminderFrequency: 'weekly'
+            }
         }
     });
     const [ownerData, setOwnerData] = useState({ name: '', email: '', phone: '' });
@@ -124,6 +132,54 @@ const InstitutionSettings = () => {
         }
     };
 
+    const addPaymentAccount = () => {
+        setFormData(prev => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                paymentAccounts: [
+                    ...(prev.settings.paymentAccounts || []),
+                    { provider: 'mpesa', accountName: '', accountNumber: '', isActive: true }
+                ]
+            }
+        }));
+    };
+
+    const updatePaymentAccount = (index, field, value) => {
+        setFormData(prev => {
+            const newAccounts = [...(prev.settings.paymentAccounts || [])];
+            newAccounts[index][field] = value;
+            return {
+                ...prev,
+                settings: { ...prev.settings, paymentAccounts: newAccounts }
+            };
+        });
+    };
+
+    const removePaymentAccount = (index) => {
+        setFormData(prev => {
+            const newAccounts = [...(prev.settings.paymentAccounts || [])];
+            newAccounts.splice(index, 1);
+            return {
+                ...prev,
+                settings: { ...prev.settings, paymentAccounts: newAccounts }
+            };
+        });
+    };
+
+    const toggleGuaranteeRequired = (isRequired) => {
+        setFormData(prev => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                guaranteeSettings: {
+                    ...prev.settings.guaranteeSettings,
+                    isRequired
+                }
+            }
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
@@ -173,7 +229,7 @@ const InstitutionSettings = () => {
                                         height: '140px',
                                         borderRadius: '16px',
                                         background: 'var(--bg-main)',
-                                        border: '2px dashed rgba(255,255,255,0.12)',
+                                        border: '2px dashed var(--border-light)',
                                         display: 'flex',
                                         flexDirection: 'column',
                                         alignItems: 'center',
@@ -320,6 +376,9 @@ uplodar logo</span>
                             </div>
                         </div>
 
+                        {/* Configuração de 2FA */}
+                        <TwoFactorSetup />
+
                         {/* Endereço */}
                         <div className="card">
                             <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -357,7 +416,7 @@ uplodar logo</span>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                                         <label style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-muted)' }}>Taxa de Juros Padrão (%)</label>
                                         <span style={{
-                                            color: '#fff',
+                                            color: 'var(--text-heading)',
                                             fontWeight: 800,
                                             fontSize: '1.2rem',
                                             background: 'linear-gradient(135deg, var(--accent) 0%, var(--primary-light) 100%)',
@@ -377,7 +436,7 @@ uplodar logo</span>
                                     <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>Aplicada mensalmente sobre o montante aprovado.</p>
                                 </div>
 
-                                <div style={{ paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--border-light)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
                                         <div>
                                             <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Taxa de Gestão</p>
@@ -401,6 +460,83 @@ uplodar logo</span>
                                         />
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        {/* Garantia */}
+                        <div className="card">
+                            <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiBriefcase style={{ color: 'var(--accent)' }} /> Configurações de Garantia
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <div>
+                                    <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>Exigir Garante</p>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Os clientes deverão adicionar um fiador.</p>
+                                </div>
+                                <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                                    <input 
+                                        type="checkbox" 
+                                        checked={formData.settings?.guaranteeSettings?.isRequired || false}
+                                        onChange={(e) => toggleGuaranteeRequired(e.target.checked)}
+                                        style={{ width: '18px', height: '18px', accentColor: 'var(--accent)' }}
+                                    />
+                                    <span style={{ marginLeft: '0.5rem', fontSize: '0.85rem' }}>Obrigatório</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* Contas de Pagamento */}
+                        <div className="card">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                                    <FiDollarSign style={{ color: 'var(--accent)' }} /> Contas de Pagamento
+                                </h3>
+                                <button type="button" onClick={addPaymentAccount} style={{ background: 'var(--accent)', color: '#fff', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer' }}>
+                                    + Adicionar Conta
+                                </button>
+                            </div>
+                            
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {formData.settings?.paymentAccounts?.map((account, index) => (
+                                    <div key={index} style={{ padding: '1rem', border: '1px solid var(--border-light)', borderRadius: '8px', background: 'var(--bg-main)' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr auto', gap: '1rem', alignItems: 'end' }}>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', display: 'block' }}>Provedor</label>
+                                                <select 
+                                                    value={account.provider} 
+                                                    onChange={(e) => updatePaymentAccount(index, 'provider', e.target.value)}
+                                                    style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-panel)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'var(--text-main)' }}
+                                                >
+                                                    <option value="mpesa">M-Pesa</option>
+                                                    <option value="emola">E-mola</option>
+                                                    <option value="bank">Conta Bancária</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', display: 'block' }}>Nome da Conta</label>
+                                                <input 
+                                                    type="text" value={account.accountName} placeholder="Nome do Titular"
+                                                    onChange={(e) => updatePaymentAccount(index, 'accountName', e.target.value)}
+                                                    style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-panel)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'var(--text-main)' }}
+                                                />
+                                            </div>
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.25rem', display: 'block' }}>Número</label>
+                                                <input 
+                                                    type="text" value={account.accountNumber} placeholder="Número"
+                                                    onChange={(e) => updatePaymentAccount(index, 'accountNumber', e.target.value)}
+                                                    style={{ width: '100%', padding: '0.5rem', background: 'var(--bg-panel)', border: '1px solid var(--border-light)', borderRadius: '6px', color: 'var(--text-main)' }}
+                                                />
+                                            </div>
+                                            <button type="button" onClick={() => removePaymentAccount(index)} style={{ background: 'transparent', border: 'none', color: 'var(--error)', padding: '0.5rem', cursor: 'pointer' }}>
+                                                Remover
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                                {(!formData.settings?.paymentAccounts || formData.settings?.paymentAccounts?.length === 0) && (
+                                    <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhuma conta configurada. Adicione contas para os clientes realizarem pagamentos.</p>
+                                )}
                             </div>
                         </div>
 

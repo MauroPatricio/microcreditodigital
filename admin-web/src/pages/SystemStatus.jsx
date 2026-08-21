@@ -48,7 +48,7 @@ const SystemStatus = () => {
                         </div>
 
                         {/* Title */}
-                        <h1 className="text-4xl font-black text-white mb-4 tracking-tight">
+                        <h1 className="text-4xl font-black text-[var(--text-heading)] mb-4 tracking-tight">
                             API Conectada com Sucesso
                         </h1>
 

@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Alert, Modal, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, ActivityIndicator, Modal, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Location from 'expo-location';
 import api from '../../services/api';
+import { useAlert } from '../../context/AlertContext';
 
 const DocumentCenter = () => {
     const [documents, setDocuments] = useState([
         { type: 'identity_card', label: 'Bilhete de Identidade', status: 'pending', file: null, rejectionReason: null },
         { type: 'nuit', label: 'NUIT', status: 'pending', file: null, rejectionReason: null },
         { type: 'residence_proof', label: 'Comprovativo de Residência', status: 'pending', file: null, rejectionReason: null },
+        { type: 'income_proof', label: 'Extrato Bancário (3 Meses)', status: 'pending', file: null, rejectionReason: null, isPdfAllowed: true },
         { type: 'selfie', label: 'Selfie de Verificação', status: 'pending', file: null, rejectionReason: null },
     ]);
     const [loading, setLoading] = useState(false);
@@ -19,13 +22,18 @@ const DocumentCenter = () => {
     const [permission, requestPermission] = useCameraPermissions();
     const cameraRef = useRef(null);
 
+    // Novo estado para o Modal de seleção premium
+    const [pickerModalVisible, setPickerModalVisible] = useState(false);
+    const [activeDocIndex, setActiveDocIndex] = useState(null);
+    const { showAlert } = useAlert();
+
     useEffect(() => {
         fetchDocs();
     }, []);
 
     const fetchDocs = async () => {
         try {
-            const res = await api.get('/auth/me'); // Ou rota específica de documentos
+            const res = await api.get('/auth/me'); 
             const userDocs = res.data.data.documents || [];
 
             const updatedDocs = documents.map(doc => {
@@ -49,9 +57,9 @@ const DocumentCenter = () => {
     };
 
     const takeSelfie = async () => {
-        if (!permission.granted) {
+        if (!permission?.granted) {
             const result = await requestPermission();
-            if (!result.granted) return Alert.alert('Permissão', 'Acesso à câmera é necessário.');
+            if (!result.granted) return showAlert('Permissão', 'Acesso à câmera é necessário.');
         }
         setCameraVisible(true);
     };
@@ -62,6 +70,8 @@ const DocumentCenter = () => {
             const newDocs = [...documents];
             const selfieIndex = documents.findIndex(d => d.type === 'selfie');
             newDocs[selfieIndex].file = photo.uri;
+            newDocs[selfieIndex].fileName = 'selfie.jpg';
+            newDocs[selfieIndex].mimeType = 'image/jpeg';
             setDocuments(newDocs);
             setCameraVisible(false);
         }
@@ -72,6 +82,16 @@ const DocumentCenter = () => {
             return takeSelfie();
         }
 
+        if (documents[index].isPdfAllowed) {
+            setActiveDocIndex(index);
+            setPickerModalVisible(true);
+        } else {
+            openImagePicker(index);
+        }
+    };
+
+    const openImagePicker = async (index) => {
+        setPickerModalVisible(false);
         let result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.Images,
             allowsEditing: true,
@@ -81,8 +101,32 @@ const DocumentCenter = () => {
         if (!result.canceled) {
             const newDocs = [...documents];
             newDocs[index].file = result.assets[0].uri;
-            newDocs[index].status = 'pending'; // Reset status if picking new file
+            newDocs[index].fileName = `doc_${newDocs[index].type}.jpg`;
+            newDocs[index].mimeType = 'image/jpeg';
+            newDocs[index].status = 'pending';
             setDocuments(newDocs);
+        }
+    };
+
+    const openDocumentPicker = async (index) => {
+        setPickerModalVisible(false);
+        try {
+            const result = await DocumentPicker.getDocumentAsync({
+                type: 'application/pdf',
+                copyToCacheDirectory: true
+            });
+
+            if (!result.canceled && result.assets && result.assets.length > 0) {
+                const asset = result.assets[0];
+                const newDocs = [...documents];
+                newDocs[index].file = asset.uri;
+                newDocs[index].fileName = asset.name || `doc_${newDocs[index].type}.pdf`;
+                newDocs[index].mimeType = asset.mimeType || 'application/pdf';
+                newDocs[index].status = 'pending';
+                setDocuments(newDocs);
+            }
+        } catch (error) {
+            console.error('Erro ao escolher PDF:', error);
         }
     };
 
@@ -106,23 +150,22 @@ const DocumentCenter = () => {
             const formData = new FormData();
             formData.append('document', {
                 uri: Platform.OS === 'ios' ? doc.file.replace('file://', '') : doc.file,
-                name: `doc_${doc.type}.jpg`,
-                type: 'image/jpeg',
+                name: doc.fileName || `doc_${doc.type}.jpg`,
+                type: doc.mimeType || 'image/jpeg',
             });
             formData.append('type', doc.type);
             if (locationData) {
                 formData.append('location', locationData);
             }
 
-            // Rota atualizada para o próprio perfil do cliente
             await api.post('/clients/documents/me', formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 
-            Alert.alert('Sucesso', 'Documento enviado para análise!');
+            showAlert('Sucesso', 'Documento enviado para análise!');
             fetchDocs(); // Recarregar statuses
         } catch (error) {
-            Alert.alert('Erro', 'Não foi possível enviar o documento.');
+            showAlert('Erro', 'Não foi possível enviar o documento.');
             console.error(error);
         } finally {
             setLoading(false);
@@ -177,7 +220,13 @@ const DocumentCenter = () => {
                             <View style={styles.actionArea}>
                                 {doc.file && (
                                     <View style={styles.previewBox}>
-                                        <Image source={{ uri: doc.file }} style={styles.preview} />
+                                        {doc.mimeType === 'application/pdf' ? (
+                                            <View style={[styles.preview, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' }]}>
+                                                <Feather name="file-text" size={28} color="#64748b" />
+                                            </View>
+                                        ) : (
+                                            <Image source={{ uri: doc.file }} style={styles.preview} />
+                                        )}
                                         <TouchableOpacity onPress={() => uploadDoc(doc, index)} disabled={loading} style={styles.uploadBtn}>
                                             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Enviar Novo</Text>}
                                         </TouchableOpacity>
@@ -216,16 +265,63 @@ const DocumentCenter = () => {
                     </View>
                 </CameraView>
             </Modal>
+
+            {/* Premium File Type Picker Modal */}
+            <Modal visible={pickerModalVisible} animationType="fade" transparent={true}>
+                <View style={styles.modalOverlay}>
+                    <View style={styles.premiumModalCard}>
+                        <View style={styles.modalHeaderRow}>
+                            <Text style={styles.modalTitle}>Tipo de Ficheiro</Text>
+                            <TouchableOpacity onPress={() => setPickerModalVisible(false)} style={styles.modalCloseBtn}>
+                                <Feather name="x" size={24} color="#94a3b8" />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.modalSubtitle}>Como pretende carregar este documento?</Text>
+                        
+                        <View style={styles.modalOptionsContainer}>
+                            <TouchableOpacity 
+                                style={[styles.premiumOptionCard, { borderColor: '#3b82f6', backgroundColor: '#eff6ff' }]} 
+                                onPress={() => openImagePicker(activeDocIndex)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={[styles.optionIconWrapper, { backgroundColor: '#dbeafe' }]}>
+                                    <Feather name="image" size={24} color="#3b82f6" />
+                                </View>
+                                <View style={styles.optionTextContainer}>
+                                    <Text style={[styles.optionTitle, { color: '#1d4ed8' }]}>Fotografia</Text>
+                                    <Text style={styles.optionDescription}>Escolha uma imagem da sua galeria.</Text>
+                                </View>
+                                <Feather name="chevron-right" size={20} color="#3b82f6" />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity 
+                                style={[styles.premiumOptionCard, { borderColor: '#10b981', backgroundColor: '#f0fdf4', marginTop: 14 }]} 
+                                onPress={() => openDocumentPicker(activeDocIndex)}
+                                activeOpacity={0.8}
+                            >
+                                <View style={[styles.optionIconWrapper, { backgroundColor: '#dcfce7' }]}>
+                                    <Feather name="file-text" size={24} color="#10b981" />
+                                </View>
+                                <View style={styles.optionTextContainer}>
+                                    <Text style={[styles.optionTitle, { color: '#047857' }]}>Documento PDF</Text>
+                                    <Text style={styles.optionDescription}>Selecione um ficheiro PDF do seu telemóvel.</Text>
+                                </View>
+                                <Feather name="chevron-right" size={20} color="#10b981" />
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
         </ScrollView>
     );
 };
 
 const getStatusColor = (status, light = false) => {
     switch (status) {
-        case 'verified': return light ? '#dcfce7' : '#10b981';
-        case 'rejected': return light ? '#fee2e2' : '#ef4444';
-        case 'uploaded': return light ? '#e0f2fe' : '#3b82f6';
-        default: return light ? '#f1f5f9' : '#64748b';
+        case 'verified': return light ? '#d1fae5' : '#059669'; // Darker green
+        case 'rejected': return light ? '#fee2e2' : '#b91c1c'; // Darker red
+        case 'uploaded': return light ? '#dcfce7' : '#10b981'; // Green
+        default: return light ? '#fee2e2' : '#ef4444'; // Red for pending
     }
 };
 
@@ -346,7 +442,82 @@ const styles = StyleSheet.create({
         borderColor: '#fff'
     },
     captureBtnInner: { width: 66, height: 66, borderRadius: 33, backgroundColor: '#fff' },
-    closeCamera: { alignSelf: 'flex-end', marginTop: 10 }
+    closeCamera: { alignSelf: 'flex-end', marginTop: 10 },
+    
+    // Modal premium styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        justifyContent: 'flex-end',
+    },
+    premiumModalCard: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 32,
+        borderTopRightRadius: 32,
+        padding: 28,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 28,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        elevation: 10,
+    },
+    modalHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    modalTitle: {
+        fontSize: 24,
+        fontWeight: '900',
+        color: '#1e293b',
+        letterSpacing: -0.5,
+    },
+    modalCloseBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#f1f5f9',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    modalSubtitle: {
+        fontSize: 15,
+        color: '#64748b',
+        marginBottom: 24,
+        lineHeight: 22,
+    },
+    modalOptionsContainer: {
+        width: '100%',
+    },
+    premiumOptionCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 2,
+    },
+    optionIconWrapper: {
+        width: 52,
+        height: 52,
+        borderRadius: 16,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
+    },
+    optionTextContainer: {
+        flex: 1,
+    },
+    optionTitle: {
+        fontSize: 17,
+        fontWeight: '800',
+        marginBottom: 4,
+    },
+    optionDescription: {
+        fontSize: 13,
+        color: '#64748b',
+    },
 });
 
 export default DocumentCenter;

@@ -15,7 +15,9 @@ const notificationSchema = new mongoose.Schema({
         type: String,
         enum: [
             'payment_reminder',
+            'payment_submitted',
             'payment_confirmed',
+            'payment_rejected',
             'credit_approved',
             'credit_rejected',
             'credit_disbursed',
@@ -63,6 +65,34 @@ const notificationSchema = new mongoose.Schema({
 
 // Índice para busca rápida por usuário e status de leitura
 notificationSchema.index({ user: 1, isRead: 1 });
+
+// Disparar Push Notification automaticamente após salvar a notificação
+notificationSchema.post('save', async function (doc, next) {
+    try {
+        // Obter o utilizador e o seu token de push
+        const User = mongoose.model('User');
+        const user = await User.findById(doc.user).select('pushToken');
+        
+        if (user && user.pushToken) {
+            // Import dinâmico para evitar problemas de dependência circular
+            const { default: pushService } = await import('../services/pushNotification.js');
+            
+            const result = await pushService.sendToDevice(user.pushToken, {
+                title: doc.title,
+                message: doc.message,
+                metadata: doc.metadata
+            });
+
+            if (result.success) {
+                // Opcional: Atualizar a notificação para indicar que foi enviada (sem acionar save repetido)
+                await mongoose.model('Notification').updateOne({ _id: doc._id }, { sent: true, sentAt: new Date() });
+            }
+        }
+    } catch (error) {
+        console.error('Erro no hook post save de Notification:', error.message);
+    }
+    next();
+});
 
 const Notification = mongoose.model('Notification', notificationSchema);
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { FiX, FiAlertCircle, FiCheckCircle, FiInfo } from 'react-icons/fi';
 
-const Modal = ({ isOpen, onClose, title, message, type = 'error' }) => {
+const Modal = ({ isOpen, onClose, title, message, type = 'error', children, maxWidth = '450px' }) => {
     if (!isOpen) return null;
 
     const icons = {
@@ -25,20 +25,20 @@ const Modal = ({ isOpen, onClose, title, message, type = 'error' }) => {
             alignItems: 'center',
             justifyContent: 'center',
             padding: '1.5rem',
-            background: 'rgba(2, 6, 23, 0.8)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
+            background: 'rgba(2, 6, 23, 0.95)',
             animation: 'modalFadeIn 0.3s ease-out'
         }}>
             <div className="glass" style={{
                 width: '100%',
-                maxWidth: '450px',
+                maxWidth: maxWidth,
+                maxHeight: '90vh',
+                overflowY: 'auto',
                 padding: '2.5rem',
                 borderRadius: '32px',
                 textAlign: 'center',
                 position: 'relative',
                 animation: 'modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                border: '1px solid var(--border-light)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
             }}>
                 <button
@@ -49,7 +49,7 @@ const Modal = ({ isOpen, onClose, title, message, type = 'error' }) => {
                         right: '1.5rem',
                         background: 'none',
                         border: 'none',
-                        color: 'rgba(255, 255, 255, 0.4)',
+                        color: 'var(--text-muted)',
                         cursor: 'pointer',
                         padding: '0.5rem',
                         borderRadius: '50%',
@@ -57,56 +57,66 @@ const Modal = ({ isOpen, onClose, title, message, type = 'error' }) => {
                         transition: 'all 0.2s',
                         zIndex: 2
                     }}
-                    onMouseEnter={(e) => e.currentTarget.style.color = 'white'}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-heading)'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.4)'}
                 >
                     <FiX size={20} />
                 </button>
 
-                <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
-                    <div style={{
-                        width: '80px',
-                        height: '80px',
-                        background: `${colors[type]}15`,
-                        borderRadius: '24px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: `1px solid ${colors[type]}33`
-                    }}>
-                        {icons[type]}
+                {!children && (
+                    <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'center' }}>
+                        <div style={{
+                            width: '80px',
+                            height: '80px',
+                            background: `${colors[type]}15`,
+                            borderRadius: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: `1px solid ${colors[type]}33`
+                        }}>
+                            {icons[type]}
+                        </div>
                     </div>
-                </div>
+                )}
 
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.5px' }}>
                     {title}
                 </h2>
 
-                <p style={{ color: 'rgba(255, 255, 255, 0.6)', lineHeight: '1.6', marginBottom: '2rem', fontSize: '1rem' }}>
-                    {message}
-                </p>
+                {children ? (
+                    <div style={{ textAlign: 'left', width: '100%', marginTop: '1.5rem' }}>
+                        {children}
+                    </div>
+                ) : (
+                    <>
+                        <p style={{ color: 'var(--text-muted)', lineHeight: '1.6', marginBottom: '2rem', fontSize: '1rem' }}>
+                            {message}
+                        </p>
 
-                <button
-                    onClick={onClose}
-                    className="btn-primary"
-                    style={{
-                        width: '100%',
-                        padding: '1.1rem',
-                        borderRadius: '16px',
-                        fontSize: '1rem',
-                        fontWeight: 700,
-                        background: colors[type],
-                        border: 'none',
-                        color: 'white',
-                        cursor: 'pointer',
-                        boxShadow: `0 10px 20px -5px ${colors[type]}40`,
-                        transition: 'all 0.3s'
-                    }}
-                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                >
-                    Entendido
-                </button>
+                        <button
+                            onClick={onClose}
+                            className="btn-primary"
+                            style={{
+                                width: '100%',
+                                padding: '1.1rem',
+                                borderRadius: '16px',
+                                fontSize: '1rem',
+                                fontWeight: 700,
+                                background: colors[type],
+                                border: 'none',
+                                color: 'var(--text-heading)',
+                                cursor: 'pointer',
+                                boxShadow: `0 10px 20px -5px ${colors[type]}40`,
+                                transition: 'all 0.3s'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                            onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                        >
+                            Entendido
+                        </button>
+                    </>
+                )}
             </div>
 
             <style>{`

@@ -56,34 +56,43 @@ describe('Auth Integration (Mocked DB)', () => {
         User.mockImplementation(() => ({
             save: jest.fn().mockResolvedValue(true),
             comparePassword: jest.fn().mockResolvedValue(true),
-            toJSON: jest.fn().mockReturnValue({ ...userData, _id: 'integrationUserId' })
+            toJSON: jest.fn().mockReturnValue({ ...userData, _id: '507f1f77bcf86cd799439011' })
         }));
 
         // Setup findById default (used by protect middleware)
-        const mockPopulate = jest.fn().mockResolvedValue({
+        const mockUserReturn = {
             ...userData,
-            _id: 'integrationUserId',
+            _id: '507f1f77bcf86cd799439011',
             role: 'client',
             isBlocked: false
-        });
-        User.findById.mockReturnValue({ populate: mockPopulate });
+        };
+        const mockQuery = {
+            populate: jest.fn().mockReturnThis(),
+            select: jest.fn().mockReturnThis(),
+            then: function(resolve) { resolve(mockUserReturn); }
+        };
+        User.findById.mockReturnValue(mockQuery);
     });
 
     it('should allow access to protected route with valid token', async () => {
         // Mock Login Flow
         const mockUser = {
             ...userData,
-            _id: 'integrationUserId',
+            _id: '507f1f77bcf86cd799439011',
             role: 'client',
             isBlocked: false,
             comparePassword: jest.fn().mockResolvedValue(true),
             save: jest.fn(),
-            toJSON: () => ({ ...userData, _id: 'integrationUserId' })
+            toJSON: () => ({ ...userData, _id: '507f1f77bcf86cd799439011' })
         };
 
         // Mock findOne for login
-        const mockSelect = jest.fn().mockResolvedValue(mockUser);
-        User.findOne.mockReturnValue({ select: mockSelect });
+        const loginQuery = {
+            populate: jest.fn().mockReturnThis(),
+            select: jest.fn().mockReturnThis(),
+            then: function(resolve) { resolve(mockUser); }
+        };
+        User.findOne.mockReturnValue(loginQuery);
 
         // 1. Login to get token
         const loginRes = await request(app)

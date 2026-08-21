@@ -1,0 +1,24 @@
+{
+  "name": "nhiquela-microcreditodigital",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nhiquela / CrediSmart+ - Plataforma Digital de Microcrédito",
+  "workspaces": [
+    "backend",
+    "admin-web",
+    "mobile-app"
+  ],
+  "scripts": {
+    "start:backend": "npm run start --workspace=backend",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:admin": "npm run dev --workspace=admin-web",
+    "dev:mobile": "npm run start --workspace=mobile-app",
+    "build:admin": "npm run build --workspace=admin-web",
+    "install:all": "npm install",
+    "test:backend": "npm run test --workspace=backend"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

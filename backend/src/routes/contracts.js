@@ -143,6 +143,61 @@ router.get('/credit/:creditId', protect, async (req, res) => {
     }
 });
 
+// @route   POST /api/contracts/:id/agent-sign
+// @desc    Receber assinatura digital feita no ecrã do Agente
+// @access  Private (Manager/Owner/Agent)
+router.post('/:id/agent-sign', protect, authorize('manager', 'owner', 'super_admin', 'agent'), async (req, res) => {
+    try {
+        const { signatureImage } = req.body;
+        const contract = await Contract.findById(req.params.id);
+
+        if (!contract) {
+            return res.status(404).json({ success: false, message: 'Contrato não encontrado' });
+        }
+
+        if (!signatureImage) {
+            return res.status(400).json({ success: false, message: 'Imagem de assinatura ausente' });
+        }
+
+        // Gerar Buffer do PDF com a assinatura
+        const pdfBuffer = await contractService.generateContractPDF(contract.credit, 'standard_loan', signatureImage);
+        const fileName = `contract-${contract.credit}-${Date.now()}.pdf`;
+
+        // Salvar localmente
+        const fileUrl = await contractService.uploadToLocal(pdfBuffer, fileName);
+
+        contract.fileUrl = fileUrl;
+        contract.status = 'signed';
+        contract.signedAt = new Date();
+        contract.signatureId = 'local-agent-canvas';
+        await contract.save();
+
+        // Update Credit status
+        const credit = await Credit.findById(contract.credit);
+        if (credit) {
+            credit.contractStatus = 'signed';
+            credit.signatureData = {
+                timestamp: new Date(),
+                method: 'agent_canvas',
+                agentId: req.user._id
+            };
+            await credit.save();
+        }
+
+        res.json({
+            success: true,
+            message: 'Contrato assinado com sucesso',
+            data: { contract }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao assinar contrato',
+            error: error.message
+        });
+    }
+});
+
 // @route   POST /api/contracts/webhook/signature
 // @desc    Webhook para atualização de status de assinatura
 // @access  Public

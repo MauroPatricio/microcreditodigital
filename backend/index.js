@@ -32,6 +32,7 @@ import userRoutes from './src/routes/users.js';
 import whatsappService from './src/services/whatsappService.js';
 import whatsappJobs from './src/jobs/whatsappJobs.js';
 import { messageQueueJob, automatedRemindersJob } from './src/jobs/messageWorker.js';
+import cronService from './src/services/cronService.js';
 
 // Config
 dotenv.config();
@@ -122,6 +123,9 @@ try {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV}`);
+    console.log(`\nServidor ativo na porta ${PORT}`);
+    console.log(`Ambiente: ${process.env.NODE_ENV || 'development'}`);
+    
+    // Inicia os serviços de agendamento automático
+    cronService.start();
 });

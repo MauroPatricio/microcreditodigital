@@ -188,6 +188,13 @@ router.get('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), 
 // @access  Private
 router.get('/:id', protect, async (req, res) => {
     try {
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cliente não encontrado (ID inválido)'
+            });
+        }
+
         const client = await User.findById(req.params.id)
             .select('-password')
             .populate('documents');
@@ -199,10 +206,11 @@ router.get('/:id', protect, async (req, res) => {
             });
         }
 
-        const isSameInstitution = client.institution?.toString() === req.user.institution?._id.toString();
+        const isSuperAdmin = req.user.role === 'super_admin';
+        const isSameInstitution = req.institutionId && client.institution?.toString() === req.institutionId.toString();
         const isOwnProfile = client._id.toString() === req.user._id.toString();
 
-        if (!isSameInstitution && !isOwnProfile) {
+        if (!isSuperAdmin && !isSameInstitution && !isOwnProfile) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado'
@@ -234,7 +242,18 @@ router.get('/:id', protect, async (req, res) => {
 // @access  Private
 router.put('/:id', protect, auditAction('User', 'update', 'medium'), async (req, res) => {
     try {
-        const { name, phone, address } = req.body;
+        if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(404).json({
+                success: false,
+                message: 'Cliente não encontrado (ID inválido)'
+            });
+        }
+
+        const { 
+            name, phone, address, email, identityDocument, nuit, 
+            dateOfBirth, professionalInfo, businessInfo, references,
+            guarantor
+        } = req.body;
 
         const client = await User.findById(req.params.id);
 
@@ -245,19 +264,28 @@ router.put('/:id', protect, auditAction('User', 'update', 'medium'), async (req,
             });
         }
 
-        const isSameInstitution = client.institution?.toString() === req.user.institution?._id.toString();
+        const isSuperAdmin = req.user.role === 'super_admin';
+        const isSameInstitution = req.institutionId && client.institution?.toString() === req.institutionId.toString();
         const isOwnProfile = client._id.toString() === req.user._id.toString();
 
-        if (!isSameInstitution || (req.user.role === 'client' && !isOwnProfile)) {
+        if (!isSuperAdmin && (!isSameInstitution || (req.user.role === 'client' && !isOwnProfile))) {
             return res.status(403).json({
                 success: false,
                 message: 'Acesso negado'
             });
         }
 
-        if (name) client.name = name;
-        if (phone) client.phone = phone;
-        if (address) client.address = address;
+        if (name !== undefined) client.name = name;
+        if (phone !== undefined) client.phone = phone;
+        if (address !== undefined) client.address = address;
+        if (email !== undefined) client.email = email;
+        if (identityDocument !== undefined) client.identityDocument = identityDocument;
+        if (nuit !== undefined) client.nuit = nuit;
+        if (dateOfBirth !== undefined) client.dateOfBirth = dateOfBirth;
+        if (professionalInfo !== undefined) client.professionalInfo = professionalInfo;
+        if (businessInfo !== undefined) client.businessInfo = businessInfo;
+        if (references !== undefined) client.references = references;
+        if (guarantor !== undefined) client.guarantor = guarantor;
 
         await client.save();
 
@@ -298,7 +326,7 @@ router.post('/:id/documents', protect, upload.single('document'), async (req, re
 
         const document = await Document.create({
             client: req.params.id,
-            institution: req.user.institution._id,
+            institution: req.user.institution ? req.user.institution._id : undefined,
             type: type || 'other',
             fileUrl: req.file.path,
             fileName: req.file.originalname,
@@ -343,7 +371,7 @@ router.post('/documents/me', protect, upload.single('document'), async (req, res
 
         const document = await Document.create({
             client: req.user._id,
-            institution: req.user.institution._id,
+            institution: req.user.institution ? req.user.institution._id : undefined,
             type: type || 'other',
             fileUrl: req.file.path,
             fileName: req.file.originalname,
@@ -383,12 +411,13 @@ router.put('/:id/verify', protect, authorize('manager', 'owner', 'super_admin'),
             });
         }
 
-        client.isVerified = true;
+        const { isVerified = true } = req.body;
+        client.isVerified = isVerified;
         await client.save();
 
         res.json({
             success: true,
-            message: 'Cliente verificado com sucesso',
+            message: `Cliente ${isVerified ? 'verificado' : 'invalidado'} com sucesso`,
             data: { client }
         });
     } catch (error) {

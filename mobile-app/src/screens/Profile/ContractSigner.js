@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import api from '../../services/api';
+import { useAlert } from '../../context/AlertContext';
 
 const ContractSigner = ({ route, navigation }) => {
     const { creditId, contractUrl } = route.params || {};
     const [signed, setSigned] = useState(false);
     const [loading, setLoading] = useState(false);
+    const { showAlert } = useAlert();
 
     const handleSign = async () => {
         setLoading(true);
@@ -16,10 +18,10 @@ const ContractSigner = ({ route, navigation }) => {
                 timestamp: new Date().toISOString()
             });
             setSigned(true);
-            Alert.alert('Sucesso', 'Contrato assinado digitalmente!');
+            showAlert('Sucesso', 'Contrato assinado digitalmente!');
             setTimeout(() => navigation.goBack(), 1500);
         } catch (error) {
-            Alert.alert('Erro', 'Não foi possível processar a assinatura.');
+            showAlert('Erro', 'Não foi possível processar a assinatura.');
         } finally {
             setLoading(false);
         }

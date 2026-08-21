@@ -68,6 +68,7 @@ const LoanList = () => {
             case 'paid': return { bg: 'rgba(16, 185, 129, 1)', color: 'white', label: 'Liquidado' };
             case 'pending': return { bg: 'rgba(245, 158, 11, 1)', color: 'white', label: 'Pendente' };
             case 'rejected': return { bg: 'rgba(239, 68, 68, 1)', color: 'white', label: 'Rejeitado' };
+            case 'approved': return { bg: 'rgba(16, 185, 129, 1)', color: 'white', label: 'Aprovado' };
             case 'overdue': return { bg: '#ef4444', color: 'white', label: 'Em Atraso' };
             default: return { bg: 'rgba(255, 255, 255, 0.1)', color: 'var(--text-muted)', label: status };
         }
@@ -122,7 +123,7 @@ const LoanList = () => {
                             style={{
                                 padding: '0.75rem 0.75rem 0.75rem 2.2rem',
                                 background: 'var(--bg-card)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                border: '1px solid var(--border-light)',
                                 borderRadius: '8px',
                                 color: 'var(--text-main)',
                                 fontSize: '0.85rem'
@@ -142,7 +143,7 @@ const LoanList = () => {
                         style={{
                             padding: '0.75rem',
                             background: 'var(--bg-card)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            border: '1px solid var(--border-light)',
                             borderRadius: '8px',
                             color: 'var(--text-main)',
                             fontSize: '0.85rem'
@@ -191,11 +192,11 @@ const LoanList = () => {
                                 </tr>
                             ) : loans.length > 0 ? (
                                 loans.map(loan => (
-                                    <tr key={loan._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'var(--transition)' }}>
+                                    <tr key={loan._id} style={{ borderBottom: '1px solid var(--border-light)', transition: 'var(--transition)' }}>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{
-                                                    width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)',
+                                                    width: '36px', height: '36px', borderRadius: '10px', background: 'var(--bg-main)', border: '1px solid var(--border-light)',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '0.9rem', color: 'var(--accent)'
                                                 }}>{loan.client?.name?.charAt(0)}</div>
                                                 <div>
@@ -262,8 +263,7 @@ const LoanList = () => {
                     position: 'fixed',
                     inset: 0,
                     zIndex: 2000,
-                    background: 'rgba(2, 6, 23, 0.8)',
-                    backdropFilter: 'blur(12px)',
+                    background: 'var(--bg-card-solid)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -275,12 +275,12 @@ const LoanList = () => {
                         maxWidth: '500px',
                         background: 'var(--bg-card)',
                         borderRadius: '24px',
-                        border: '1px solid rgba(255,255,255,0.1)',
+                        border: '1px solid var(--border-light)',
                         boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
                         position: 'relative',
                         overflow: 'hidden'
                     }}>
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Selecionar Cliente</h3>
                             <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
                                 <FiX size={20} />
@@ -300,7 +300,7 @@ const LoanList = () => {
                                         width: '100%',
                                         padding: '0.85rem 1rem 0.85rem 2.8rem',
                                         background: 'var(--bg-main)',
-                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        border: '1px solid var(--border-light)',
                                         borderRadius: '12px',
                                         color: 'var(--text-main)',
                                         outline: 'none'
@@ -350,7 +350,7 @@ const LoanList = () => {
                             </div>
                         </div>
 
-                        <div style={{ padding: '1.25rem', background: 'var(--bg-main)', borderTop: '1px solid rgba(255,255,255,0.05)', textAlign: 'center' }}>
+                        <div style={{ padding: '1.25rem', background: 'var(--bg-main)', borderTop: '1px solid var(--border-light)', textAlign: 'center' }}>
                             <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                 Não encontrou o cliente? <Link to="/clients/new" style={{ color: 'var(--accent)', fontWeight: 700, textDecoration: 'none' }}>Cadastrar Novo</Link>
                             </p>

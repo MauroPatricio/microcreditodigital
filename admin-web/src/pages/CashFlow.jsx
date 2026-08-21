@@ -190,7 +190,7 @@ const CashFlow = () => {
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} />
                                 <YAxis stroke="#64748b" fontSize={11} tickFormatter={v => `${(v / 1000).toFixed(0)}K`} />
-                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }} formatter={(v) => formatMT(v)} />
+                                <Tooltip contentStyle={{ background: '#1e293b', border: '1px solid var(--border-light)', borderRadius: '8px' }} formatter={(v) => formatMT(v)} />
                                 <Line type="monotone" dataKey="entradas" stroke="#10b981" strokeWidth={2} dot={false} name="Entradas" />
                                 <Line type="monotone" dataKey="saidas" stroke="#ef4444" strokeWidth={2} dot={false} name="Saídas" />
                                 <Line type="monotone" dataKey="saldo" stroke="#8b5cf6" strokeWidth={2} dot={false} name="Saldo" strokeDasharray="4 2" />
@@ -201,7 +201,7 @@ const CashFlow = () => {
 
                 {/* Transactions Table */}
                 <div className="glass" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                    <div style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <div style={{ padding: '1.25rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)' }}>
                         <h3 style={{ fontWeight: 700, fontSize: '1rem' }}>Listagem de Transações ({total})</h3>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button onClick={() => setFilterType('')} style={{ ...btnStyle, background: !filterType ? 'rgba(255,255,255,0.1)' : 'transparent' }}>Todas</button>
@@ -214,7 +214,7 @@ const CashFlow = () => {
                             <thead>
                                 <tr style={{ background: 'var(--bg-main)' }}>
                                     {['Tipo', 'Categoria', 'Descrição', 'Método', 'Valor', 'Data', 'Ações'].map(h => (
-                                        <th key={h} style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>{h}</th>
+                                        <th key={h} style={{ padding: '0.9rem 1rem', textAlign: 'left', fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', borderBottom: '1px solid var(--border-light)' }}>{h}</th>
                                     ))}
                                 </tr>
                             </thead>
@@ -224,7 +224,7 @@ const CashFlow = () => {
                                 ) : transactions.length === 0 ? (
                                     <tr><td colSpan={7} style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma transação para este período.</td></tr>
                                 ) : transactions.map(tx => (
-                                    <tr key={tx._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                                    <tr key={tx._id} style={{ borderBottom: '1px solid var(--border-light)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
                                         <td style={{ padding: '0.8rem 1rem' }}>
                                             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.75rem', fontWeight: 700, background: tx.type === 'entrada' ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.12)', color: tx.type === 'entrada' ? '#10b981' : '#ef4444' }}>
                                                 {tx.type === 'entrada' ? <FiArrowUpCircle size={12} /> : <FiArrowDownCircle size={12} />}

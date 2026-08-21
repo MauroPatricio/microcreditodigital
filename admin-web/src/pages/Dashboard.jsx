@@ -6,7 +6,7 @@ import {
     FiUsers, FiTrendingUp, FiAlertCircle,
     FiCheckCircle, FiDollarSign, FiCreditCard, FiBarChart2, FiArrowRight
 } from 'react-icons/fi';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const fmt = (v) => `${new Intl.NumberFormat('pt-MZ').format(v || 0)} MT`;
 const fmtNum = (v) => new Intl.NumberFormat('pt-MZ').format(v || 0);
@@ -23,19 +23,34 @@ const Dashboard = () => {
     });
     const [monthlyData, setMonthlyData] = useState(null);
     const [cashSummary, setCashSummary] = useState(null);
+    const [portfolioData, setPortfolioData] = useState(null);
+    const [revenueData, setRevenueData] = useState(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchAll = async () => {
             try {
-                const [dashRes, monthlyRes, cashRes] = await Promise.allSettled([
+                const [dashRes, monthlyRes, cashRes, portRes, revRes] = await Promise.allSettled([
                     api.get('/analytics/dashboard'),
                     api.get(`/reports/monthly?month=${now.getMonth() + 1}&year=${now.getFullYear()}`),
-                    api.get(`/cashflow/summary?month=${now.getMonth() + 1}&year=${now.getFullYear()}`)
+                    api.get(`/cashflow/summary?month=${now.getMonth() + 1}&year=${now.getFullYear()}`),
+                    api.get('/analytics/portfolio'),
+                    api.get('/analytics/revenue?months=6')
                 ]);
                 if (dashRes.status === 'fulfilled' && dashRes.value.data.success) setStats(dashRes.value.data.data);
                 if (monthlyRes.status === 'fulfilled' && monthlyRes.value.data.success) setMonthlyData(monthlyRes.value.data.data);
                 if (cashRes.status === 'fulfilled' && cashRes.value.data.success) setCashSummary(cashRes.value.data.data);
+                if (portRes.status === 'fulfilled' && portRes.value.data.success) setPortfolioData(portRes.value.data.data);
+                
+                if (revRes.status === 'fulfilled' && revRes.value.data.success) {
+                    const revMap = revRes.value.data.data.revenueByMonth;
+                    const chartData = Object.keys(revMap).sort().map(k => {
+                        const [year, month] = k.split('-');
+                        const monthName = new Date(year, parseInt(month)-1, 1).toLocaleString('pt-MZ', { month: 'short' });
+                        return { name: monthName, valor: revMap[k] };
+                    });
+                    setRevenueData(chartData);
+                }
             } catch (error) {
                 console.error('Dashboard error', error);
             } finally {
@@ -81,6 +96,14 @@ const Dashboard = () => {
             {/* KPI Row 1 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>
                 <StatCard
+                    title="Dinheiro em Caixa"
+                    value={fmt(stats.portfolio.currentBalance)}
+                    icon={FiCreditCard}
+                    color={stats.portfolio.currentBalance >= 0 ? 'var(--success)' : 'var(--danger)'}
+                    subtitle="Disponível para empréstimo"
+                    onClick={() => navigate('/cashflow')}
+                />
+                <StatCard
                     title="Capital em Carteira"
                     value={fmt(stats.portfolio.totalActiveAmount)}
                     icon={FiTrendingUp}
@@ -97,25 +120,26 @@ const Dashboard = () => {
                     onClick={() => navigate('/loans')}
                 />
                 <StatCard
-                    title="PAR (Portfolio At Risk)"
-                    value={`${stats.portfolio.par || 0}%`}
+                    title="Taxa de Inadimplência"
+                    value={`${stats.performance?.defaultRate || 0}%`}
                     icon={FiBarChart2}
-                    color={stats.portfolio.par > 5 ? 'var(--danger)' : 'var(--success)'}
-                    subtitle="Risco da carteira ativa"
+                    color={stats.performance?.defaultRate > 5 ? 'var(--danger)' : 'var(--success)'}
+                    subtitle={`${stats.performance?.defaultedCredits || 0} créditos em atraso`}
+                    onClick={() => navigate('/loans')}
                 />
                 <StatCard
-                    title="Total Recuperado"
+                    title="Capital Recuperado"
                     value={fmt(stats.portfolio.totalRecovered)}
                     icon={FiCheckCircle}
                     color="var(--success)"
-                    subtitle="Volume total de reembolsos"
+                    subtitle="Volume total reembolsado"
                 />
                 <StatCard
-                    title="Rendimento Juros"
-                    value={fmt(stats.monthly.interestIncome)}
+                    title="Lucro Acumulado"
+                    value={fmt(stats.performance.totalRevenue)}
                     icon={FiDollarSign}
-                    color="var(--blue-highlight)"
-                    subtitle="Receita de juros (Mês)"
+                    color="var(--warning)"
+                    subtitle="Juros recebidos global"
                     onClick={() => navigate('/cashflow')}
                 />
                 <StatCard
@@ -126,16 +150,6 @@ const Dashboard = () => {
                     subtitle={`${fmtNum(stats.clients.verified)} verificados`}
                     onClick={() => navigate('/clients')}
                 />
-                {cashSummary && (
-                    <StatCard
-                        title="Saldo de Caixa"
-                        value={fmt(cashSummary.saldoFinal)}
-                        icon={FiCreditCard}
-                        color={cashSummary.saldoFinal >= 0 ? 'var(--success)' : 'var(--danger)'}
-                        subtitle="Saldo atual do mês"
-                        onClick={() => navigate('/cashflow')}
-                    />
-                )}
             </div>
 
             {/* Second row */}
@@ -188,27 +202,20 @@ const Dashboard = () => {
                 </div>
 
                 {/* Gráfico de Produção */}
-                <div className="card" style={{ gridColumn: '1 / -1' }}>
+                <div className="card" style={{ gridColumn: '1 / 2' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <div>
-                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>Desempenho de Produção</h3>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Evolução do volume de crédito nos últimos meses</p>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>Evolução de Receita</h3>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Receita de juros e capital nos últimos 6 meses</p>
                         </div>
                     </div>
                     <div style={{ height: 300, minHeight: 300, width: '100%' }}>
                         <ResponsiveContainer width="99%" height="100%">
-                            <AreaChart data={[
-                                { name: 'Jan', valor: Math.max(10000, stats.portfolio.totalActiveAmount * 0.4) },
-                                { name: 'Fev', valor: Math.max(15000, stats.portfolio.totalActiveAmount * 0.6) },
-                                { name: 'Mar', valor: Math.max(12000, stats.portfolio.totalActiveAmount * 0.5) },
-                                { name: 'Abr', valor: Math.max(25000, stats.portfolio.totalActiveAmount * 0.8) },
-                                { name: 'Mai', valor: Math.max(28000, stats.portfolio.totalActiveAmount * 0.9) },
-                                { name: 'Jun', valor: Math.max(30000, stats.portfolio.totalActiveAmount) }
-                            ]}>
+                            <AreaChart data={revenueData || []}>
                                 <defs>
                                     <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="var(--accent)" stopOpacity={0.3}/>
-                                        <stop offset="95%" stopColor="var(--accent)" stopOpacity={0}/>
+                                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                                        <stop offset="95%" stopColor="#10b981" stopOpacity={0.0}/>
                                     </linearGradient>
                                 </defs>
                                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-light)" vertical={false} />
@@ -218,8 +225,44 @@ const Dashboard = () => {
                                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '8px' }}
                                     itemStyle={{ color: 'var(--text-main)', fontWeight: 600 }}
                                 />
-                                <Area type="monotone" dataKey="valor" stroke="var(--accent)" strokeWidth={3} fillOpacity={1} fill="url(#colorValor)" />
+                                <Area type="monotone" dataKey="valor" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorValor)" />
                             </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </div>
+
+                {/* Gráfico de Portfolio */}
+                <div className="card" style={{ gridColumn: '2 / 3' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-main)' }}>Estado do Portfolio</h3>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Distribuição dos créditos ativos</p>
+                        </div>
+                    </div>
+                    <div style={{ height: 300, minHeight: 300, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={[
+                                        { name: 'Em dia', value: stats.portfolio.activeCredits },
+                                        { name: 'Em atraso', value: stats.portfolio.overdueCredits }
+                                    ]}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={70}
+                                    outerRadius={90}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    <Cell key="cell-1" fill="#10b981" />
+                                    <Cell key="cell-2" fill="#ef4444" />
+                                </Pie>
+                                <Tooltip 
+                                    contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '8px' }}
+                                    itemStyle={{ color: 'var(--text-main)', fontWeight: 600 }}
+                                />
+                                <Legend verticalAlign="bottom" height={36}/>
+                            </PieChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
@@ -234,22 +277,22 @@ const Dashboard = () => {
                     
                     {/* Indicadores Administrativos */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
-                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="card" style={{ background: 'var(--bg-card-hover)' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Utilizadores Gerais</span>
                             <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--text-main)' }}>{stats.adminMetrics.totalUsers}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{stats.adminMetrics.activeUsers} utilizadores ativos</div>
                         </div>
-                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="card" style={{ background: 'var(--bg-card-hover)' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Agentes Ativos</span>
                             <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: 'var(--accent)' }}>{stats.adminMetrics.activeAgents}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Operando no terreno</div>
                         </div>
-                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="card" style={{ background: 'var(--bg-card-hover)' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Representantes Ativos</span>
                             <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: '#10b981' }}>{stats.adminMetrics.activeRepresentatives}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Gerindo carteiras comerciais</div>
                         </div>
-                        <div className="card" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                        <div className="card" style={{ background: 'var(--bg-card-hover)' }}>
                             <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase' }}>Novos Clientes (Mês)</span>
                             <div style={{ fontSize: '1.6rem', fontWeight: 800, marginTop: '0.5rem', color: '#3b82f6' }}>{stats.adminMetrics.newClients}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Registados este mês</div>
@@ -264,7 +307,7 @@ const Dashboard = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {stats.adminMetrics.agentProduction?.length > 0 ? (
                                     stats.adminMetrics.agentProduction.map((agent, i) => (
-                                        <div key={agent._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.5rem' }}>
+                                        <div key={agent._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.5rem' }}>
                                             <div>
                                                 <p style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{agent.name || 'Agente Sem Nome'}</p>
                                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {agent._id}</p>
@@ -286,7 +329,7 @@ const Dashboard = () => {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {stats.adminMetrics.representativeProduction?.length > 0 ? (
                                     stats.adminMetrics.representativeProduction.map((rep, i) => (
-                                        <div key={rep._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255,255,255,0.03)', paddingBottom: '0.5rem' }}>
+                                        <div key={rep._id || i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-light)', paddingBottom: '0.5rem' }}>
                                             <div>
                                                 <p style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-main)' }}>{rep.name || 'Representante Sem Nome'}</p>
                                                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>ID: {rep._id}</p>

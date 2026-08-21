@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import { FiFileText, FiPlus, FiSave, FiCode, FiEye, FiX, FiCheckCircle, FiInfo, FiCopy, FiTrendingUp } from 'react-icons/fi';
+import { FiFileText, FiPlus, FiSave, FiCode, FiEye, FiX, FiCheckCircle, FiInfo, FiCopy, FiTrendingUp, FiTrash2 } from 'react-icons/fi';
 import api from '../api';
 import Modal from '../components/Modal';
+import { useAuth } from '../context/AuthContext';
 
 const ContractTemplateManager = () => {
     const [templates, setTemplates] = useState([]);
@@ -10,6 +11,8 @@ const ContractTemplateManager = () => {
     const [preview, setPreview] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+    const { user } = useAuth();
+    const institution = user?.activeInstitution || user?.institution;
 
     useEffect(() => {
         fetchTemplates();
@@ -52,13 +55,47 @@ const ContractTemplateManager = () => {
         }
     };
 
+    const handleDelete = async (id, e) => {
+        e.stopPropagation();
+        if (window.confirm('Tem certeza que deseja apagar este template de contrato? Esta ação é irreversível.')) {
+            try {
+                await api.delete(`/contract-templates/${id}`);
+                setModal({
+                    isOpen: true,
+                    title: 'Removido',
+                    message: 'Template de contrato removido com sucesso.',
+                    type: 'success'
+                });
+                if (editing?._id === id) setEditing(null);
+                fetchTemplates();
+            } catch (error) {
+                setModal({
+                    isOpen: true,
+                    title: 'Erro',
+                    message: 'Não foi possível remover o template.',
+                    type: 'error'
+                });
+            }
+        }
+    };
+
     const placeholders = [
         { tag: '{{client_name}}', desc: 'Nome do Cliente' },
-        { tag: '{{client_id}}', desc: 'Número do BI' },
+        { tag: '{{client_id}}', desc: 'Número do BI / Documento' },
+        { tag: '{{client_nuit}}', desc: 'NUIT do Cliente' },
+        { tag: '{{client_email}}', desc: 'Email do Cliente' },
+        { tag: '{{client_phone}}', desc: 'Telefone do Cliente' },
+        { tag: '{{client_address}}', desc: 'Endereço do Cliente' },
         { tag: '{{amount}}', desc: 'Valor Aprovado' },
+        { tag: '{{total_amount}}', desc: 'Valor Total a Pagar' },
         { tag: '{{term}}', desc: 'Prazo em Meses' },
+        { tag: '{{interest_rate}}', desc: 'Taxa de Juros (%)' },
         { tag: '{{monthly_payment}}', desc: 'Prestação Mensal' },
+        { tag: '{{loan_purpose}}', desc: 'Finalidade do Empréstimo' },
+        { tag: '{{start_date}}', desc: 'Data de Início' },
+        { tag: '{{end_date}}', desc: 'Data de Fim (Vencimento)' },
         { tag: '{{institution_name}}', desc: 'Sua Instituição' },
+        { tag: '{{institution_nuit}}', desc: 'NUIT da Instituição' },
         { tag: '{{institution_logo}}', desc: 'Logo da Instituição (URL)' }
     ];
 
@@ -91,7 +128,7 @@ const ContractTemplateManager = () => {
                             }}>
                                 <FiFileText size={28} />
                             </div>
-                            <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '-1.5px', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                            <h1 style={{ fontSize: '2rem', fontWeight: 800 }}>
                                 Gestão de Contratos
                             </h1>
                         </div>
@@ -166,7 +203,7 @@ const ContractTemplateManager = () => {
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
-                                        color: editing?._id === t._id ? 'white' : 'var(--text-muted)',
+                                        color: editing?._id === t._id ? 'var(--text-heading)' : 'var(--text-muted)',
                                         transition: 'all 0.3s'
                                     }}>
                                         <FiFileText size={22} />
@@ -176,13 +213,14 @@ const ContractTemplateManager = () => {
                                         <span style={{ padding: '0.3rem 0.75rem', background: 'var(--bg-main)', color: 'var(--text-muted)', borderRadius: '12px', fontSize: '0.7rem', fontWeight: 900 }}>v{t.version}.0</span>
                                     </div>
                                 </div>
-                                <h3 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.5rem', color: editing?._id === t._id ? 'white' : 'inherit', letterSpacing: '-0.3px', position: 'relative', zIndex: 1 }}>{t.title}</h3>
+                                <h3 style={{ fontWeight: 800, fontSize: '1.3rem', marginBottom: '0.5rem', color: editing?._id === t._id ? 'var(--text-heading)' : 'inherit', letterSpacing: '-0.3px', position: 'relative', zIndex: 1 }}>{t.title}</h3>
                                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '2rem', fontFamily: 'monospace', opacity: 0.7, position: 'relative', zIndex: 1 }}>SLUG: {t.name}</p>
 
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
-                                    <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.4)', fontWeight: 500 }}>{new Date(t.updatedAt).toLocaleDateString('pt-MZ')}</span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 500 }}>{new Date(t.updatedAt).toLocaleDateString('pt-MZ')}</span>
                                     <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                        <button className="btn-icon-premium" onClick={(e) => { e.stopPropagation(); setPreview(t); }} style={{ width: '40px', height: '40px' }}><FiEye size={18} /></button>
+                                        <button className="btn-icon-premium" onClick={(e) => { e.stopPropagation(); setPreview(t); }} style={{ width: '40px', height: '40px' }} title="Visualizar PDF"><FiEye size={18} /></button>
+                                        <button className="btn-icon-premium" onClick={(e) => handleDelete(t._id, e)} style={{ width: '40px', height: '40px', color: '#EF4444', borderColor: 'rgba(239, 68, 68, 0.2)' }} title="Eliminar Template"><FiTrash2 size={18} /></button>
                                     </div>
                                 </div>
                             </div>
@@ -198,7 +236,7 @@ const ContractTemplateManager = () => {
                                 borderRadius: '32px',
                                 position: editing ? 'sticky' : 'relative',
                                 top: '2rem',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                border: '1px solid var(--border-light)',
                                 boxShadow: '0 40px 80px -20px rgba(0, 0, 0, 0.6)',
                                 animation: 'fadeInRight 0.4s cubic-bezier(0.23, 1, 0.32, 1)'
                             }}
@@ -208,7 +246,7 @@ const ContractTemplateManager = () => {
                                     <h2 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.5px' }}>{editing._id ? 'Ajustar Modelo' : 'Novo Modelo Legal'}</h2>
                                     <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginTop: '0.25rem' }}>Defina as variáveis e o conteúdo jurídico.</p>
                                 </div>
-                                <button onClick={() => setEditing(null)} style={{ background: 'var(--bg-main)', color: 'rgba(255,255,255,0.4)', width: '40px', height: '40px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                <button onClick={() => setEditing(null)} style={{ background: 'var(--bg-main)', color: 'var(--bg-card-hover)', width: '40px', height: '40px', borderRadius: '12px', border: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                     <FiX size={24} />
                                 </button>
                             </div>
@@ -221,7 +259,7 @@ const ContractTemplateManager = () => {
                                             type="text"
                                             value={editing.name}
                                             onChange={e => setEditing({ ...editing, name: e.target.value })}
-                                            style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                                            style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                             placeholder="ex: contrato_consumo"
                                             required
                                         />
@@ -232,7 +270,7 @@ const ContractTemplateManager = () => {
                                             type="text"
                                             value={editing.title}
                                             onChange={e => setEditing({ ...editing, title: e.target.value })}
-                                            style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                                            style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                             placeholder="ex: Contrato de Empréstimo Pessoal"
                                             required
                                         />
@@ -255,7 +293,7 @@ const ContractTemplateManager = () => {
                                                 width: '100%',
                                                 padding: '1.5rem',
                                                 background: 'var(--bg-main)',
-                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                border: '1px solid var(--border-light)',
                                                 borderRadius: '20px',
                                                 color: 'var(--text-main)',
                                                 fontFamily: '"Fira Code", monospace',
@@ -293,7 +331,7 @@ const ContractTemplateManager = () => {
                                                     fontSize: '0.75rem',
                                                     background: 'var(--bg-main)',
                                                     padding: '0.6rem 0.9rem',
-                                                    border: '1px solid rgba(255,255,255,0.08)',
+                                                    border: '1px solid var(--border-light)',
                                                     borderRadius: '12px',
                                                     color: 'var(--text-main)',
                                                     display: 'flex',
@@ -343,7 +381,7 @@ const ContractTemplateManager = () => {
                                             height: '64px',
                                             borderRadius: '20px',
                                             background: 'var(--bg-main)',
-                                            border: '1px solid rgba(255,255,255,0.1)',
+                                            border: '1px solid var(--border-light)',
                                             color: 'var(--text-main)',
                                             fontWeight: 700,
                                             cursor: 'pointer'
@@ -381,7 +419,7 @@ const ContractTemplateManager = () => {
                     <div style={{
                         padding: '1rem 2.5rem',
                         background: 'rgba(15, 23, 42, 0.8)',
-                        borderBottom: '1px solid rgba(255,255,255,0.1)',
+                        borderBottom: '1px solid var(--border-light)',
                         display: 'flex',
                         justifyContent: 'space-between',
                         alignItems: 'center'
@@ -424,7 +462,7 @@ const ContractTemplateManager = () => {
                                     color: 'var(--text-main)',
                                     padding: '0.75rem 1.5rem',
                                     borderRadius: '12px',
-                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    border: '1px solid var(--border-light)',
                                     cursor: 'pointer'
                                 }}
                             >
@@ -451,10 +489,15 @@ const ContractTemplateManager = () => {
                         >
                             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                    <div style={{ width: '60px', height: '60px', background: 'var(--accent)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'var(--text-main)' }}>
-                                        <FiTrendingUp size={32} />
-                                    </div>
-                                    <h1 style={{ fontSize: '18pt', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.5rem' }}>{preview.title}</h1>
+                                    {institution?.logo ? (
+                                        <img src={institution.logo} alt={institution.name} style={{ maxWidth: '120px', maxHeight: '80px', objectFit: 'contain', margin: '0 auto 1rem' }} />
+                                    ) : (
+                                        <div style={{ width: '60px', height: '60px', background: 'var(--accent)', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 1rem', color: 'var(--text-main)' }}>
+                                            <FiTrendingUp size={32} />
+                                        </div>
+                                    )}
+                                    <h1 style={{ fontSize: '18pt', fontWeight: 800, textTransform: 'uppercase', marginBottom: '0.25rem' }}>{institution?.name || 'MINHA INSTITUIÇÃO'}</h1>
+                                    <h2 style={{ fontSize: '14pt', fontWeight: 600, color: '#555', marginBottom: '0.5rem' }}>{preview.title}</h2>
                                 </div>
                             </div>
 
@@ -469,10 +512,15 @@ const ContractTemplateManager = () => {
                                 {preview.content
                                     .replace(/{{client_name}}/g, 'MAURO PATRÍCIO DOS SANTOS')
                                     .replace(/{{client_id}}/g, '001234567LA045')
-                                    .replace(/{{amount}}/g, '250.000,00 Kz')
+                                    .replace(/{{amount}}/g, '250.000,00 MT')
                                     .replace(/{{term}}/g, '12 meses')
-                                    .replace(/{{monthly_payment}}/g, '25.500,00 Kz')
-                                    .replace(/{{institution_name}}/g, 'MICROCRÉDITO DIGITAL HUB')
+                                    .replace(/{{interest_rate}}/g, '15%')
+                                    .replace(/{{monthly_payment}}/g, '25.500,00 MT')
+                                    .replace(/{{start_date}}/g, new Date().toLocaleDateString('pt-MZ'))
+                                    .replace(/{{end_date}}/g, new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toLocaleDateString('pt-MZ'))
+                                    .replace(/{{institution_name}}/g, institution?.name || 'MINHA INSTITUIÇÃO')
+                                    .replace(/{{institution_nuit}}/g, institution?.nuit || '000000000')
+                                    .replace(/{{institution_logo}}/g, institution?.logo || '')
                                 }
                             </div>
 

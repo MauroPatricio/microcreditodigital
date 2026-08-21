@@ -17,7 +17,12 @@ const UserForm = () => {
         password: '',
         identityDocument: '',
         role: 'agent',
-        isActive: true
+        isActive: true,
+        isPublicServant: false,
+        company: '',
+        guarantorName: '',
+        guarantorDocument: '',
+        guarantorPhone: ''
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -40,7 +45,12 @@ const UserForm = () => {
                     password: '', // Não preencher a senha
                     identityDocument: u.identityDocument || '',
                     role: u.role || 'agent',
-                    isActive: !u.isBlocked
+                    isActive: !u.isBlocked,
+                    isPublicServant: u.professionalInfo?.employmentStatus === 'civil_servant',
+                    company: u.professionalInfo?.employer || '',
+                    guarantorName: u.guarantor?.name || '',
+                    guarantorDocument: u.guarantor?.documentNumber || '',
+                    guarantorPhone: u.guarantor?.phone || ''
                 });
             }
         } catch (err) {
@@ -63,6 +73,32 @@ const UserForm = () => {
 
         try {
             const dataToSubmit = { ...formData, isBlocked: !formData.isActive };
+
+            if (formData.role === 'client') {
+                if (!formData.guarantorName || !formData.guarantorDocument || !formData.guarantorPhone) {
+                    setError('Para clientes, os dados do garante são obrigatórios.');
+                    setLoading(false);
+                    return;
+                }
+                if (formData.isPublicServant && !formData.company) {
+                    setError('Por favor, informe a instituição pública/ministério.');
+                    setLoading(false);
+                    return;
+                }
+
+                dataToSubmit.guarantor = {
+                    name: formData.guarantorName,
+                    documentNumber: formData.guarantorDocument,
+                    phone: formData.guarantorPhone,
+                    relationship: 'Outro'
+                };
+                
+                dataToSubmit.professionalInfo = {
+                    employmentStatus: formData.isPublicServant ? 'civil_servant' : 'employed',
+                    employer: formData.company
+                };
+            }
+
             if (isEditing) {
                 if (!dataToSubmit.password) delete dataToSubmit.password;
                 await api.put(`/users/${id}`, dataToSubmit);
@@ -171,6 +207,54 @@ const UserForm = () => {
                             </div>
                         </div>
                     </div>
+
+                    {formData.role === 'client' && (
+                        <div style={{ marginTop: '1rem', padding: '1.5rem', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--text-main)' }}>Dados Adicionais do Cliente</h3>
+                            
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <input 
+                                    type="checkbox" 
+                                    name="isPublicServant" 
+                                    checked={formData.isPublicServant} 
+                                    onChange={handleChange} 
+                                    style={{ width: 'auto', transform: 'scale(1.2)' }} 
+                                    id="isPublicServantCheckbox"
+                                />
+                                <label htmlFor="isPublicServantCheckbox" style={{ margin: 0, textTransform: 'none', letterSpacing: 0, fontSize: '0.9rem', cursor: 'pointer', fontWeight: 600 }}>
+                                    É Funcionário Público?
+                                </label>
+                            </div>
+
+                            <div style={{ marginBottom: '1.5rem' }}>
+                                <label>{formData.isPublicServant ? 'Instituição / Ministério onde trabalha *' : 'Empresa / Instituição (Opcional)'}</label>
+                                <input 
+                                    type="text" 
+                                    name="company" 
+                                    value={formData.company} 
+                                    onChange={handleChange} 
+                                    placeholder={formData.isPublicServant ? 'Ex: Ministério da Educação' : 'Ex: Empresa Privada'} 
+                                    required={formData.isPublicServant}
+                                />
+                            </div>
+
+                            <h4 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--primary)', marginTop: '1.5rem' }}>Dados do Garante *</h4>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1rem' }}>
+                                <div>
+                                    <label>Nome do Garante *</label>
+                                    <input type="text" name="guarantorName" value={formData.guarantorName} onChange={handleChange} required placeholder="Nome completo" />
+                                </div>
+                                <div>
+                                    <label>Número do BI *</label>
+                                    <input type="text" name="guarantorDocument" value={formData.guarantorDocument} onChange={handleChange} required placeholder="Número do documento" />
+                                </div>
+                            </div>
+                            <div>
+                                <label>Telemóvel do Garante *</label>
+                                <input type="text" name="guarantorPhone" value={formData.guarantorPhone} onChange={handleChange} required placeholder="+258..." />
+                            </div>
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
                         <input 

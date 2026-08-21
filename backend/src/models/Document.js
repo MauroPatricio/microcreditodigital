@@ -8,8 +8,7 @@ const documentSchema = new mongoose.Schema({
     },
     institution: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Institution',
-        required: true
+        ref: 'Institution'
     },
     type: {
         type: String,

@@ -36,7 +36,7 @@ export const clientValidation = [
 
 // Validações para login
 export const loginValidation = [
-    body('email').isEmail().withMessage('Email inválido').trim(),
+    body('email').notEmpty().withMessage('Email ou Telefone é obrigatório').trim(),
     body('password').notEmpty().withMessage('Senha é obrigatória')
 ];
 

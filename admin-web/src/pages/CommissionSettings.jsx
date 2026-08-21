@@ -162,13 +162,13 @@ const CommissionSettings = () => {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '1.5rem' }}>
                 {/* Detailed Table */}
                 <div className="card" style={{ padding: 0 }}>
-                    <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Lista de Comissões</h3>
                     </div>
                     <div style={{ overflowX: 'auto' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                                <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
                                     <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Agente</th>
                                     <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Crédito</th>
                                     <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Montante</th>
@@ -185,7 +185,7 @@ const CommissionSettings = () => {
                                     </tr>
                                 ) : (
                                     commissions.map((comm) => (
-                                        <tr key={comm._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                        <tr key={comm._id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                             <td style={{ padding: '1rem 1.5rem' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 700 }}>
@@ -250,7 +250,7 @@ const CommissionSettings = () => {
                             <p style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Sem dados.</p>
                         ) : (
                             summary?.byAgent?.map((item) => (
-                                <div key={item.agent._id} style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div key={item.agent._id} style={{ padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                         <span style={{ fontWeight: 600 }}>{item.agent.name}</span>
                                         <span style={{ color: 'var(--accent)', fontWeight: 700 }}>{formatCurrency(item.total)}</span>

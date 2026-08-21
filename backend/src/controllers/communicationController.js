@@ -12,7 +12,7 @@ export const sendMessage = async (req, res) => {
         const result = await communicationService.sendImmediate({
             clientId,
             agentId: req.user.id,
-            institutionId: req.user.institutionId,
+            institutionId: req.institutionId,
             channel,
             message,
             type: type || 'manual'
@@ -32,7 +32,7 @@ export const scheduleMessage = async (req, res) => {
         const result = await communicationService.scheduleMessage({
             clientId,
             agentId: req.user.id,
-            institutionId: req.user.institutionId,
+            institutionId: req.institutionId,
             channel,
             message,
             scheduledFor,
@@ -51,7 +51,7 @@ export const scheduleMessage = async (req, res) => {
 export const getHistory = async (req, res) => {
     try {
         const { status, channel, type, limit = 50, page = 1 } = req.query;
-        const query = { institution: req.user.institutionId };
+        const query = { institution: req.institutionId };
 
         if (status) query.status = status;
         if (channel) query.channel = channel;
@@ -79,7 +79,7 @@ export const getHistory = async (req, res) => {
  */
 export const getStats = async (req, res) => {
     try {
-        const institutionId = req.user.institutionId;
+        const institutionId = req.institutionId;
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -120,7 +120,7 @@ export const getStats = async (req, res) => {
 export const getTemplates = async (req, res) => {
     try {
         const templates = await CommunicationTemplate.find({
-            $or: [{ institution: req.user.institutionId }, { institution: null }]
+            $or: [{ institution: req.institutionId }, { institution: null }]
         });
         res.status(200).json({ success: true, data: templates });
     } catch (error) {
@@ -132,7 +132,7 @@ export const createTemplate = async (req, res) => {
     try {
         const template = await CommunicationTemplate.create({
             ...req.body,
-            institution: req.user.institutionId
+            institution: req.institutionId
         });
         res.status(201).json({ success: true, data: template });
     } catch (error) {

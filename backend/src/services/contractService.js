@@ -236,18 +236,18 @@ class ContractService {
     /**
      * Gera um PDF de contrato baseado num template dinâmico
      */
-    async generateContractPDF(creditId, templateName = 'standard_loan') {
+    async generateContractPDF(creditId, templateName = 'standard_loan', clientSignatureImage = null) {
         const credit = await Credit.findById(creditId)
             .populate('client')
             .populate('institution');
 
         if (!credit) throw new Error('Crédito não encontrado');
 
-        const template = await ContractTemplate.findOne({
+        const template = credit.institution ? await ContractTemplate.findOne({
             institution: credit.institution._id,
             name: templateName,
             isActive: true
-        });
+        }) : null;
 
         const doc = new PDFDocument({ margin: 50 });
         const buffers = [];
@@ -258,7 +258,7 @@ class ContractService {
 
             const content = template ? this.parseTemplate(template.content, credit) : this.getDefaultContent(credit);
 
-            if (credit.institution.settings?.appearance?.logoUrl) {
+            if (credit.institution?.settings?.appearance?.logoUrl) {
                 try {
                     const cleanPath = credit.institution.settings.appearance.logoUrl.replace(/^\/api\//, '').replace(/^\//, '');
                     let logoPath = path.join(process.cwd(), cleanPath);
@@ -276,10 +276,25 @@ class ContractService {
 
             doc.moveDown(4);
             doc.text('__________________________________________', { align: 'center' });
-            doc.text(credit.institution.name, { align: 'center' });
+            doc.text(credit.institution?.name || 'A Instituição', { align: 'center' });
             doc.moveDown(2);
-            doc.text('__________________________________________', { align: 'center' });
-            doc.text(credit.client.name, { align: 'center' });
+            
+            if (clientSignatureImage) {
+                try {
+                    const base64Data = clientSignatureImage.replace(/^data:image\/\w+;base64,/, "");
+                    const signatureBuffer = Buffer.from(base64Data, 'base64');
+                    // Draw image centered approximately
+                    doc.image(signatureBuffer, 220, doc.y, { width: 150 });
+                    doc.moveDown(4);
+                } catch (e) {
+                    console.error("Erro ao adicionar assinatura:", e);
+                    doc.text('__________________________________________', { align: 'center' });
+                }
+            } else {
+                doc.text('__________________________________________', { align: 'center' });
+            }
+            
+            doc.text(credit.client?.name || 'O Cliente', { align: 'center' });
             doc.text('Assinatura do Mutuário', { align: 'center' });
             doc.end();
         });
@@ -288,14 +303,23 @@ class ContractService {
     parseTemplate(content, credit) {
         let parsed = content;
         const tags = {
-            '{{client_name}}': credit.client.name,
-            '{{client_id}}': credit.client.identityDocument,
+            '{{client_name}}': credit.client?.name || '',
+            '{{client_id}}': credit.client?.identityDocument || '',
+            '{{client_nuit}}': credit.client?.nuit || credit.client?.identityDocument || '',
+            '{{client_email}}': credit.client?.email || '',
+            '{{client_phone}}': credit.client?.phone || '',
+            '{{client_address}}': this.formatAddress(credit.client?.address),
             '{{amount}}': this.formatCurrency(credit.approvedAmount),
-            '{{interest}}': `${credit.interestRate}%`,
+            '{{total_amount}}': this.formatCurrency((credit.monthlyPayment || 0) * (credit.term || 0)),
+            '{{interest_rate}}': `${credit.interestRate}%`,
             '{{term}}': `${credit.term} meses`,
             '{{monthly_payment}}': this.formatCurrency(credit.monthlyPayment),
-            '{{institution_name}}': credit.institution.name,
-            '{{nuit}}': credit.institution.nuit
+            '{{loan_purpose}}': credit.purpose || 'Não especificado',
+            '{{start_date}}': new Date().toLocaleDateString('pt-MZ'),
+            '{{end_date}}': new Date(new Date().setMonth(new Date().getMonth() + (credit.term || 1))).toLocaleDateString('pt-MZ'),
+            '{{institution_name}}': credit.institution?.name || '',
+            '{{institution_nuit}}': credit.institution?.nuit || '',
+            '{{institution_logo}}': credit.institution?.logo || ''
         };
         Object.keys(tags).forEach(tag => {
             parsed = parsed.replace(new RegExp(tag, 'g'), tags[tag]);
@@ -304,7 +328,8 @@ class ContractService {
     }
 
     getDefaultContent(credit) {
-        return `Pelo presente instrumento particular de contrato de mútuo, de um lado ${credit.institution.name} (MUTUANTE) e de outro lado ${credit.client.name} (MUTUÁRIO)...`;
+        return `Pelo presente instrumento particular de Mútuo, a instituição ${credit.institution?.name || 'A Instituição'}, ` +
+            `com sede em ${credit.institution?.settings?.address || 'Moçambique'}, e de outro lado ${credit.client?.name || 'O Cliente'} (MUTUÁRIO)...`;
     }
 
     formatAddress(address) {

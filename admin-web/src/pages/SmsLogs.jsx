@@ -153,7 +153,7 @@ const SmsLogs = () => {
                             name="type"
                             value={filters.type}
                             onChange={handleFilterChange}
-                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)', outline: 'none' }}
+                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)', outline: 'none' }}
                         >
                             <option value="">Todos</option>
                             <option value="approval">Aprovação</option>
@@ -169,7 +169,7 @@ const SmsLogs = () => {
                             name="status"
                             value={filters.status}
                             onChange={handleFilterChange}
-                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)', outline: 'none' }}
+                            style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)', outline: 'none' }}
                         >
                             <option value="">Todos</option>
                             <option value="sent">Enviado</option>
@@ -184,7 +184,7 @@ const SmsLogs = () => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                            <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Destinatário</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Tipo</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Mensagem</th>
@@ -199,7 +199,7 @@ const SmsLogs = () => {
                                 <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum log encontrado.</td></tr>
                             ) : (
                                 logs.map((log) => (
-                                    <tr key={log._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                    <tr key={log._id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                         <td style={{ padding: '1.25rem 1.5rem' }}>
                                             <span style={{ fontWeight: 600 }}>{log.recipient}</span>
                                         </td>
@@ -233,7 +233,7 @@ const SmsLogs = () => {
                 </div>
 
                 {totalPages > 1 && (
-                    <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
                         {[...Array(totalPages)].map((_, i) => (
                             <button
                                 key={i}

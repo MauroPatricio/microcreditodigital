@@ -4,6 +4,7 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { useNavigate } from 'react-router-dom';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import * as XLSX from 'xlsx';
 import api from '../api';
 import Layout from '../components/Layout';
 
@@ -219,23 +220,42 @@ const Reports = () => {
                             </button>
 
                             {activeReport && (
-                                <button
-                                    onClick={() => document.getElementById('btn-export-pdf')?.click()}
-                                    className="btn-secondary"
-                                    style={{
-                                        padding: '0.8rem 1.5rem',
-                                        fontSize: '0.95rem',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '0.5rem',
-                                        height: '46px',
-                                        background: 'rgba(59, 130, 246, 0.1)',
-                                        color: '#3b82f6',
-                                        border: '1px solid #3b82f6'
-                                    }}
-                                >
-                                    <FiDownload size={18} /> Download PDF
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => document.getElementById('btn-export-excel')?.click()}
+                                        className="btn-primary"
+                                        style={{
+                                            padding: '0.8rem 1.5rem',
+                                            fontSize: '0.95rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            height: '46px',
+                                            background: '#10b981',
+                                            color: 'var(--text-heading)',
+                                            border: 'none'
+                                        }}
+                                    >
+                                        <FiDownload size={18} /> Exportar Excel
+                                    </button>
+                                    <button
+                                        onClick={() => document.getElementById('btn-export-pdf')?.click()}
+                                        className="btn-secondary"
+                                        style={{
+                                            padding: '0.8rem 1.5rem',
+                                            fontSize: '0.95rem',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            height: '46px',
+                                            background: 'rgba(59, 130, 246, 0.1)',
+                                            color: '#3b82f6',
+                                            border: '1px solid #3b82f6'
+                                        }}
+                                    >
+                                        <FiDownload size={18} /> Download PDF
+                                    </button>
+                                </>
                             )}
                         </div>
                     </div>
@@ -377,7 +397,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
         try {
             const canvas = await html2canvas(reportRef.current, {
                 backgroundColor: '#0f172a',
-                scale: 2
+                scale: 3
             });
 
             const imgData = canvas.toDataURL('image/png');
@@ -393,6 +413,54 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
         }
     };
 
+    const exportToExcel = () => {
+        if (!data) return;
+
+        const wb = XLSX.utils.book_new();
+
+        // Folha 1: Resumo Financeiro
+        if (data.overview) {
+            const financialData = [
+                { Métrica: 'Capital Ativo na Rua', Valor: data.overview.activeCapital },
+                { Métrica: 'Capital em Risco (Inadimplência)', Valor: data.overview.capitalAtRisk },
+                { Métrica: 'Juros Esperados Totais', Valor: data.overview.expectedInterest },
+                { Métrica: 'Total de Créditos Ativos', Valor: data.overview.totalActiveCredits }
+            ];
+            const wsFinanceiro = XLSX.utils.json_to_sheet(financialData);
+            XLSX.utils.book_append_sheet(wb, wsFinanceiro, 'Resumo Financeiro');
+        }
+
+        // Folha 2: Saúde da Carteira & Inadimplência
+        if (data.defaultAnalysis) {
+            const defaultData = [
+                { Métrica: 'Créditos em Dia', Valor: data.defaultAnalysis.performing },
+                { Métrica: 'Créditos Atrasados', Valor: data.defaultAnalysis.nonPerforming },
+                { Métrica: 'Taxa de Inadimplência (%)', Valor: data.defaultAnalysis.defaultRate }
+            ];
+            const wsSaude = XLSX.utils.json_to_sheet(defaultData);
+            XLSX.utils.book_append_sheet(wb, wsSaude, 'Saúde da Carteira');
+        }
+
+        // Folha 3: Créditos
+        if (data.activeCredits && data.activeCredits.length > 0) {
+            const creditsList = data.activeCredits.map(c => ({
+                'Nº Empréstimo': c.loanNumber,
+                'Cliente': c.client?.name || 'N/A',
+                'Status': c.status,
+                'Capital': c.amount,
+                'Total a Pagar': c.totalPayable,
+                'Total Pago': c.totalPaid,
+                'Juros Esperados': c.expectedInterest,
+                'Data de Aprovação': new Date(c.approvalDate).toLocaleDateString('pt-MZ')
+            }));
+            const wsCreditos = XLSX.utils.json_to_sheet(creditsList);
+            XLSX.utils.book_append_sheet(wb, wsCreditos, 'Lista de Créditos');
+        }
+
+        const dateStr = new Date().toLocaleDateString('pt-MZ').replace(/\//g, '-');
+        XLSX.writeFile(wb, `relatorio-${reportId}-${dateStr}.xlsx`);
+    };
+
     const CHART_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'];
 
     return (
@@ -406,15 +474,22 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 700 }}>
                     {config.title}
                 </h2>
-                <button
-                    id="btn-export-pdf"
-                    onClick={exportToPDF}
-                    className="btn-primary"
-                    style={{ padding: '0.5rem 1rem', display: 'none' }}
-                >
-                    <FiDownload size={16} style={{ marginRight: '0.5rem' }} />
-                    Exportar PDF
-                </button>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                    <button
+                        id="btn-export-excel"
+                        onClick={exportToExcel}
+                        style={{ display: 'none' }}
+                    />
+                    <button
+                        id="btn-export-pdf"
+                        onClick={exportToPDF}
+                        className="btn-primary"
+                        style={{ padding: '0.5rem 1rem', display: 'none' }}
+                    >
+                        <FiDownload size={16} style={{ marginRight: '0.5rem' }} />
+                        Exportar PDF
+                    </button>
+                </div>
             </div>
 
             {/* Credit Performance */}

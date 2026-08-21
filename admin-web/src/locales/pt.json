@@ -57,6 +57,7 @@
         "upload_error": "Erro ao enviar documento",
         "doc_types": {
             "identity_card": "Documento de Identidade (BI)",
+            "passport": "Passaporte",
             "proof_of_address": "Comprovativo de Morada",
             "income_proof": "Comprovativo de Rendimentos",
             "contract": "Contrato Assinado",

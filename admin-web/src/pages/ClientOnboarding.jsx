@@ -79,7 +79,47 @@ const ClientOnboarding = () => {
         }
     };
 
+    const validateStep = (step) => {
+        switch (step) {
+            case 1:
+                if (!formData.name.trim()) return 'Nome Completo é obrigatório.';
+                if (!formData.phone.trim()) return 'Telefone é obrigatório.';
+                if (!formData.identityDocument.trim()) return 'Nº BI é obrigatório.';
+                if (!formData.dateOfBirth) return 'Data de Nascimento é obrigatória.';
+                return null;
+            case 2:
+                if (!formData.professionalInfo.employmentStatus) return 'Status de Emprego é obrigatório.';
+                if (formData.professionalInfo.monthlyIncome < 0) return 'Renda Mensal não pode ser negativa.';
+                return null;
+            case 3:
+                // Negócio é opcional ("Se aplicável")
+                return null;
+            case 4:
+                // Pelo menos 1 referência com nome e telefone
+                const hasValidRef = formData.references.some(r => r.name.trim() && r.phone.trim());
+                if (!hasValidRef) return 'Forneça pelo menos 1 referência pessoal com Nome e Contacto.';
+                return null;
+            case 5:
+                if (!formData.address.province) return 'Província é obrigatória.';
+                if (!formData.address.city.trim()) return 'Cidade/Distrito é obrigatório.';
+                if (!formData.address.street.trim()) return 'Morada Detalhada é obrigatória.';
+                return null;
+            default:
+                return null;
+        }
+    };
+
     const handleNext = () => {
+        const error = validateStep(currentStep);
+        if (error) {
+            setModal({
+                isOpen: true,
+                title: 'Campos Obrigatórios',
+                message: error,
+                type: 'error'
+            });
+            return;
+        }
         if (currentStep < 6) setCurrentStep(currentStep + 1);
     };
 
@@ -209,7 +249,7 @@ const ClientOnboarding = () => {
                     <div className="step-content fadeIn">
                         <h3 className="step-title">Referências Pessoais</h3>
                         {formData.references.map((ref, idx) => (
-                            <div key={idx} style={{ marginBottom: '2rem', padding: '1.5rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div key={idx} style={{ marginBottom: '2rem', padding: '1.5rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)' }}>
                                 <h4 style={{ marginBottom: '1rem', color: 'var(--accent)', fontSize: '0.9rem', fontWeight: 700 }}>Referência #{idx + 1}</h4>
                                 <div className="grid-2">
                                     <div className="form-group">
@@ -312,24 +352,26 @@ const ClientOnboarding = () => {
                 </header>
 
                 {/* Step Progress Bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4rem', position: 'relative' }}>
-                    <div style={{ position: 'absolute', top: '24px', left: '5%', right: '5%', height: '2px', background: 'var(--bg-main)', zIndex: 0 }}>
-                        <div style={{ width: `${((currentStep - 1) / 5) * 100}%`, height: '100%', background: 'var(--accent)', transition: '0.3s' }}></div>
-                    </div>
-                    {steps.map(step => (
-                        <div key={step.id} style={{ zIndex: 1, textAlign: 'center', width: '60px' }}>
-                            <div className={`step-circle ${currentStep >= step.id ? 'active' : ''}`} style={{
-                                width: '48px', height: '48px', borderRadius: '50%', margin: '0 auto 0.75rem',
-                                background: currentStep >= step.id ? 'var(--accent)' : 'var(--bg-card)',
-                                border: currentStep >= step.id ? 'none' : '2px solid rgba(255,255,255,0.05)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: '0.3s', color: currentStep >= step.id ? 'white' : 'var(--text-muted)'
-                            }}>
-                                {currentStep > step.id ? <FiCheckCircle /> : step.icon}
-                            </div>
-                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: currentStep >= step.id ? 'white' : 'var(--text-muted)' }}>{step.title}</span>
+                <div style={{ overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1rem 3rem', padding: '0 1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', position: 'relative', minWidth: '600px' }}>
+                        <div style={{ position: 'absolute', top: '24px', left: '5%', right: '5%', height: '2px', background: 'var(--bg-main)', zIndex: 0 }}>
+                            <div style={{ width: `${((currentStep - 1) / 5) * 100}%`, height: '100%', background: 'var(--accent)', transition: '0.3s' }}></div>
                         </div>
-                    ))}
+                        {steps.map(step => (
+                            <div key={step.id} style={{ zIndex: 1, textAlign: 'center', width: '60px' }}>
+                                <div className={`step-circle ${currentStep >= step.id ? 'active' : ''}`} style={{
+                                    width: '48px', height: '48px', borderRadius: '50%', margin: '0 auto 0.75rem',
+                                    background: currentStep >= step.id ? 'var(--accent)' : 'var(--bg-card)',
+                                    border: currentStep >= step.id ? 'none' : '2px solid rgba(255,255,255,0.05)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: '0.3s', color: currentStep >= step.id ? 'var(--text-heading)' : 'var(--text-muted)'
+                                }}>
+                                    {currentStep > step.id ? <FiCheckCircle /> : step.icon}
+                                </div>
+                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: currentStep >= step.id ? 'var(--text-heading)' : 'var(--text-muted)' }}>{step.title}</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <div className="card glass" style={{ padding: '3rem', minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
@@ -337,14 +379,23 @@ const ClientOnboarding = () => {
                         {renderStep()}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '3rem', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '3rem', borderTop: '1px solid var(--border-light)', paddingTop: '2rem' }}>
                         <button
                             className="btn-secondary"
-                            onClick={handlePrev}
-                            disabled={currentStep === 1}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            onClick={() => {
+                                if (currentStep > 1) {
+                                    handlePrev();
+                                } else {
+                                    navigate(-1); // Voltar para a página anterior (ex: Lista de Clientes)
+                                }
+                            }}
+                            style={{ 
+                                display: 'flex', alignItems: 'center', gap: '0.5rem', 
+                                padding: '0.75rem 2rem', 
+                                background: 'transparent', border: '1px solid var(--border-light)'
+                            }}
                         >
-                            <FiChevronLeft /> Anterior
+                            <FiChevronLeft /> Voltar
                         </button>
 
                         {currentStep === 6 ? (
@@ -352,7 +403,7 @@ const ClientOnboarding = () => {
                                 className="btn-primary"
                                 onClick={handleSubmit}
                                 disabled={loading}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2.5rem' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2.5rem', background: 'var(--success)' }}
                             >
                                 {loading ? 'Processando...' : 'Finalizar Cadastro'} <FiCheckCircle />
                             </button>
@@ -360,7 +411,7 @@ const ClientOnboarding = () => {
                             <button
                                 className="btn-primary"
                                 onClick={handleNext}
-                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2.5rem' }}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 2.5rem', background: 'var(--accent)' }}
                             >
                                 Próximo <FiChevronRight />
                             </button>
@@ -380,7 +431,7 @@ const ClientOnboarding = () => {
             <style>{`
                 .grid-2 {
                     display: grid;
-                    grid-template-columns: 1fr 1fr;
+                    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
                     gap: 1.5rem;
                 }
                 .step-title {

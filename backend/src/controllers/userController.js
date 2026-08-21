@@ -59,7 +59,7 @@ export const getUser = async (req, res) => {
 // @access  Private (Admin/Owner)
 export const createUser = async (req, res) => {
     try {
-        const { name, email, phone, password, identityDocument, dateOfBirth, role, isActive } = req.body;
+        const { name, email, phone, password, identityDocument, dateOfBirth, role, isActive, guarantor, professionalInfo } = req.body;
 
         // Validar role permitido
         const allowedRoles = ['agent', 'manager', 'admin', 'representative', 'supervisor', 'client'];
@@ -100,7 +100,9 @@ export const createUser = async (req, res) => {
             isBlocked: isActive === false,
             isVerified: true,
             institution: req.institutionId,
-            registeredBy: req.user._id
+            registeredBy: req.user._id,
+            guarantor,
+            professionalInfo
         });
 
         res.status(201).json({
@@ -131,7 +133,7 @@ export const updateUser = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Sem permissão' });
         }
 
-        const { name, email, phone, role, isBlocked, password } = req.body;
+        const { name, email, phone, role, isBlocked, password, guarantor, professionalInfo, identityDocument } = req.body;
 
         if (email && email !== user.email) {
             const existingEmail = await User.findOne({ email });
@@ -144,9 +146,18 @@ export const updateUser = async (req, res) => {
         user.email = email || user.email;
         user.phone = phone || user.phone;
         user.isBlocked = isBlocked !== undefined ? isBlocked : user.isBlocked;
+        if (identityDocument) user.identityDocument = identityDocument;
 
         if (role && ['agent', 'manager', 'admin', 'representative', 'supervisor', 'client'].includes(role)) {
             user.role = role;
+        }
+        
+        if (guarantor) {
+            user.guarantor = guarantor;
+        }
+        
+        if (professionalInfo) {
+            user.professionalInfo = professionalInfo;
         }
 
         if (password) {

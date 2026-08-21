@@ -1,5 +1,7 @@
 import express from 'express';
 import Institution from '../models/Institution.js';
+import SubscriptionRequest from '../models/SubscriptionRequest.js';
+import Credit from '../models/Credit.js';
 import User from '../models/User.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
@@ -95,6 +97,30 @@ router.post('/', protect, authorize('super_admin', 'owner'), auditAction('Instit
         res.status(500).json({
             success: false,
             message: 'Erro ao criar instituição',
+            error: error.message
+        });
+    }
+});
+
+// @route   GET /api/institutions/public
+// @desc    Listar instituições públicas para registo na app mobile (Apenas pacotes premium)
+// @access  Public
+router.get('/public', async (req, res) => {
+    try {
+        const institutions = await Institution.find({
+            isActive: true,
+            'subscription.plan': 'premium',
+            'subscription.status': 'active'
+        }).select('_id name settings.appearance.logoUrl');
+
+        res.json({
+            success: true,
+            data: institutions
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar instituições públicas',
             error: error.message
         });
     }
@@ -216,6 +242,16 @@ router.get('/stats/global', protect, authorize('owner', 'super_admin'), async (r
         const institutions = await Institution.find(query);
         const instIds = institutions.map(i => i._id);
 
+        const volumeData = await Credit.aggregate([
+            { $match: { institution: { $in: instIds } } },
+            { $group: { _id: '$institution', totalValue: { $sum: '$amount' } } }
+        ]);
+
+        const volumeMap = {};
+        volumeData.forEach(v => {
+            volumeMap[v._id.toString()] = v.totalValue;
+        });
+
         // Aqui faríamos agregações complexas em Credits, Installments, etc.
         // Por agora, retornamos um resumo básico
         res.json({
@@ -226,7 +262,8 @@ router.get('/stats/global', protect, authorize('owner', 'super_admin'), async (r
                 institutions: institutions.map(i => ({
                     id: i._id,
                     name: i.name,
-                    status: i.isActive ? 'Ativa' : 'Inativa'
+                    status: i.isActive ? 'Ativa' : 'Inativa',
+                    value: volumeMap[i._id.toString()] || 0
                 }))
             }
         });

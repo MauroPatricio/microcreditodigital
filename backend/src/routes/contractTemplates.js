@@ -45,4 +45,18 @@ router.put('/:id', protect, authorize('owner', 'super_admin'), auditAction('Cont
     }
 });
 
+// @route   DELETE /api/contract-templates/:id
+// @desc    Remover template de contrato
+router.delete('/:id', protect, authorize('owner', 'super_admin'), auditAction('ContractTemplate', 'delete', 'high'), async (req, res) => {
+    try {
+        const template = await ContractTemplate.findOneAndDelete({ _id: req.params.id, institution: req.institutionId });
+        if (!template) {
+            return res.status(404).json({ success: false, message: 'Template não encontrado.' });
+        }
+        res.json({ success: true, message: 'Template removido com sucesso.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 export default router;

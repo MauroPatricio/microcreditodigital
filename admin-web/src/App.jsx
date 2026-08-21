@@ -58,10 +58,12 @@ import AuditLogs from './pages/AuditLogs';
 import PendingDocuments from './pages/PendingDocuments';
 import WhatsAppSettings from './pages/WhatsAppSettings';
 import ContractTemplates from './pages/ContractTemplates';
+import MySubscription from './pages/MySubscription';
 import GlobalDashboard from './pages/GlobalDashboard';
 import ClientOnboarding from './pages/ClientOnboarding';
 import CreditRequestPremium from './pages/CreditRequestPremium';
 import InstitutionOnboarding from './pages/InstitutionOnboarding';
+import InstitutionManagement from './pages/InstitutionManagement';
 import SystemStatus from './pages/SystemStatus';
 import CashFlow from './pages/CashFlow';
 import MonthlyReport from './pages/MonthlyReport';
@@ -73,6 +75,7 @@ import CommunicationTemplates from './pages/CommunicationTemplates.jsx';
 import CommunicationHistory from './pages/CommunicationHistory.jsx';
 import UserList from './pages/UserList.jsx';
 import UserForm from './pages/UserForm.jsx';
+import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
 
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -82,6 +85,7 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
+            <Route path="/institution-management" element={<ProtectedRoute roles={['super_admin']}><InstitutionManagement /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -104,8 +108,9 @@ function App() {
             <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
             <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
             <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager']}><ContractTemplates /></ProtectedRoute>} />
-            <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner']}><GlobalDashboard /></ProtectedRoute>} />
+            <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner', 'super_admin']}><GlobalDashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute roles={['owner', 'admin']}><InstitutionSettings /></ProtectedRoute>} />
+            <Route path="/my-subscription" element={<ProtectedRoute roles={['owner']}><MySubscription /></ProtectedRoute>} />
             <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
             <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
             <Route path="/cashflow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />
@@ -119,9 +124,11 @@ function App() {
             <Route path="/communication/templates" element={<ProtectedRoute><CommunicationTemplates /></ProtectedRoute>} />
             <Route path="/communication/history" element={<ProtectedRoute><CommunicationHistory /></ProtectedRoute>} />
 
-            <Route path="/users" element={<ProtectedRoute roles={['owner', 'admin', 'supervisor', 'manager']}><UserList /></ProtectedRoute>} />
-            <Route path="/users/new" element={<ProtectedRoute roles={['owner', 'admin']}><UserForm /></ProtectedRoute>} />
-            <Route path="/users/:id" element={<ProtectedRoute roles={['owner', 'admin']}><UserForm /></ProtectedRoute>} />
+            <Route path="/users" element={<ProtectedRoute roles={['owner', 'admin', 'supervisor', 'manager', 'super_admin']}><UserList /></ProtectedRoute>} />
+            <Route path="/users/new" element={<ProtectedRoute roles={['owner', 'admin', 'super_admin']}><UserForm /></ProtectedRoute>} />
+            <Route path="/users/:id" element={<ProtectedRoute roles={['owner', 'admin', 'super_admin']}><UserForm /></ProtectedRoute>} />
+
+            <Route path="/privacy" element={<PrivacyPolicy />} />
 
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>

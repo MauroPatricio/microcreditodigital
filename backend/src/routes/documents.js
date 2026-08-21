@@ -91,4 +91,32 @@ router.get('/:id/download', protect, async (req, res) => {
     }
 });
 
+// @route   GET /api/documents/:id/view
+// @desc    Visualizar documento no navegador
+router.get('/:id/view', protect, async (req, res) => {
+    try {
+        const document = await Document.findById(req.params.id);
+        if (!document) {
+            return res.status(404).json({ success: false, message: 'Documento não encontrado' });
+        }
+
+        // Verificar permissão
+        const isStaff = ['owner', 'manager', 'agent', 'super_admin'].includes(req.user.role);
+        const isOwnerOfDoc = document.client.toString() === req.user._id.toString();
+
+        if (!isStaff && !isOwnerOfDoc) {
+            return res.status(403).json({ success: false, message: 'Sem permissão para visualizar este arquivo' });
+        }
+
+        const filePath = path.resolve(document.fileUrl);
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ success: false, message: 'Arquivo físico não encontrado no servidor' });
+        }
+
+        res.sendFile(filePath);
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 export default router;

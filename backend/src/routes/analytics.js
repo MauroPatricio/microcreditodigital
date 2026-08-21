@@ -3,6 +3,8 @@ import Credit from '../models/Credit.js';
 import Payment from '../models/Payment.js';
 import User from '../models/User.js';
 import Installment from '../models/Installment.js';
+import CashTransaction from '../models/CashTransaction.js';
+import cashflowService from '../services/cashflowService.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -30,14 +32,22 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
 
         const overdueAmount = overdueInstallments.reduce((sum, inst) => sum + (inst.totalAmount - inst.paidAmount), 0);
 
-        // Taxa de incumprimento
-        const defaultedCredits = await Credit.countDocuments({ status: 'defaulted', institution: institutionId });
-        const totalCredits = await Credit.countDocuments({ status: { $ne: 'pending' }, institution: institutionId });
-        const defaultRate = totalCredits > 0 ? (defaultedCredits / totalCredits) * 100 : 0;
+        // Taxa de incumprimento (Non-Performing Loans - Créditos com atraso)
+        const overdueCreditsIds = await Installment.distinct('credit', {
+            status: { $ne: 'paid' },
+            dueDate: { $lt: new Date() },
+            institution: institutionId
+        });
+        const defaultedCredits = overdueCreditsIds.length;
+        const totalActiveCreditsCount = await Credit.countDocuments({ status: 'active', institution: institutionId });
+        const defaultRate = totalActiveCreditsCount > 0 ? (defaultedCredits / totalActiveCreditsCount) * 100 : 0;
 
-        // Receita total (juros recebidos)
-        const allPayments = await Payment.find({ status: 'completed', institution: institutionId });
-        const totalRevenue = allPayments.reduce((sum, payment) => sum + payment.amount, 0);
+        // Receita total (juros recebidos) via CashTransaction
+        const jurosTxs = await CashTransaction.find({ category: 'juros', institution: institutionId });
+        const totalRevenue = jurosTxs.reduce((sum, tx) => sum + tx.amount, 0);
+
+        // Dinheiro disponível no Caixa
+        const currentBalance = await cashflowService.getCurrentBalance(institutionId);
 
         // Créditos pendentes de aprovação
         const pendingCredits = await Credit.countDocuments({ status: 'pending', institution: institutionId });
@@ -73,9 +83,12 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
         const totalRecovered = totalRecoveredRes[0]?.total || 0;
 
         // Rendimento mensal de juros (estimado pelos pagamentos)
-        // Nota: Idealmente os pagamentos teriam discriminado o que é juro. 
-        // Aqui usamos uma aproximação baseada no total de juros proporcional
-        const monthlyInterestIncome = paymentsThisMonth.reduce((sum, payment) => sum + (payment.amount * 0.2), 0); // Exemplo: 20% do pago é juro (ajustar conforme lógica real)
+        const jurosThisMonthTxs = await CashTransaction.find({
+            category: 'juros',
+            institution: institutionId,
+            date: { $gte: startOfMonth }
+        });
+        const monthlyInterestIncome = jurosThisMonthTxs.reduce((sum, tx) => sum + tx.amount, 0);
 
         // Performance por Agente
         const agentPerformance = await Credit.aggregate([
@@ -142,10 +155,12 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
                     overdueCredits: overdueInstallments.length,
                     overdueAmount: Math.round(overdueAmount * 100) / 100,
                     par: Math.round(par * 100) / 100,
-                    totalRecovered: Math.round(totalRecovered * 100) / 100
+                    totalRecovered: Math.round(totalRecovered * 100) / 100,
+                    currentBalance: Math.round(currentBalance * 100) / 100
                 },
                 performance: {
                     defaultRate: Math.round(defaultRate * 100) / 100,
+                    defaultedCredits: defaultedCredits,
                     totalRevenue: Math.round(totalRevenue * 100) / 100,
                     pendingApprovals: pendingCredits,
                     agentPerformance

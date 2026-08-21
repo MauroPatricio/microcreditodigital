@@ -121,7 +121,7 @@ const BomReport = () => {
 
                         {/* Section 2: Operations Table */}
                         <div className="glass" style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-light)' }}>
                                 <h3 style={{ fontWeight: 700, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', color: '#e63946' }}>2. Tabela de Operações de Crédito</h3>
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.25rem' }}>{data.totals.totalOperacoes} operações no período {data.period.label}</p>
                             </div>
@@ -144,7 +144,7 @@ const BomReport = () => {
                                                 { label: 'Dias Atraso (12)', width: '100px' },
                                                 { label: 'PPEs (13)', width: '70px' }
                                             ].map(col => (
-                                                <th key={col.label} style={{ padding: '0.75rem 0.6rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, color: '#e63946', borderBottom: '1px solid rgba(255,255,255,0.06)', whiteSpace: 'nowrap', minWidth: col.width }}>
+                                                <th key={col.label} style={{ padding: '0.75rem 0.6rem', textAlign: 'left', fontSize: '0.68rem', fontWeight: 700, color: '#e63946', borderBottom: '1px solid var(--border-light)', whiteSpace: 'nowrap', minWidth: col.width }}>
                                                     {col.label}
                                                 </th>
                                             ))}
@@ -154,7 +154,7 @@ const BomReport = () => {
                                         {data.operations.length === 0 ? (
                                             <tr><td colSpan={13} style={{ padding: '2.5rem', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhuma operação no período selecionado.</td></tr>
                                         ) : data.operations.map(op => (
-                                            <tr key={op.numero} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
+                                            <tr key={op.numero} style={{ borderBottom: '1px solid var(--border-light)' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.02)'} onMouseLeave={e => e.currentTarget.style.background = ''}>
                                                 <td style={{ padding: '0.65rem 0.6rem', fontWeight: 700, color: 'var(--accent)' }}>{op.numero}</td>
                                                 <td style={{ padding: '0.65rem 0.6rem', fontWeight: 600 }}>{op.nomeCliente}</td>
                                                 <td style={{ padding: '0.65rem 0.6rem', color: 'var(--text-muted)' }}>{new Date(op.dataDesembolso).toLocaleDateString('pt-MZ')}</td>
@@ -174,7 +174,7 @@ const BomReport = () => {
                                     {/* Totals row */}
                                     {data.operations.length > 0 && (
                                         <tfoot>
-                                            <tr style={{ background: 'var(--bg-main)', fontWeight: 800, borderTop: '2px solid rgba(255,255,255,0.1)' }}>
+                                            <tr style={{ background: 'var(--bg-main)', fontWeight: 800, borderTop: '2px solid var(--border-light)' }}>
                                                 <td colSpan={3} style={{ padding: '0.85rem 0.6rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.5px' }}>TOTAIS ({data.totals.totalOperacoes} op.)</td>
                                                 <td style={{ padding: '0.85rem 0.6rem' }}>{fmt(data.totals.totalDesembolsado)}</td>
                                                 <td colSpan={5}></td>
@@ -189,7 +189,7 @@ const BomReport = () => {
                         </div>
 
                         {/* Notes */}
-                        <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '3px solid rgba(255,255,255,0.06)' }}>
+                        <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', borderTop: '3px solid var(--border-light)' }}>
                             <h3 style={{ fontWeight: 700, marginBottom: '1rem', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Notas Explicativas</h3>
                             <ol style={{ paddingLeft: '1.25rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
                                 {[

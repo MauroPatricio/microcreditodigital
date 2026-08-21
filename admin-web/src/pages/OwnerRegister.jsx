@@ -114,7 +114,7 @@ const OwnerRegister = () => {
         width: '100%',
         padding: '1rem 1rem 1rem 3rem',
         background: 'var(--bg-main)',
-        border: '1px solid rgba(255,255,255,0.1)',
+        border: '1px solid var(--border-light)',
         borderRadius: '12px',
         color: 'var(--text-main)',
         fontSize: '0.95rem'
@@ -147,7 +147,7 @@ const OwnerRegister = () => {
                     textAlign: 'center',
                     background: '#1E293B',
                     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-                    border: '1px solid rgba(255,255,255,0.06)'
+                    border: '1px solid var(--border-light)'
                 }}>
                     <div style={{
                         width: '80px',
@@ -182,7 +182,7 @@ const OwnerRegister = () => {
                     <div style={{
                         width: '100%',
                         height: '4px',
-                        background: 'rgba(255,255,255,0.1)',
+                        background: 'var(--bg-card-hover)',
                         borderRadius: '2px',
                         overflow: 'hidden'
                     }}>
@@ -213,7 +213,7 @@ const OwnerRegister = () => {
                 borderRadius: '24px',
                 background: '#1E293B',
                 boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
-                border: '1px solid rgba(255,255,255,0.06)'
+                border: '1px solid var(--border-light)'
             }}>
                 <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
                     <div style={{
@@ -239,7 +239,7 @@ const OwnerRegister = () => {
                 {/* Progress Bar */}
                 <div style={{
                     height: '4px',
-                    background: 'rgba(255,255,255,0.1)',
+                    background: 'var(--bg-card-hover)',
                     borderRadius: '2px',
                     marginBottom: '2rem',
                     overflow: 'hidden'
@@ -440,7 +440,7 @@ const OwnerRegister = () => {
                                     height: '130px',
                                     borderRadius: '20px',
                                     background: 'var(--bg-main)',
-                                    border: '2px dashed var(--border-light, rgba(255,255,255,0.2))',
+                                    border: '2px dashed var(--border-light, var(--border-light))',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     alignItems: 'center',
@@ -509,7 +509,7 @@ const OwnerRegister = () => {
                                     flex: 1,
                                     background: 'var(--bg-main)',
                                     color: 'var(--text-main)',
-                                    border: '1px solid var(--border-light, rgba(255,255,255,0.1))',
+                                    border: '1px solid var(--border-light, var(--border-light))',
                                     boxShadow: 'none',
                                     display: 'flex',
                                     alignItems: 'center',

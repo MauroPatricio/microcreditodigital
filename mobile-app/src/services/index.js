@@ -8,7 +8,7 @@ export const authService = {
     },
 
     login: async (email, password) => {
-        const response = await api.post('/auth/login', { email, password });
+        const response = await api.post('/auth/login', { email, password, isMobile: true });
         return response.data;
     },
 
@@ -21,12 +21,17 @@ export const authService = {
         const response = await api.get('/auth/me');
         return response.data;
     },
+
+    deleteAccount: async () => {
+        const response = await api.delete('/auth/me');
+        return response.data;
+    },
 };
 
 // Credit Services
 export const creditService = {
-    simulate: async (amount, term) => {
-        const response = await api.post('/credits/simulate', { amount, term });
+    simulate: async (amount, term, periodicity = 'monthly') => {
+        const response = await api.post('/credits/simulate', { amount, term, periodicity });
         return response.data;
     },
 
@@ -105,6 +110,14 @@ export const clientService = {
                 'Content-Type': 'multipart/form-data',
             },
         });
+        return response.data;
+    },
+};
+
+// Institution Services
+export const institutionService = {
+    getPublicInstitutions: async () => {
+        const response = await api.get('/institutions/public');
         return response.data;
     },
 };

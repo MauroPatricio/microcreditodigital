@@ -47,7 +47,7 @@ const ClientList = () => {
             </div>
 
             <div className="card" style={{ padding: '0' }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', position: 'relative' }}>
                     <FiSearch style={{ position: 'absolute', left: '2.5rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
                         type="text"
@@ -58,7 +58,7 @@ const ClientList = () => {
                             width: '100%',
                             padding: '0.75rem 1rem 0.75rem 2.8rem',
                             background: 'var(--bg-main)',
-                            border: '1px solid rgba(255,255,255,0.1)',
+                            border: '1px solid var(--border-light)',
                             borderRadius: '12px',
                             color: 'var(--text-main)'
                         }}
@@ -83,7 +83,7 @@ const ClientList = () => {
                                 </tr>
                             ) : clients.length > 0 ? (
                                 clients.map(client => (
-                                    <tr key={client._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', transition: 'var(--transition)' }}>
+                                    <tr key={client._id} style={{ borderBottom: '1px solid var(--border-light)', transition: 'var(--transition)' }}>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{

@@ -59,7 +59,7 @@ const EntityHistory = ({ entityType, entityId }) => {
 
     return (
         <div className="card" style={{ padding: '0' }}>
-            <div style={{ padding: '1.25rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                 <FiActivity color="var(--accent)" />
                 <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Histórico de Auditoria</h3>
             </div>
@@ -75,7 +75,7 @@ const EntityHistory = ({ entityType, entityId }) => {
                                 top: '20px',
                                 bottom: '-20px',
                                 width: '1px',
-                                background: 'rgba(255,255,255,0.1)'
+                                background: 'var(--bg-card-hover)'
                             }} />
                         )}
 
@@ -101,14 +101,14 @@ const EntityHistory = ({ entityType, entityId }) => {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
                                 <div style={{
                                     width: '24px', height: '24px', borderRadius: '50%',
-                                    background: 'rgba(255,255,255,0.05)', display: 'flex',
+                                    background: 'var(--bg-card-hover)', display: 'flex',
                                     alignItems: 'center', justifyContent: 'center', fontSize: '0.7rem'
                                 }}>
                                     <FiUser />
                                 </div>
                                 <span style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
                                     {log.user?.name}
-                                    <span style={{ marginLeft: '0.4rem', fontSize: '0.75rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'rgba(255,255,255,0.05)' }}>
+                                    <span style={{ marginLeft: '0.4rem', fontSize: '0.75rem', padding: '0.1rem 0.4rem', borderRadius: '4px', background: 'var(--bg-card-hover)' }}>
                                         {log.user?.role}
                                     </span>
                                 </span>

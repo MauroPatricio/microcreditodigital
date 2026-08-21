@@ -113,7 +113,7 @@ const UserList = () => {
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                 <div style={{
                                                     width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-light)',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'white'
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: 'var(--text-heading)'
                                                 }}>{user.name?.charAt(0)}</div>
                                                 <div>
                                                     <p style={{ fontWeight: 600, fontSize: '0.95rem' }}>{user.name}</p>

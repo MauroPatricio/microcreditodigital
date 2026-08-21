@@ -365,11 +365,12 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                                     <p style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--warning)' }}>{simulation.totalInterest?.toLocaleString()} MT</p>
                                 </div>
                             </div>
-                            <div style={{ flex: 1, minHeight: '120px', margin: '1rem 0' }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                            <div style={{ width: '100%', height: 300, minHeight: 300 }}>
+                                <ResponsiveContainer width="99%" height="100%">
                                     <AreaChart data={chartData}>
+                                        <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                                         <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }} cursor={false} />
-                                        <Area type="monotone" dataKey="balance" stroke="var(--accent)" fill="var(--accent)" fillOpacity={0.1} />
+                                        <Area type="monotone" dataKey="balance" stroke="#10b981" fill="#10b981" fillOpacity={0.15} strokeWidth={3} />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>

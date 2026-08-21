@@ -159,7 +159,7 @@ const MyCommissions = () => {
 
             {/* Commissions Table */}
             <div className="card" style={{ padding: 0 }}>
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 style={{ fontSize: '1.1rem', fontWeight: 700 }}>Histórico de Comissões</h3>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                         <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Período: </span>
@@ -169,7 +169,7 @@ const MyCommissions = () => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                            <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Data</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Cliente / Crédito</th>
                                 <th style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Base (Aprovado)</th>
@@ -186,7 +186,7 @@ const MyCommissions = () => {
                                 </tr>
                             ) : (
                                 commissions.map((comm) => (
-                                    <tr key={comm._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                    <tr key={comm._id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                         <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                             {new Date(comm.createdAt).toLocaleDateString('pt-MZ')}
                                         </td>

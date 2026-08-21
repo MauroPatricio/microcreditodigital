@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1098780973693",
+    "project_id": "credismart-notifications",
+    "storage_bucket": "credismart-notifications.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1098780973693:android:d78396064961ae2efaaf14",
+        "android_client_info": {
+          "package_name": "com.microcreditodigital.mobileapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDmNT958FpLzNwUHFLyY2IZkgRH-cmxuE0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

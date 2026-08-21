@@ -171,7 +171,7 @@ const MessageScheduler = () => {
                             />
                         </div>
 
-                        <div style={{ marginBottom: '2rem', padding: '1.25rem', borderRadius: '12px', background: 'rgba(255,255,255,0.03)' }}>
+                        <div style={{ marginBottom: '2rem', padding: '1.25rem', borderRadius: '12px', background: 'var(--bg-card-hover)' }}>
                             <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', marginBottom: formData.isScheduled ? '1rem' : '0' }}>
                                 <input
                                     type="checkbox"

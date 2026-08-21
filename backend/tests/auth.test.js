@@ -3,12 +3,13 @@ import { jest } from '@jest/globals';
 // Mock middleware
 jest.unstable_mockModule('../src/middleware/auth.js', () => ({
     protect: (req, res, next) => {
-        req.user = { _id: 'mockUserId', role: 'client' };
+        req.user = { _id: '507f1f77bcf86cd799439014', role: 'client' };
         next();
     },
     generateToken: () => 'mockToken',
     generateRefreshToken: () => 'mockRefreshToken',
-    verifyRefreshToken: () => ({ id: 'mockUserId' }),
+    verifyRefreshToken: () => ({ id: '507f1f77bcf86cd799439014' }),
+    authorize: () => (req, res, next) => next(),
 }));
 
 // Mock User model
@@ -59,7 +60,7 @@ describe('Auth Routes (ESM Mocks)', () => {
         User.mockImplementation(() => ({
             save: jest.fn().mockResolvedValue(true),
             comparePassword: jest.fn().mockResolvedValue(true),
-            toJSON: jest.fn().mockReturnValue({ ...userData, _id: 'userId' })
+            toJSON: jest.fn().mockReturnValue({ ...userData, _id: '507f1f77bcf86cd799439012' })
         }));
     });
 
@@ -68,9 +69,9 @@ describe('Auth Routes (ESM Mocks)', () => {
             User.findOne.mockResolvedValue(null);
             User.create.mockResolvedValue({
                 ...userData,
-                _id: 'newUserId',
+                _id: '507f1f77bcf86cd799439013',
                 role: 'client',
-                toJSON: () => ({ ...userData, _id: 'newUserId', role: 'client' })
+                toJSON: () => ({ ...userData, _id: '507f1f77bcf86cd799439013', role: 'client' })
             });
 
             const res = await request(app)
@@ -98,12 +99,12 @@ describe('Auth Routes (ESM Mocks)', () => {
         it('should login successfully with correct credentials', async () => {
             const mockUser = {
                 ...userData,
-                _id: 'userId',
+                _id: '507f1f77bcf86cd799439012',
                 role: 'client',
                 isBlocked: false,
                 comparePassword: jest.fn().mockResolvedValue(true),
                 save: jest.fn(),
-                toJSON: () => ({ ...userData, _id: 'userId' })
+                toJSON: () => ({ ...userData, _id: '507f1f77bcf86cd799439012' })
             };
 
             // Using mockReturnValue for chainable query

@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import api from '../api';
+import { useNavigate } from 'react-router-dom';
 import {
     FiActivity, FiSearch, FiFilter, FiUser,
-    FiAlertTriangle, FiCheckCircle, FiInfo, FiLayers
+    FiAlertTriangle, FiCheckCircle, FiInfo, FiLayers, FiEye
 } from 'react-icons/fi';
 
 const AuditLogs = () => {
+    const navigate = useNavigate();
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(1);
@@ -73,7 +75,7 @@ const AuditLogs = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Nível de Gravidade</label>
-                        <select name="severity" value={filters.severity} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}>
+                        <select name="severity" value={filters.severity} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>
                             <option value="">Todos</option>
                             <option value="critical">Crítico</option>
                             <option value="high">Alto</option>
@@ -83,7 +85,7 @@ const AuditLogs = () => {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Tipo de Entidade</label>
-                        <select name="entityType" value={filters.entityType} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}>
+                        <select name="entityType" value={filters.entityType} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>
                             <option value="">Todas</option>
                             <option value="Credit">Créditos</option>
                             <option value="User">Utilizadores/Clientes</option>
@@ -93,7 +95,7 @@ const AuditLogs = () => {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>Ação</label>
-                        <select name="action" value={filters.action} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-main)' }}>
+                        <select name="action" value={filters.action} onChange={handleFilterChange} className="glass-select" style={{ width: '100%', padding: '0.65rem', borderRadius: '8px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}>
                             <option value="">Todas</option>
                             <option value="approve">Aprovação</option>
                             <option value="disburse">Desembolso</option>
@@ -115,7 +117,7 @@ const AuditLogs = () => {
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                         <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', textAlign: 'left' }}>
+                            <tr style={{ borderBottom: '1px solid var(--border-light)', textAlign: 'left' }}>
                                 <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Timestamp</th>
                                 <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Utilizador</th>
                                 <th style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Ação / Entidade</th>
@@ -130,7 +132,7 @@ const AuditLogs = () => {
                                 <tr><td colSpan="5" style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>Nenhum log de auditoria encontrado.</td></tr>
                             ) : (
                                 logs.map((log) => (
-                                    <tr key={log._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                                    <tr key={log._id} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                         <td style={{ padding: '1.25rem 1.5rem', whiteSpace: 'nowrap' }}>
                                             <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{new Date(log.timestamp).toLocaleDateString('pt-MZ')}</div>
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(log.timestamp).toLocaleTimeString()}</div>
@@ -147,12 +149,29 @@ const AuditLogs = () => {
                                             </div>
                                         </td>
                                         <td style={{ padding: '1.25rem 1.5rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--accent)', fontWeight: 700, fontSize: '0.85rem' }}>
-                                                <FiLayers /> {log.action.toUpperCase()}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', fontWeight: 800, fontSize: '0.85rem', letterSpacing: '0.5px' }}>
+                                                <FiLayers color="var(--primary-light)" /> {log.action.toUpperCase()}
                                             </div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{log.entityType} ID: {log.entityId}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.2rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                {log.entityType} ID: {log.entityId}
+                                                {(log.entityId && log.entityId !== 'undefined') && (
+                                                    <button
+                                                        onClick={() => {
+                                                            const type = log.entityType?.toLowerCase();
+                                                            if (type === 'user') navigate(`/users/${log.entityId}`);
+                                                            else if (type === 'credit' || type === 'loan') navigate(`/credits/${log.entityId}`);
+                                                            else if (type === 'client') navigate(`/clients/${log.entityId}`);
+                                                            else if (type === 'payment') navigate(`/payments`);
+                                                        }}
+                                                        title="Ver Registo"
+                                                        style={{ background: 'transparent', border: 'none', color: 'var(--blue-highlight)', cursor: 'pointer', padding: 0 }}
+                                                    >
+                                                        <FiEye size={14} />
+                                                    </button>
+                                                )}
+                                            </div>
                                             {log.changes && (log.changes.before || log.changes.after) && (
-                                                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', padding: '0.5rem', background: 'var(--bg-main)', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.05)', maxWidth: '400px' }}>
+                                                <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', padding: '0.5rem', background: 'var(--bg-main)', borderRadius: '4px', border: '1px solid var(--border-light)', maxWidth: '400px' }}>
                                                     {log.changes.before && <div style={{ marginBottom: '0.25rem', overflowX: 'auto' }}><strong style={{ color: 'var(--danger)' }}>Anterior:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)' }}>{typeof log.changes.before === 'object' ? JSON.stringify(log.changes.before) : String(log.changes.before)}</span></div>}
                                                     {log.changes.after && <div style={{ overflowX: 'auto' }}><strong style={{ color: 'var(--accent)' }}>Atualizado:</strong> <span style={{ fontFamily: 'monospace', color: 'var(--text-main)' }}>{typeof log.changes.after === 'object' ? JSON.stringify(log.changes.after) : String(log.changes.after)}</span></div>}
                                                 </div>
@@ -173,7 +192,7 @@ const AuditLogs = () => {
                 </div>
 
                 {totalPages > 1 && (
-                    <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', borderTop: '1px solid var(--border-light)' }}>
                         <button disabled={page === 1} onClick={() => setPage(page - 1)} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>Anterior</button>
                         <span style={{ display: 'flex', alignItems: 'center', padding: '0 1rem', fontSize: '0.9rem' }}>Página {page} de {totalPages}</span>
                         <button disabled={page === totalPages} onClick={() => setPage(page + 1)} className="btn-secondary" style={{ padding: '0.5rem 1rem' }}>Próxima</button>

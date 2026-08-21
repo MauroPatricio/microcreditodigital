@@ -39,7 +39,8 @@ const institutionSchema = new mongoose.Schema({
             max: { type: Number, default: 50000 }
         },
         interestRates: {
-            default: { type: Number, default: 10 } // 10%
+            default: { type: Number, default: 10 }, // 10%
+            penaltyRate: { type: Number, default: 1 } // 1% ao dia de atraso
         },
         appearance: {
             primaryColor: { type: String, default: '#0A2540' },
@@ -50,13 +51,46 @@ const institutionSchema = new mongoose.Schema({
             name: String,
             role: String,
             stampUrl: String
+        },
+        paymentAccounts: [{
+            type: { type: String, enum: ['bank', 'mpesa', 'emola', 'other'] },
+            bankName: String,
+            accountName: String,
+            accountNumber: String,
+            nib: String,
+            agency: String,
+            phoneProvider: String, // para mpesa, emola
+            phoneNumber: String,
+            description: String,
+            isPrimary: { type: Boolean, default: false },
+            isActive: { type: Boolean, default: true }
+        }],
+        guaranteeSettings: {
+            isRequired: { type: Boolean, default: false },
+            allowOptional: { type: Boolean, default: true },
+            requiredDocuments: [{ type: String }] // ex: ['BI_FRENTE', 'BI_VERSO', 'COMPROVATIVO_RESIDENCIA']
+        },
+        notificationSettings: {
+            remindersBeforeDue: [{ type: Number, default: [7, 3, 1] }], // dias antes
+            remindOnDueDate: { type: Boolean, default: true },
+            remindAfterDue: { type: Boolean, default: true },
+            channels: {
+                push: { type: Boolean, default: true },
+                email: { type: Boolean, default: true },
+                sms: { type: Boolean, default: false }
+            }
+        },
+        onboardingSettings: {
+            requireEmergencyContact: { type: Boolean, default: true },
+            requireProfessionalInfo: { type: Boolean, default: true },
+            requiredDocuments: [{ type: String }]
         }
     },
     subscription: {
         plan: {
             type: String,
-            enum: ['starter', 'business', 'enterprise', 'free'],
-            default: 'free'
+            enum: ['starter', 'business', 'enterprise', 'free', 'trial', 'standard', 'premium'],
+            default: 'trial'
         },
         status: {
             type: String,

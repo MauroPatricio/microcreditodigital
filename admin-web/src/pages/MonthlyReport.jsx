@@ -154,7 +154,7 @@ const MonthlyReport = () => {
                         {/* Best Payers */}
                         {data.melhoresPagadores && data.melhoresPagadores.length > 0 && (
                             <div className="glass" style={{ borderRadius: '16px', overflow: 'hidden', marginBottom: '1.5rem' }}>
-                                <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                                <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-light)' }}>
                                     <h3 style={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>🏆 Melhores Pagadores do Mês</h3>
                                 </div>
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
@@ -167,7 +167,7 @@ const MonthlyReport = () => {
                                     </thead>
                                     <tbody>
                                         {data.melhoresPagadores.map((p, i) => (
-                                            <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                            <tr key={i} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                                 <td style={{ padding: '0.85rem 1.25rem', fontWeight: 800, color: i === 0 ? '#f59e0b' : i === 1 ? '#9ca3af' : i === 2 ? '#b45309' : 'var(--text-muted)' }}>
                                                     {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}º`}
                                                 </td>
@@ -184,7 +184,7 @@ const MonthlyReport = () => {
 
                         {/* Credit Status Breakdown */}
                         <div className="glass" style={{ borderRadius: '16px', overflow: 'hidden' }}>
-                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                            <div style={{ padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--border-light)' }}>
                                 <h3 style={{ fontWeight: 700, fontSize: '0.95rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>📊 Estado da Carteira</h3>
                             </div>
                             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
@@ -202,7 +202,7 @@ const MonthlyReport = () => {
                                         { label: 'Liquidados no Mês', qtd: data.creditosLiquidados?.total, val: data.creditosLiquidados?.valor, color: '#8b5cf6' },
                                         { label: 'Em Atraso', qtd: data.creditosEmAtraso?.total, val: data.creditosEmAtraso?.valor, color: '#ef4444' },
                                     ].map(row => (
-                                        <tr key={row.label} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                        <tr key={row.label} style={{ borderBottom: '1px solid var(--border-light)' }}>
                                             <td style={{ padding: '0.85rem 1.25rem', fontWeight: 600, color: row.color }}>{row.label}</td>
                                             <td style={{ padding: '0.85rem 1.25rem', color: 'var(--text-muted)' }}>{row.qtd || 0}</td>
                                             <td style={{ padding: '0.85rem 1.25rem', fontWeight: 700 }}>{fmt(row.val)}</td>

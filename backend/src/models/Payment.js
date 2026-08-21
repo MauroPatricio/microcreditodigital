@@ -37,8 +37,15 @@ const paymentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed', 'cancelled'],
+        enum: ['pending', 'in_analysis', 'confirmed', 'rejected', 'completed', 'failed', 'cancelled'],
         default: 'pending'
+    },
+    confirmedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
+    rejectionReason: {
+        type: String
     },
     metadata: {
         type: mongoose.Schema.Types.Mixed,

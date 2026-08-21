@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,6 +14,7 @@ import HomeScreen from '../screens/Home/HomeScreen';
 import CollectionsScreen from '../screens/Home/CollectionsScreen';
 import CreditSimulatorScreen from '../screens/Credit/CreditSimulatorScreen';
 import MyCreditsScreen from '../screens/Credit/MyCreditsScreen';
+import RequestCreditScreen from '../screens/Credit/RequestCreditScreen';
 
 // Profile/Extra Screens
 import DocumentCenter from '../screens/Profile/DocumentCenter';
@@ -31,26 +33,51 @@ function AuthNavigator() {
     );
 }
 
+import ProfileScreen from '../screens/Profile/ProfileScreen';
+import { Home, Users, Wallet, Activity, CreditCard, User } from 'lucide-react-native';
+
+const premiumTabOptions = {
+    headerShown: false,
+    tabBarShowLabel: true,
+    tabBarActiveTintColor: '#3b82f6',
+    tabBarInactiveTintColor: '#94a3b8',
+    tabBarStyle: {
+        position: 'absolute',
+        bottom: 24,
+        left: 20,
+        right: 20,
+        elevation: 0,
+        backgroundColor: '#ffffff',
+        borderRadius: 24,
+        height: 70,
+        paddingBottom: 8,
+        paddingTop: 8,
+        shadowColor: '#3b82f6',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.1,
+        shadowRadius: 20,
+        borderTopWidth: 0,
+    },
+    tabBarLabelStyle: {
+        fontSize: 11,
+        fontWeight: '600',
+        marginTop: 4,
+    }
+};
+
 // Agent Navigator (Field Agents)
 function AgentNavigator() {
     return (
-        <Tab.Navigator
-            screenOptions={{
-                tabBarActiveTintColor: '#2563eb',
-                tabBarInactiveTintColor: '#94a3b8',
-                tabBarStyle: { height: 60, paddingBottom: 5 },
-                headerShown: true,
-                headerStyle: { backgroundColor: '#fff', elevation: 0, shadowOpacity: 0 },
-                headerTitleStyle: { fontWeight: 'bold' },
-            }}
-        >
+        <Tab.Navigator screenOptions={premiumTabOptions}>
             <Tab.Screen
                 name="AgentHome"
                 component={HomeScreen}
                 options={{
                     title: 'Início',
-                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏢</Text>,
+                    tabBarIcon: ({ color, size }) => <Home color={color} size={24} strokeWidth={2.5} />,
+                    headerShown: true,
                     headerTitle: 'Painel do Agente',
+                    headerStyle: { backgroundColor: '#fcfcfc', elevation: 0, shadowOpacity: 0 },
                 }}
             />
             <Tab.Screen
@@ -58,8 +85,10 @@ function AgentNavigator() {
                 component={RegisterScreen}
                 options={{
                     title: 'Novo Cliente',
-                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>👤</Text>,
+                    tabBarIcon: ({ color, size }) => <Users color={color} size={24} strokeWidth={2.5} />,
+                    headerShown: true,
                     headerTitle: 'Registar Cliente',
+                    headerStyle: { backgroundColor: '#fcfcfc', elevation: 0, shadowOpacity: 0 },
                 }}
             />
             <Tab.Screen
@@ -67,8 +96,18 @@ function AgentNavigator() {
                 component={CollectionsScreen}
                 options={{
                     title: 'Cobranças',
-                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>💰</Text>,
+                    tabBarIcon: ({ color, size }) => <Wallet color={color} size={24} strokeWidth={2.5} />,
+                    headerShown: true,
                     headerTitle: 'Minhas Cobranças',
+                    headerStyle: { backgroundColor: '#fcfcfc', elevation: 0, shadowOpacity: 0 },
+                }}
+            />
+            <Tab.Screen
+                name="AgentProfile"
+                component={ProfileScreen}
+                options={{
+                    title: 'Perfil',
+                    tabBarIcon: ({ color, size }) => <User color={color} size={24} strokeWidth={2.5} />,
                 }}
             />
         </Tab.Navigator>
@@ -78,20 +117,13 @@ function AgentNavigator() {
 // Client Tab Navigator
 function ClientTabNavigator() {
     return (
-        <Tab.Navigator
-            screenOptions={{
-                tabBarActiveTintColor: '#2563eb',
-                tabBarInactiveTintColor: '#94a3b8',
-                tabBarStyle: { height: 60, paddingBottom: 5 },
-            }}
-        >
+        <Tab.Navigator screenOptions={premiumTabOptions}>
             <Tab.Screen
                 name="Home"
                 component={HomeScreen}
                 options={{
                     title: 'Início',
-                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>🏠</Text>,
-                    headerShown: false,
+                    tabBarIcon: ({ color, size }) => <Home color={color} size={24} strokeWidth={2.5} />,
                 }}
             />
             <Tab.Screen
@@ -99,8 +131,7 @@ function ClientTabNavigator() {
                 component={CreditSimulatorScreen}
                 options={{
                     title: 'Simular',
-                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>⚖️</Text>,
-                    headerTitle: 'Simulador',
+                    tabBarIcon: ({ color, size }) => <Activity color={color} size={24} strokeWidth={2.5} />,
                 }}
             />
             <Tab.Screen
@@ -108,8 +139,15 @@ function ClientTabNavigator() {
                 component={MyCreditsScreen}
                 options={{
                     title: 'Créditos',
-                    tabBarIcon: () => <Text style={{ fontSize: 24 }}>📊</Text>,
-                    headerTitle: 'Meus Créditos',
+                    tabBarIcon: ({ color, size }) => <CreditCard color={color} size={24} strokeWidth={2.5} />,
+                }}
+            />
+            <Tab.Screen
+                name="ClientProfile"
+                component={ProfileScreen}
+                options={{
+                    title: 'Perfil',
+                    tabBarIcon: ({ color, size }) => <User color={color} size={24} strokeWidth={2.5} />,
                 }}
             />
         </Tab.Navigator>
@@ -117,12 +155,22 @@ function ClientTabNavigator() {
 }
 
 // Client Stack Navigator (for full screen screens)
+import CreditDetailsScreen from '../screens/Credit/CreditDetailsScreen';
+import InstallmentsCalendarScreen from '../screens/Credit/InstallmentsCalendarScreen';
+import PaymentScreen from '../screens/Credit/PaymentScreen';
+import PaymentHistoryScreen from '../screens/Credit/PaymentHistoryScreen';
+
 function ClientStack() {
     return (
         <Stack.Navigator>
             <Stack.Screen name="MainTabs" component={ClientTabNavigator} options={{ headerShown: false }} />
             <Stack.Screen name="DocumentCenter" component={DocumentCenter} options={{ title: 'Documentos' }} />
             <Stack.Screen name="ContractSigner" component={ContractSigner} options={{ title: 'Assinar Contrato' }} />
+            <Stack.Screen name="RequestCredit" component={RequestCreditScreen} options={{ title: 'Solicitar Crédito' }} />
+            <Stack.Screen name="CreditDetails" component={CreditDetailsScreen} options={{ title: 'Detalhes do Crédito' }} />
+            <Stack.Screen name="InstallmentsCalendarScreen" component={InstallmentsCalendarScreen} options={{ title: 'Calendário de Prestações' }} />
+            <Stack.Screen name="PaymentScreen" component={PaymentScreen} options={{ title: 'Pagar Prestação' }} />
+            <Stack.Screen name="PaymentHistoryScreen" component={PaymentHistoryScreen} options={{ title: 'Histórico de Pagamentos' }} />
         </Stack.Navigator>
     );
 }

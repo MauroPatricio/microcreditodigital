@@ -6,15 +6,16 @@ import {
     StyleSheet,
     TouchableOpacity,
     ActivityIndicator,
-    TextInput,
-    Alert
+    TextInput
 } from 'react-native';
 import api from '../../services/api';
+import { useAlert } from '../../context/AlertContext';
 
 export default function CollectionsScreen() {
     const [collections, setCollections] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const { showAlert } = useAlert();
 
     useEffect(() => {
         fetchCollections();
@@ -33,7 +34,7 @@ export default function CollectionsScreen() {
     };
 
     const handleRegisterPayment = (loan) => {
-        Alert.alert(
+        showAlert(
             'Registrar Pagamento',
             `Deseja registrar o pagamento de ${loan.client.name}?`,
             [
@@ -48,14 +49,15 @@ export default function CollectionsScreen() {
                                 amount: loan.amount / loan.term, // Exemplo: valor de uma parcela
                                 paymentMethod: 'cash'
                             });
-                            Alert.alert('Sucesso', 'Pagamento registrado');
+                            showAlert('Sucesso', 'Pagamento registrado');
                             fetchCollections();
                         } catch (e) {
-                            Alert.alert('Erro', 'Falha ao registrar pagamento');
+                            showAlert('Erro', 'Falha ao registrar pagamento');
                         }
                     }
                 }
-            ]
+            ],
+            'warning'
         );
     };
 
@@ -79,7 +81,7 @@ export default function CollectionsScreen() {
                     <View style={styles.card}>
                         <View>
                             <Text style={styles.clientName}>{item.client?.name}</Text>
-                            <Text style={styles.loanInfo}>{item.amount.toLocaleString()} MT | {item.status}</Text>
+                            <Text style={styles.loanInfo}>{(item.amount || 0).toLocaleString()} MT | {item.status}</Text>
                         </View>
                         <TouchableOpacity
                             style={styles.payButton}

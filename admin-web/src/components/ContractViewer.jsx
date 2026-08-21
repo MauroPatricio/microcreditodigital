@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { FiFileText, FiDownload, FiSend, FiCheckCircle, FiClock, FiXCircle } from 'react-icons/fi';
+import { FiFileText, FiDownload, FiSend, FiCheckCircle, FiClock, FiXCircle, FiPenTool } from 'react-icons/fi';
+import SignatureModal from './SignatureModal';
 
 const ContractViewer = ({ creditId, onUpdate }) => {
     const [contract, setContract] = useState(null);
     const [loading, setLoading] = useState(true);
     const [sending, setSending] = useState(false);
     const [generating, setGenerating] = useState(false);
+    const [isSignModalOpen, setIsSignModalOpen] = useState(false);
 
     useEffect(() => {
         fetchContract();
@@ -57,6 +59,20 @@ const ContractViewer = ({ creditId, onUpdate }) => {
         }
     };
 
+    const handleAgentSign = async (base64Image) => {
+        try {
+            const res = await api.post(`/contracts/${contract._id}/agent-sign`, { signatureImage: base64Image });
+            if (res.data.success) {
+                alert('Contrato assinado com sucesso!');
+                setIsSignModalOpen(false);
+                fetchContract();
+                if (onUpdate) onUpdate();
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erro ao guardar assinatura');
+        }
+    };
+
     const getStatusInfo = (status) => {
         switch (status) {
             case 'signed': return { label: 'Assinado', color: '#10b981', icon: <FiCheckCircle /> };
@@ -78,7 +94,7 @@ const ContractViewer = ({ creditId, onUpdate }) => {
     if (!contract) {
         return (
             <div className="card" style={{ textAlign: 'center', padding: '3rem' }}>
-                <FiFileText style={{ fontSize: '3rem', color: 'rgba(255,255,255,0.1)', marginBottom: '1rem' }} />
+                <FiFileText style={{ fontSize: '3rem', color: 'var(--text-muted)', marginBottom: '1rem' }} />
                 <h3>Nenhum contrato gerado</h3>
                 <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>O contrato é gerado automaticamente na aprovação, mas você pode gerá-lo manualmente agora.</p>
                 <button
@@ -97,7 +113,7 @@ const ContractViewer = ({ creditId, onUpdate }) => {
 
     return (
         <div className="card" style={{ padding: '0' }}>
-            <div style={{ padding: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
                         <FiFileText fontSize="1.2rem" />
@@ -126,9 +142,9 @@ const ContractViewer = ({ creditId, onUpdate }) => {
                 <div style={{
                     width: '100%',
                     height: '500px',
-                    background: 'rgba(255,255,255,0.02)',
+                    background: 'var(--bg-card-hover)',
                     borderRadius: '8px',
-                    border: '1px solid rgba(255,255,255,0.05)',
+                    border: '1px solid var(--border-light)',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden'
@@ -146,20 +162,29 @@ const ContractViewer = ({ creditId, onUpdate }) => {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: 'rgba(255,255,255,0.05)', color: 'white' }}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none', background: 'var(--bg-card-hover)', color: 'var(--text-heading)' }}
                     >
                         <FiDownload /> Baixar PDF
                     </a>
 
                     {contract.status === 'draft' && (
-                        <button
-                            onClick={handleSendForSignature}
-                            disabled={sending}
-                            className="btn-primary"
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                        >
-                            <FiSend /> {sending ? 'Enviando...' : 'Enviar para Assinatura'}
-                        </button>
+                        <>
+                            <button
+                                onClick={handleSendForSignature}
+                                disabled={sending}
+                                className="btn-primary"
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', opacity: 0.8 }}
+                            >
+                                <FiSend /> {sending ? 'Enviando...' : 'Pedir Assinatura Online'}
+                            </button>
+                            <button
+                                onClick={() => setIsSignModalOpen(true)}
+                                className="btn-primary"
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#10b981', border: 'none' }}
+                            >
+                                <FiPenTool /> Assinar no Ecrã
+                            </button>
+                        </>
                     )}
 
                     {contract.status === 'pending_signature' && (
@@ -174,6 +199,13 @@ const ContractViewer = ({ creditId, onUpdate }) => {
                     )}
                 </div>
             </div>
+
+            <SignatureModal 
+                isOpen={isSignModalOpen} 
+                onClose={() => setIsSignModalOpen(false)} 
+                onSave={handleAgentSign} 
+                clientName={contract.client?.name || 'Cliente'} 
+            />
 
             {contract.status === 'signed' && (
                 <div style={{ padding: '1.5rem', background: 'rgba(16, 185, 129, 0.05)', borderTop: '1px solid rgba(16, 185, 129, 0.1)', borderRadius: '0 0 12px 12px' }}>

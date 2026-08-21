@@ -2,26 +2,31 @@ import React, { useState } from 'react';
 import {
     View,
     Text,
-    TextInput,
-    TouchableOpacity,
     StyleSheet,
-    Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    ActivityIndicator,
+    TouchableOpacity,
 } from 'react-native';
+import { Mail, Lock, AlertCircle } from 'lucide-react-native';
 import { useAuth } from '../../context/AuthContext';
+import PremiumInput from '../../components/PremiumInput';
+import PremiumButton from '../../components/PremiumButton';
+import { useTheme } from '../../theme/ThemeContext';
+import { spacing, typography, borderRadius } from '../../theme/typography';
 
 export default function LoginScreen({ navigation }) {
     const { login } = useAuth();
+    const { colors } = useTheme();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
     const handleLogin = async () => {
+        setErrorMsg('');
         if (!email || !password) {
-            Alert.alert('Erro', 'Por favor, preencha todos os campos');
+            setErrorMsg('Por favor, preencha todos os campos.');
             return;
         }
 
@@ -30,62 +35,66 @@ export default function LoginScreen({ navigation }) {
         setLoading(false);
 
         if (!result.success) {
-            Alert.alert('Erro', result.message);
+            setErrorMsg(result.message || 'Falha ao iniciar sessão.');
         }
     };
 
     return (
         <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            style={styles.container}
+            style={[styles.container, { backgroundColor: colors.background }]}
         >
-            <ScrollView contentContainerStyle={styles.scrollContent}>
+            <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
                     <Text style={styles.logo}>💰</Text>
-                    <Text style={styles.title}>CrediSmart+</Text>
-                    <Text style={styles.subtitle}>Seu crédito inteligente</Text>
+                    <Text style={[styles.title, { color: colors.primary }]}>CrediSmart+</Text>
+                    <Text style={[styles.subtitle, { color: colors.text.secondary }]}>O seu crédito inteligente</Text>
                 </View>
 
-                <View style={styles.form}>
-                    <Text style={styles.label}>Email</Text>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="seu@email.com"
+                <View style={[styles.form, { backgroundColor: colors.surface, shadowColor: colors.shadow }]}>
+                    
+                    {errorMsg ? (
+                        <View style={[styles.errorContainer, { backgroundColor: `${colors.status.error}15`, borderColor: colors.status.error }]}>
+                            <AlertCircle color={colors.status.error} size={20} />
+                            <Text style={[styles.errorText, { color: colors.status.error }]}>{errorMsg}</Text>
+                        </View>
+                    ) : null}
+
+                    <PremiumInput
+                        label="Email ou Telefone"
+                        placeholder="seu@email.com ou 84..."
                         value={email}
                         onChangeText={setEmail}
-                        keyboardType="email-address"
+                        keyboardType="default"
                         autoCapitalize="none"
                         autoComplete="email"
+                        icon={Mail}
                     />
 
-                    <Text style={styles.label}>Senha</Text>
-                    <TextInput
-                        style={styles.input}
+                    <PremiumInput
+                        label="Senha"
                         placeholder="Sua senha"
                         value={password}
                         onChangeText={setPassword}
-                        secureTextEntry
                         autoComplete="password"
+                        isPassword={true}
+                        icon={Lock}
                     />
 
-                    <TouchableOpacity
-                        style={[styles.button, loading && styles.buttonDisabled]}
-                        onPress={handleLogin}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#fff" />
-                        ) : (
-                            <Text style={styles.buttonText}>Entrar</Text>
-                        )}
-                    </TouchableOpacity>
+                    <View style={styles.buttonContainer}>
+                        <PremiumButton
+                            title="Entrar"
+                            onPress={handleLogin}
+                            loading={loading}
+                        />
+                    </View>
 
                     <TouchableOpacity
                         style={styles.linkButton}
                         onPress={() => navigation.navigate('Register')}
                     >
-                        <Text style={styles.linkText}>
-                            Não tem conta? <Text style={styles.linkTextBold}>Registre-se</Text>
+                        <Text style={[styles.linkText, { color: colors.text.secondary }]}>
+                            Não tem conta? <Text style={[styles.linkTextBold, { color: colors.primary }]}>Registre-se</Text>
                         </Text>
                     </TouchableOpacity>
                 </View>
@@ -97,82 +106,63 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
     },
     scrollContent: {
         flexGrow: 1,
         justifyContent: 'center',
-        padding: 20,
+        padding: spacing.lg,
     },
     header: {
         alignItems: 'center',
-        marginBottom: 40,
+        marginBottom: spacing.xxl,
     },
     logo: {
         fontSize: 60,
-        marginBottom: 10,
+        marginBottom: spacing.sm,
     },
     title: {
-        fontSize: 32,
-        fontWeight: 'bold',
-        color: '#2563eb',
-        marginBottom: 5,
+        fontFamily: typography.family.bold,
+        fontSize: typography.size.xxxl,
+        marginBottom: spacing.xs,
     },
     subtitle: {
-        fontSize: 16,
-        color: '#64748b',
+        fontFamily: typography.family.regular,
+        fontSize: typography.size.md,
     },
     form: {
-        backgroundColor: '#fff',
-        padding: 20,
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
+        padding: spacing.lg,
+        borderRadius: borderRadius.lg,
         elevation: 3,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 12,
     },
-    label: {
-        fontSize: 14,
-        fontWeight: '600',
-        color: '#334155',
-        marginBottom: 8,
-        marginTop: 12,
-    },
-    input: {
-        backgroundColor: '#f8fafc',
-        borderWidth: 1,
-        borderColor: '#e2e8f0',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        color: '#1e293b',
-    },
-    button: {
-        backgroundColor: '#2563eb',
-        padding: 16,
-        borderRadius: 8,
-        alignItems: 'center',
-        marginTop: 24,
-    },
-    buttonDisabled: {
-        opacity: 0.6,
-    },
-    buttonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+    buttonContainer: {
+        marginTop: spacing.lg,
     },
     linkButton: {
-        marginTop: 20,
+        marginTop: spacing.md,
         alignItems: 'center',
     },
     linkText: {
-        color: '#64748b',
-        fontSize: 14,
+        fontFamily: typography.family.regular,
+        fontSize: typography.size.sm,
     },
     linkTextBold: {
-        color: '#2563eb',
-        fontWeight: '600',
+        fontFamily: typography.family.bold,
+    },
+    errorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: spacing.md,
+        borderRadius: borderRadius.md,
+        borderWidth: 1,
+        marginBottom: spacing.md,
+    },
+    errorText: {
+        fontFamily: typography.family.medium,
+        fontSize: typography.size.sm,
+        marginLeft: spacing.sm,
+        flex: 1,
     },
 });

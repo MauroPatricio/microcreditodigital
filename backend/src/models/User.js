@@ -36,7 +36,7 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Institution',
         required: function () {
-            return !['super_admin', 'owner', 'admin'].includes(this.role);
+            return !['super_admin', 'owner', 'admin', 'client'].includes(this.role);
         }
     },
     activeInstitution: {
@@ -74,30 +74,52 @@ const userSchema = new mongoose.Schema({
         yearsInResidence: { type: Number, default: 0 }
     },
     professionalInfo: {
-        employmentStatus: { type: String, enum: ['employed', 'self_employed', 'unemployed', 'retired', 'student', 'civil_servant'] },
+        employmentStatus: { type: String, enum: ['employed', 'self_employed', 'unemployed', 'retired', 'student', 'civil_servant', 'entrepreneur', 'merchant', 'farmer', 'service_provider', 'other'] },
         employerName: String,
+        sector: { type: String, enum: ['public', 'private'] },
+        department: String,
+        contractType: String,
         monthlyIncome: Number,
         monthlyExpenses: Number,
-        incomeSource: String,
+        incomeSource: String, // Para outros rendimentos
         employmentDuration: String,
         position: String,
-        workAddress: String
+        workAddress: String,
+        otherEmploymentStatus: String
     },
     guarantor: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User'
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        name: String,
+        relationship: String,
+        phone: String,
+        nuit: String,
+        documentType: String,
+        documentNumber: String,
+        address: String,
+        profession: String,
+        monthlyIncome: Number,
+        documents: [{ type: String }] // URLs para anexos (frente, verso BI)
     },
     collateralType: String,
     businessInfo: {
         name: String,
-        type: String,
+        type: String, // Tipo de actividade
+        location: String,
         yearsInOperation: Number,
-        monthlyRevenue: Number
+        monthlyRevenue: Number,
+        monthlyExpenses: Number,
+        estimatedNetIncome: Number
     },
     references: [{
         name: String,
         relationship: String,
-        phone: String
+        phone: String,
+        altPhone: String,
+        address: String,
+        profession: String,
+        consentRecorded: { type: Boolean, default: false },
+        consentDate: Date,
+        consentMethod: String // ex: 'sms_reply', 'app_click', 'verbal'
     }],
     selfieUrl: String,
     onboardingStep: {
@@ -163,6 +185,14 @@ const userSchema = new mongoose.Schema({
     resetPasswordExpires: {
         type: Date,
         default: null
+    },
+    twoFactorSecret: {
+        type: String,
+        default: null
+    },
+    isTwoFactorEnabled: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true
@@ -196,7 +226,8 @@ userSchema.index({ email: 1 });
 userSchema.index({ phone: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ identityDocument: 1, institution: 1 }, { unique: true, sparse: true });
-userSchema.index({ nuit: 1, institution: 1 }, { unique: true, sparse: true });
+// Removida a restrição unique para nuit_institution porque clientes podem não ter NUIT e o MongoDB trata null como valor único
+userSchema.index({ nuit: 1, institution: 1 }, { sparse: true });
 userSchema.index({ 'address.coordinates': '2dsphere' });
 userSchema.index({ createdAt: -1 });
 

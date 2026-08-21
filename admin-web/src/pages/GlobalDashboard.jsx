@@ -32,7 +32,7 @@ const GlobalDashboard = () => {
 
     const data = stats?.institutions.map(inst => ({
         name: inst.name,
-        value: 100 // Mock value for visualization
+        value: inst.value || 0
     })) || [];
 
     const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
@@ -150,9 +150,9 @@ const GlobalDashboard = () => {
                                         content={({ active, payload }) => {
                                             if (active && payload && payload.length) {
                                                 return (
-                                                    <div className="glass" style={{ padding: '1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}>
+                                                    <div className="glass" style={{ padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-light)', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}>
                                                         <p style={{ fontSize: '0.9rem', fontWeight: 800, marginBottom: '0.25rem' }}>{payload[0].payload.name}</p>
-                                                        <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent)' }}>Confiança: {payload[0].value}%</p>
+                                                        <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--accent)' }}>Volume: {new Intl.NumberFormat('pt-MZ', { style: 'currency', currency: 'MZN' }).format(payload[0].value)}</p>
                                                     </div>
                                                 );
                                             }
@@ -184,7 +184,7 @@ const GlobalDashboard = () => {
                                         <span style={{ fontWeight: 600, color: 'var(--text-main)' }}>{item.label}</span>
                                         <span style={{ fontWeight: 800, color: item.color }}>{item.val}%</span>
                                     </div>
-                                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ height: '8px', background: 'var(--bg-card-hover)', borderRadius: '4px', overflow: 'hidden' }}>
                                         <div style={{ width: `${item.val}%`, height: '100%', background: item.color, borderRadius: '4px' }}></div>
                                     </div>
                                 </div>

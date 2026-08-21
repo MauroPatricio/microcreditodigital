@@ -70,7 +70,7 @@ const InstitutionSwitcher = () => {
                         justifyContent: 'center',
                         flexShrink: 0,
                         overflow: 'hidden',
-                        color: 'white',
+                        color: 'var(--text-heading)',
                         fontWeight: 'bold'
                     }}>
                         {activeInst?.settings?.appearance?.logoUrl ? (
@@ -80,7 +80,7 @@ const InstitutionSwitcher = () => {
                                 style={{ width: '100%', height: '100%', objectFit: 'contain' }}
                             />
                         ) : (
-                            <span style={{ color: 'white', fontWeight: 700, fontSize: '0.85rem' }}>
+                            <span style={{ color: 'var(--text-heading)', fontWeight: 700, fontSize: '0.85rem' }}>
                                 {(activeInst?.name || 'I').charAt(0).toUpperCase()}
                             </span>
                         )}
@@ -124,9 +124,9 @@ const InstitutionSwitcher = () => {
                                     justifyContent: 'space-between',
                                     padding: '0.75rem 1rem',
                                     background: inst._id === activeInst?._id ? 'var(--sidebar-active-bg)' : 'transparent',
-                                    border: '1px solid ' + (inst._id === activeInst?._id ? 'var(--primary-light)' : 'transparent'),
+                                    border: '1px solid ' + (inst._id === activeInst?._id ? '#10b981' : 'transparent'),
                                     borderRadius: '8px',
-                                    color: inst._id === activeInst?._id ? 'var(--primary)' : 'var(--text-main)',
+                                    color: inst._id === activeInst?._id ? '#10b981' : 'var(--text-main)',
                                     cursor: inst._id === activeInst?._id ? 'default' : 'pointer',
                                     textAlign: 'left',
                                     marginBottom: '4px',

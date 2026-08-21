@@ -40,7 +40,7 @@ const CommunicationHistory = ({ status: initialStatus }) => {
             case 'sent': return <span style={{ color: 'var(--success)', background: 'rgba(34, 197, 94, 0.1)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>🟢 ENVIADO</span>;
             case 'pending': return <span style={{ color: 'var(--warning)', background: 'rgba(234, 179, 8, 0.1)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>🟡 PENDENTE</span>;
             case 'failed': return <span style={{ color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)', padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 800 }}>🔴 FALHOU</span>;
-            case 'cancelled': return <span style={{ color: 'var(--text-muted)', background: 'rgba(255, 255, 255, 0.05)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>CANCELADO</span>;
+            case 'cancelled': return <span style={{ color: 'var(--text-muted)', background: 'var(--bg-card-hover)', padding: '4px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>CANCELADO</span>;
             default: return status;
         }
     };

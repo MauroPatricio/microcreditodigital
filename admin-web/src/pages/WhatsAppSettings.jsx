@@ -144,7 +144,7 @@ const WhatsAppSettings = () => {
                                     </div>
                                 </div>
                                 <h3 style={{ fontSize: '1.25rem', fontWeight: 800, marginBottom: '0.75rem', letterSpacing: '-0.3px' }}>{t.title}</h3>
-                                <p style={{ fontSize: '0.95rem', color: 'rgba(255,255,255,0.6)', marginBottom: '1.75rem', lineHeight: '1.6', height: '4.8rem', overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}>
+                                <p style={{ fontSize: '0.95rem', color: 'var(--text-muted)', marginBottom: '1.75rem', lineHeight: '1.6', height: '4.8rem', overflow: 'hidden', display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: 3 }}>
                                     {t.body}
                                 </p>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', fontSize: '0.85rem', color: 'var(--text-muted)', background: 'var(--bg-main)', padding: '0.75rem 1rem', borderRadius: '12px' }}>
@@ -157,7 +157,7 @@ const WhatsAppSettings = () => {
                     </div>
 
                     {editingTemplate && (
-                        <div className="glass" style={{ padding: '2.5rem 2rem', borderRadius: '32px', position: 'sticky', top: '2rem', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
+                        <div className="glass" style={{ padding: '2.5rem 2rem', borderRadius: '32px', position: 'sticky', top: '2rem', border: '1px solid var(--border-light)', boxShadow: '0 20px 40px rgba(0,0,0,0.4)' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                                 <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.5px' }}>
                                     {editingTemplate._id ? 'Editar Layout' : 'Novo Template'}
@@ -174,7 +174,7 @@ const WhatsAppSettings = () => {
                                         onChange={e => setEditingTemplate({ ...editingTemplate, name: e.target.value })}
                                         placeholder="ex: lembrete_atraso"
                                         required
-                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -185,7 +185,7 @@ const WhatsAppSettings = () => {
                                         onChange={e => setEditingTemplate({ ...editingTemplate, title: e.target.value })}
                                         placeholder="ex: Aviso de Vencimento Próximo"
                                         required
-                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
+                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none' }}
                                     />
                                 </div>
                                 <div>
@@ -196,7 +196,7 @@ const WhatsAppSettings = () => {
                                         rows="6"
                                         placeholder="Use {{name}}, {{amount}}, etc para personalizar."
                                         required
-                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none', resize: 'none', lineHeight: '1.6' }}
+                                        style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', outline: 'none', resize: 'none', lineHeight: '1.6' }}
                                     ></textarea>
                                     <div style={{ marginTop: '0.75rem', display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
                                         {['name', 'amount', 'date', 'institution', 'institution_logo', 'contract'].map(tag => (
@@ -212,7 +212,7 @@ const WhatsAppSettings = () => {
                                         <select
                                             value={editingTemplate.triggerType}
                                             onChange={e => setEditingTemplate({ ...editingTemplate, triggerType: e.target.value })}
-                                            style={{ width: '100%', padding: '1.1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', appearance: 'none' }}
+                                            style={{ width: '100%', padding: '1.1rem', background: 'rgba(15, 23, 42, 0.8)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', appearance: 'none' }}
                                         >
                                             {triggerOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                                         </select>
@@ -222,9 +222,9 @@ const WhatsAppSettings = () => {
                                         <div style={{ position: 'relative' }}>
                                             <input
                                                 type="number"
-                                                value={editingTemplate.triggerDays}
-                                                onChange={e => setEditingTemplate({ ...editingTemplate, triggerDays: parseInt(e.target.value) })}
-                                                style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', textAlign: 'center' }}
+                                                value={editingTemplate.triggerDays ?? ''}
+                                                onChange={e => setEditingTemplate({ ...editingTemplate, triggerDays: e.target.value === '' ? '' : parseInt(e.target.value) })}
+                                                style={{ width: '100%', padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontSize: '1rem', textAlign: 'center' }}
                                             />
                                             <span style={{ position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)', fontSize: '0.8rem', color: 'var(--text-muted)' }}>dias</span>
                                         </div>
@@ -242,7 +242,7 @@ const WhatsAppSettings = () => {
                                     <button
                                         type="button"
                                         onClick={() => setEditingTemplate(null)}
-                                        style={{ flex: 1, padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer' }}
+                                        style={{ flex: 1, padding: '1.1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '16px', color: 'var(--text-main)', fontWeight: 600, cursor: 'pointer' }}
                                     >
                                         Cancelar
                                     </button>

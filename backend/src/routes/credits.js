@@ -6,6 +6,7 @@ import Commission from '../models/Commission.js';
 import Contract from '../models/Contract.js';
 import contractService from '../services/contractService.js';
 import smsService from '../services/sms.js';
+import { mpesaService } from '../services/mpesaService.js';
 import { protect, authorize } from '../middleware/auth.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
@@ -14,6 +15,9 @@ import { calculateConfidence } from '../services/confidenceService.js';
 import simulationService from '../services/simulationService.js';
 import cashflowService from '../services/cashflowService.js';
 import CashTransaction from '../models/CashTransaction.js';
+import uploadCollateral from '../middleware/uploadCollateralMiddleware.js';
+import emailService from '../services/emailService.js';
+import notificationService from '../services/notificationService.js';
 
 const router = express.Router();
 
@@ -31,7 +35,7 @@ router.post('/simulate', protect, async (req, res) => {
             });
         }
 
-        const rate = interestRate || 10;
+        const rate = interestRate || req.institution?.settings?.interestRates?.default || 10;
         // Default to monthly if not specified, for backward compatibility
         const period = periodicity || 'monthly';
         const start = startDate || new Date();
@@ -65,7 +69,7 @@ router.post('/simulate/pdf', protect, async (req, res) => {
             return res.status(400).json({ success: false, message: 'Dados incompletos' });
         }
 
-        const rate = interestRate || req.user.institution.settings?.interestRates?.default || 10;
+        const rate = interestRate || req.institution.settings?.interestRates?.default || 10;
         const period = periodicity || 'monthly';
         const start = startDate || new Date();
         const amortType = amortizationType || 'price';
@@ -129,19 +133,52 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
             });
         }
 
+        // Actualizar Garante no perfil caso tenha sido submetido no pedido
+        if (req.body.guarantor && req.body.guarantor.name) {
+            client.guarantor = {
+                ...client.guarantor,
+                name: req.body.guarantor.name,
+                documentNumber: req.body.guarantor.documentNumber,
+                phone: req.body.guarantor.phone,
+                relationship: req.body.guarantor.relationship || 'Outro'
+            };
+            await client.save();
+        }
+
+        // Validação de Garantia Obrigatória
+        const guaranteeSettings = req.institution.settings?.guaranteeSettings;
+        if (guaranteeSettings && guaranteeSettings.isRequired) {
+            if (!client.guarantor || !client.guarantor.name || !client.guarantor.documentNumber) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Este produto de crédito exige garantia. Por favor, adicione as informações de um Garante no seu perfil antes de solicitar o crédito.'
+                });
+            }
+            
+            // Validar documentos obrigatórios do garante se definidos
+            if (guaranteeSettings.requiredDocuments && guaranteeSettings.requiredDocuments.length > 0) {
+                const hasDocs = client.guarantor.documents && client.guarantor.documents.length >= guaranteeSettings.requiredDocuments.length;
+                if (!hasDocs) {
+                    return res.status(400).json({
+                        success: false,
+                        message: 'Faltam documentos obrigatórios do Garante exigidos por esta instituição.'
+                    });
+                }
+            }
+        }
+
         // Calcular Confiança Automática
         const allClientCredits = await Credit.find({ client: effectiveClientId });
         const confidenceData = await calculateConfidence(client, allClientCredits);
 
-        // Criar solicitação de crédito
         const credit = await Credit.create({
             client: effectiveClientId,
-            institution: req.user.institution._id,
+            institution: req.institution._id,
             amount,
             term,
             periodicity: periodicity || 'monthly',
             amortizationType: amortizationType || 'price',
-            interestRate: interestRate || req.user.institution.settings?.interestRates?.default || 15,
+            interestRate: interestRate || req.institution.settings?.interestRates?.default || 15,
             purpose,
             collateral,
             status: 'pending',
@@ -155,6 +192,37 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
             }]
         });
 
+        // -----------------------------------------------------
+        // Enviar Notificações e Emails
+        // -----------------------------------------------------
+        try {
+            // Notificação App/WhatsApp para o Cliente
+            if (client.phone) {
+                // Se tiver push notification ou outro canal, podemos usar, mas vamos garantir o email
+                // Vamos tentar o sendNotification do notificationService se ele tiver um template apropriado
+                // Por agora enviamos apenas email e uma log-based notification
+            }
+
+            // Email para o Cliente
+            await emailService.sendCreditRequestClient(client, credit);
+
+            // Obter os proprietários/gestores da instituição
+            const managers = await User.find({
+                institution: req.institution._id,
+                role: { $in: ['owner', 'manager'] }
+            });
+
+            // Email e Notificação para cada proprietário/gestor
+            for (const manager of managers) {
+                if (manager.email) {
+                    await emailService.sendCreditRequestOwner(manager.email, client, credit);
+                }
+            }
+            console.log(`[Notification] Sent notifications for Credit Request ${credit._id}`);
+        } catch (notifErr) {
+            console.error('[Notification] Error sending credit request notifications:', notifErr.message);
+        }
+
         res.status(201).json({
             success: true,
             message: 'Solicitação de crédito enviada com sucesso',
@@ -163,9 +231,10 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
             }
         });
     } catch (error) {
+        import('fs').then(fs => fs.appendFileSync('error_log.txt', new Date().toISOString() + '\\n' + error.stack + '\\n\\n'));
         res.status(500).json({
             success: false,
-            message: 'Erro ao solicitar crédito',
+            message: 'Erro ao solicitar crédito: ' + error.message,
             error: error.message
         });
     }
@@ -178,7 +247,7 @@ router.get('/', protect, async (req, res) => {
     try {
         const { status, page = 1, limit = 10 } = req.query;
 
-        let query = { institution: req.user.institution._id };
+        let query = { institution: req.institution._id };
 
         // Se for cliente, só pode ver seus próprios créditos
         if (req.user.role === 'client') {
@@ -242,7 +311,7 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        const isSameInstitution = credit.institution.toString() === req.user.institution._id.toString();
+        const isSameInstitution = credit.institution.toString() === req.institution._id.toString();
         const isOwnCredit = req.user.role === 'client' && credit.client._id.toString() === req.user._id.toString();
         const isAdminOrStaff = ['owner', 'manager', 'agent'].includes(req.user.role);
 
@@ -415,7 +484,7 @@ router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin')
         await smsService.sendCreditApproved(
             credit.client.phone,
             credit.approvedAmount,
-            req.user.institution,
+            req.institution,
             req.user._id,
             credit._id
         );
@@ -479,7 +548,7 @@ router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'),
         await smsService.sendCreditRejected(
             client.phone,
             reason,
-            req.user.institution,
+            req.institution,
             req.user._id,
             credit._id
         );
@@ -523,48 +592,162 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
         if (credit.status !== 'approved' || credit.contractStatus !== 'signed') {
             return res.status(400).json({
                 success: false,
-                message: `Crédito deve estar aprovado e contrato assinado para desembolso. Atual: status=${credit.status}, contractStatus=${credit.contractStatus}`
+                message: `Crédito deve estar aprovado e contrato assinado para desembolso.`
             });
         }
 
+        // MAKER ACTION: Solicitar Desembolso
+        credit.currentStage = 'awaiting_disbursement';
+        credit.disbursementMethod = disbursementMethod || 'mpesa';
+        
+        credit.makerChecker = {
+            requestedBy: req.user._id,
+            requestedAt: new Date(),
+            status: 'pending'
+        };
+
+        credit.workflowHistory.push({
+            stage: 'awaiting_disbursement',
+            action: 'disbursement_requested',
+            performedBy: req.user._id,
+            comment: `Pedido de desembolso via ${disbursementMethod ? disbursementMethod.toUpperCase() : 'método não especificado'}. Aguardando aprovação do Checker.`
+        });
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: `Pedido de liberação de fundos enviado. Aguardando aprovação de outro colega (Checker).`,
+            data: { credit }
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao solicitar desembolso',
+            error: error.message
+        });
+    }
+});
+
+// @route   PUT /api/credits/:id/approve-disbursement
+// @desc    Aprovar o desembolso do crédito (Checker Action)
+// @access  Private (Manager/Owner/Super Admin)
+router.put('/:id/approve-disbursement', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Credit', 'approve_disbursement', 'high'), async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id);
+
+        if (!credit) {
+            return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+        }
+
+        if (credit.currentStage !== 'awaiting_disbursement') {
+            return res.status(400).json({ success: false, message: 'Este crédito não está aguardando liberação de fundos' });
+        }
+
+        // Validação MAKER-CHECKER (O Checker não pode ser o Maker)
+        // Permitimos bypass apenas se for o owner da instituição e forçado (mas por segurança bloqueamos estritamente)
+        if (credit.makerChecker?.requestedBy?.toString() === req.user._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: 'Acesso Negado: O utilizador que solicitou o desembolso (Maker) não pode ser o mesmo a autorizar (Checker).'
+            });
+        }
+
+        // CHECKER ACTION: Aprovar Desembolso
         credit.status = 'active';
         credit.currentStage = 'disbursement';
         credit.disbursedAt = new Date();
-        credit.disbursementMethod = disbursementMethod || 'mpesa';
+        
+        credit.makerChecker.approvedBy = req.user._id;
+        credit.makerChecker.approvedAt = new Date();
+        credit.makerChecker.status = 'approved';
 
         credit.workflowHistory.push({
             stage: 'disbursement',
             action: 'disbursed',
             performedBy: req.user._id,
-            comment: `Crédito desembolsado via ${disbursementMethod ? disbursementMethod.toUpperCase() : 'método não especificado'}.`
+            comment: `Crédito desembolsado definitivamente via ${credit.disbursementMethod}. Checker: ${req.user.name}`
         });
 
-        await credit.save();
-
-        // Enviar SMS de desembolso
         const client = await User.findById(credit.client);
+
+        // Desembolso via M-Pesa B2C se escolhido
+        if (credit.disbursementMethod === 'mpesa') {
+            const mpesaResult = await mpesaService.executeMpesaPayout({
+                amount: credit.approvedAmount,
+                phoneNumber: client.phone,
+                referenceId: credit._id.toString()
+            });
+
+            if (!mpesaResult.success) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Falha no desembolso M-Pesa: ${mpesaResult.errorMessage}`
+                });
+            }
+
+            credit.workflowHistory.push({
+                stage: 'disbursement',
+                action: 'mpesa_success',
+                performedBy: req.user._id,
+                comment: `Transferência M-Pesa concluída. TX ID: ${mpesaResult.transactionId}`
+            });
+        }
+
+        await credit.save();
         await smsService.sendDisbursementNotice(
             client.phone,
             credit.approvedAmount,
-            disbursementMethod,
-            req.user.institution,
+            credit.disbursementMethod,
+            req.institution,
             req.user._id,
             credit._id
         );
 
         res.json({
             success: true,
-            message: `Crédito desembolsado via ${disbursementMethod ? disbursementMethod.toUpperCase() : 'método não especificado'}`,
-            data: {
-                credit
-            }
+            message: `Desembolso autorizado e concluído com sucesso.`,
+            data: { credit }
         });
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: 'Erro ao desembolsar crédito',
+            message: 'Erro ao aprovar desembolso',
             error: error.message
         });
+    }
+});
+
+// @route   POST /api/credits/request/:id/insist
+// @desc    Alert finance team that disbursement countdown has reached 0
+// @access  Private (Client)
+router.post('/request/:id/insist', protect, async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id).populate('client', 'name phone');
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+        
+        // Notify finance team (we'll send to admin email for now)
+        const financeEmail = process.env.EMAIL_USER || 'nhiquelaservicos@gmail.com';
+        const subject = `[ALERTA] Desembolso Pendente - Crédito #${credit._id.toString().slice(-6)}`;
+        const html = `
+            <h2>Alerta de Desembolso Pendente</h2>
+            <p>O cliente <strong>${credit.client?.name || 'Cliente'}</strong> está aguardando o desembolso do crédito há mais de 30 minutos.</p>
+            <p><strong>Detalhes do Crédito:</strong></p>
+            <ul>
+                <li><strong>ID:</strong> ${credit._id}</li>
+                <li><strong>Valor Solicitado:</strong> ${credit.amount} MT</li>
+                <li><strong>Cliente:</strong> ${credit.client?.name} (${credit.client?.phone})</li>
+                <li><strong>Data de Solicitação:</strong> ${new Date(credit.createdAt).toLocaleString()}</li>
+            </ul>
+            <p>Por favor, verifique a solicitação no sistema e proceda com o desembolso.</p>
+        `;
+
+        await emailService.sendEmail(financeEmail, subject, html);
+        
+        res.json({ success: true, message: 'Equipa de finanças alertada com sucesso' });
+    } catch (error) {
+        console.error('Error on insist:', error);
+        res.status(500).json({ success: false, message: 'Erro ao enviar alerta' });
     }
 });
 
@@ -636,6 +819,68 @@ router.post('/:id/sign-contract', protect, auditAction('Credit', 'sign_contract'
         res.json({
             success: true,
             message: 'Contrato assinado com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// @route   POST /api/credits/:id/approve-contract
+// @desc    Aprovar contrato manualmente (Admin/Manager)
+// @access  Private
+router.post('/:id/approve-contract', protect, authorize('owner', 'manager'), auditAction('Credit', 'approve_contract', 'high'), async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id);
+
+        if (!credit) {
+            return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+        }
+
+        credit.contractStatus = 'signed';
+        
+        credit.workflowHistory.push({
+            stage: 'signature',
+            action: 'contract_signed',
+            performedBy: req.user._id,
+            comment: 'Contrato aprovado/assinado manualmente pelo administrador.'
+        });
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: 'Contrato aprovado com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// @route   POST /api/credits/:id/reject-contract
+// @desc    Rejeitar/Cancelar contrato (Admin/Manager)
+// @access  Private
+router.post('/:id/reject-contract', protect, authorize('owner', 'manager'), auditAction('Credit', 'reject_contract', 'medium'), async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id);
+
+        if (!credit) {
+            return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+        }
+
+        credit.contractStatus = 'rejected';
+        
+        credit.workflowHistory.push({
+            stage: 'signature',
+            action: 'rejected',
+            performedBy: req.user._id,
+            comment: 'Contrato rejeitado/cancelado pelo administrador.'
+        });
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: 'Contrato rejeitado com sucesso'
         });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
@@ -725,7 +970,7 @@ router.put('/:id/restructure', protect, authorize('manager', 'owner', 'super_adm
 });
 
 // @route   PUT /api/credits/:id/liquidate
-// @desc    Liquidação antecipada de um crédito
+// @desc    Liquidação antecipada de um crédito com perdão de juros futuros
 // @access  Private (Manager/Owner)
 router.put('/:id/liquidate', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
@@ -738,37 +983,88 @@ router.put('/:id/liquidate', protect, authorize('manager', 'owner', 'super_admin
             return res.status(400).json({ success: false, message: 'Apenas créditos ativos ou em atraso podem ser liquidados' });
         }
 
-        const remainingBalance = credit.totalPayable - credit.totalPaid;
+        // Buscar todas as parcelas não pagas
+        const installments = await Installment.find({ credit: credit._id, status: { $ne: 'paid' } });
 
-        // Registrar o pagamento final (Simulado ou real dependendo da integração)
-        credit.totalPaid = credit.totalPayable;
+        let amountToPayCapital = 0;
+        let amountToPayInterest = 0; // Juros de parcelas já em atraso (não perdoados)
+        let forgivenInterest = 0;
+
+        const now = new Date();
+
+        for (let inst of installments) {
+            const unpaidPrincipal = (inst.principalAmount || 0) - (inst.paidPrincipal || 0);
+            const unpaidInterest = (inst.interestAmount || 0) - (inst.paidInterest || 0);
+
+            amountToPayCapital += unpaidPrincipal;
+
+            // Se a parcela já venceu, o cliente tem de pagar os juros
+            if (new Date(inst.dueDate) < now) {
+                amountToPayInterest += unpaidInterest;
+                inst.paidInterest = (inst.paidInterest || 0) + unpaidInterest;
+            } else {
+                // Se a parcela é futura, perdoar os juros
+                forgivenInterest += unpaidInterest;
+                inst.interestAmount = inst.paidInterest || 0; // Zera o juro restante para refletir o perdão
+                inst.totalAmount = inst.principalAmount + inst.interestAmount; // Ajusta o total da parcela
+            }
+
+            inst.paidPrincipal = (inst.paidPrincipal || 0) + unpaidPrincipal;
+            inst.paidAmount = inst.totalAmount;
+            inst.status = 'paid';
+            inst.paymentDate = now;
+            await inst.save();
+        }
+
+        const totalToPay = amountToPayCapital + amountToPayInterest;
+
+        // Atualizar o crédito
+        credit.totalPaid = (credit.totalPaid || 0) + totalToPay;
         credit.remainingBalance = 0;
         credit.status = 'paid';
-        credit.lastPaymentDate = new Date();
+        credit.lastPaymentDate = now;
 
         // Adicionar ao histórico de auditoria
         credit.workflowHistory.push({
             stage: 'disbursement',
             action: 'liquidated_early',
             performedBy: req.user._id,
-            timestamp: new Date(),
-            comment: `Liquidação antecipada efetuada. Valor: ${remainingBalance} MT`
+            timestamp: now,
+            comment: `Liquidação antecipada efetuada. Capital pago: ${amountToPayCapital} MT. Juros perdoados: ${forgivenInterest} MT.`
         });
 
-        // Registrar automaticamente no Fluxo de Caixa (Caixa)
         const creditClient = await User.findById(credit.client);
         const clientName = creditClient ? creditClient.name : 'Cliente';
-        await CashTransaction.create({
-            institution: credit.institution,
-            type: 'entrada',
-            category: 'reembolso_emprestimo',
-            amount: remainingBalance,
-            description: `Liquidação antecipada do empréstimo de ${clientName}`,
-            reference: credit.loanNumber || credit._id.toString(),
-            paymentMethod: 'dinheiro', // Ou o método usado na liquidação
-            date: new Date(),
-            createdBy: req.user._id
-        });
+
+        // Registrar no Fluxo de Caixa separadamente (Capital)
+        if (amountToPayCapital > 0) {
+            await cashflowService.registerTransaction({
+                institution: credit.institution,
+                type: 'entrada',
+                category: 'reembolso_emprestimo', // Capital recuperado
+                amount: amountToPayCapital,
+                description: `Liquidação antecipada (Capital) - ${clientName}`,
+                reference: credit.loanNumber || credit._id.toString(),
+                paymentMethod: 'dinheiro',
+                createdBy: req.user._id,
+                date: now
+            });
+        }
+
+        // Registrar no Fluxo de Caixa separadamente (Juros Atrasados, se houver)
+        if (amountToPayInterest > 0) {
+            await cashflowService.registerTransaction({
+                institution: credit.institution,
+                type: 'entrada',
+                category: 'juros', // Lucro
+                amount: amountToPayInterest,
+                description: `Liquidação antecipada (Juros Vencidos) - ${clientName}`,
+                reference: credit.loanNumber || credit._id.toString(),
+                paymentMethod: 'dinheiro',
+                createdBy: req.user._id,
+                date: now
+            });
+        }
 
         await credit.save();
 
@@ -778,6 +1074,41 @@ router.put('/:id/liquidate', protect, authorize('manager', 'owner', 'super_admin
         });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Erro ao liquidar crédito', error: error.message });
+    }
+});
+// @route   POST /api/credits/:id/collateral/:collateralId/photos
+// @desc    Upload de foto para uma garantia específica
+// @access  Private
+router.post('/:id/collateral/:collateralId/photos', protect, authorize('admin', 'manager', 'owner', 'supervisor', 'agent', 'representative'), uploadCollateral.single('photo'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Nenhuma imagem enviada.' });
+        }
+
+        const credit = await Credit.findOne({ _id: req.params.id, institution: req.institution });
+        if (!credit) {
+            return res.status(404).json({ success: false, message: 'Crédito não encontrado.' });
+        }
+
+        const collateralItem = credit.collateral.id(req.params.collateralId);
+        if (!collateralItem) {
+            return res.status(404).json({ success: false, message: 'Garantia não encontrada.' });
+        }
+
+        // Adiciona a foto no array
+        const photoUrl = `/uploads/collateral/${req.file.filename}`;
+        collateralItem.photos.push(photoUrl);
+
+        await credit.save();
+
+        res.json({
+            success: true,
+            message: 'Foto carregada com sucesso.',
+            data: collateralItem
+        });
+    } catch (error) {
+        console.error('Upload Collateral Photo Error:', error);
+        res.status(500).json({ success: false, message: 'Erro ao carregar a foto.', error: error.message });
     }
 });
 

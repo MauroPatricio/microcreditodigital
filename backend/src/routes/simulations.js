@@ -104,8 +104,11 @@ router.post('/:id/send', protect, asyncHandler(async (req, res) => {
  */
 router.get('/', protect, asyncHandler(async (req, res) => {
     const { clientId } = req.query;
-    const query = { institution: req.user.institution._id };
-
+    const query = {};
+    
+    if (req.institutionId) {
+        query.institution = req.institutionId;
+    }
     if (clientId) {
         query.client = clientId;
     }

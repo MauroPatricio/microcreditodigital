@@ -28,7 +28,26 @@ const ClientProfile = () => {
     const [selectedFile, setSelectedFile] = useState(null);
     const [docType, setDocType] = useState('identity_card');
     const [generatingReport, setGeneratingReport] = useState(false);
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [savingEdit, setSavingEdit] = useState(false);
+    const [editData, setEditData] = useState({});
     const clientRef = useRef(null);
+
+    const handleEditSubmit = async (e) => {
+        e.preventDefault();
+        setSavingEdit(true);
+        try {
+            const res = await api.put(`/clients/${client._id}`, editData);
+            setClient(res.data.data.client || res.data.data);
+            setShowEditModal(false);
+            alert('Dados do cliente actualizados com sucesso!');
+        } catch (error) {
+            console.error('Erro ao actualizar cliente:', error);
+            alert('Erro ao actualizar dados do cliente.');
+        } finally {
+            setSavingEdit(false);
+        }
+    };
 
     const handleGenerateReport = async () => {
         if (!clientRef.current) return;
@@ -143,6 +162,109 @@ const ClientProfile = () => {
 
     return (
         <Layout>
+            {/* Modal de Edição de Dados do Cliente */}
+            {
+                showEditModal && (
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="glass" style={{
+                            width: '100%', maxWidth: '600px', padding: '2.5rem', borderRadius: '24px',
+                            background: 'var(--bg-card)', border: '1px solid var(--border-light)',
+                            maxHeight: '90vh', overflowY: 'auto'
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                                <h3 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Editar Cliente</h3>
+                                <button type="button" onClick={() => setShowEditModal(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                                    <FiXCircle size={24} />
+                                </button>
+                            </div>
+                            <form onSubmit={handleEditSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                                <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--accent)' }}>Dados Pessoais</h4>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Nome Completo</label>
+                                        <input 
+                                            type="text" 
+                                            value={editData.name} 
+                                            onChange={(e) => setEditData({...editData, name: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Email</label>
+                                        <input 
+                                            type="email" 
+                                            value={editData.email} 
+                                            onChange={(e) => setEditData({...editData, email: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Telefone</label>
+                                        <input 
+                                            type="text" 
+                                            value={editData.phone} 
+                                            onChange={(e) => setEditData({...editData, phone: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}
+                                            required
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>BI / NUIT</label>
+                                        <input 
+                                            type="text" 
+                                            value={editData.identityDocument} 
+                                            onChange={(e) => setEditData({...editData, identityDocument: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Data Nascimento</label>
+                                        <input 
+                                            type="date" 
+                                            value={editData.dateOfBirth} 
+                                            onChange={(e) => setEditData({...editData, dateOfBirth: e.target.value})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)' }}>Endereço</label>
+                                        <input 
+                                            type="text" 
+                                            value={editData.address?.street} 
+                                            onChange={(e) => setEditData({...editData, address: {...editData.address, street: e.target.value}})}
+                                            style={{ width: '100%', padding: '0.8rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid var(--border-light)', color: 'var(--text-main)' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button 
+                                        type="button" 
+                                        onClick={() => setShowEditModal(false)}
+                                        className="btn-secondary" 
+                                        style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: 800, border: '1px solid var(--border-light)', background: 'transparent', color: 'var(--text-main)' }}
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button 
+                                        type="submit" 
+                                        disabled={savingEdit}
+                                        className="btn-primary" 
+                                        style={{ flex: 1, padding: '1rem', borderRadius: '12px', fontWeight: 800, border: 'none', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+                                    >
+                                        {savingEdit ? 'A Salvar...' : 'Salvar Alterações'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                )
+            }
+
             <div style={{ marginBottom: '2rem' }}>
                 <button
                     onClick={() => navigate('/clients')}
@@ -200,9 +322,51 @@ const ClientProfile = () => {
                 {/* Lado Esquerdo - Info Pessoal */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                     <div className="card">
-                        <h3 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FiUser style={{ color: 'var(--accent)' }} /> {t('client_profile.personal_info')}
-                        </h3>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiUser style={{ color: 'var(--accent)' }} /> {t('client_profile.personal_info')}
+                            </h3>
+                            <button 
+                                onClick={() => {
+                                    setEditData({
+                                        name: client.name || '',
+                                        email: client.email || '',
+                                        phone: client.phone || '',
+                                        identityDocument: client.identityDocument || '',
+                                        nuit: client.nuit || '',
+                                        dateOfBirth: client.dateOfBirth ? new Date(client.dateOfBirth).toISOString().split('T')[0] : '',
+                                        address: {
+                                            street: client.address?.street || '',
+                                            city: client.address?.city || ''
+                                        },
+                                        professionalInfo: {
+                                            employmentStatus: client.professionalInfo?.employmentStatus || '',
+                                            employerName: client.professionalInfo?.employerName || '',
+                                            position: client.professionalInfo?.position || '',
+                                            monthlyIncome: client.professionalInfo?.monthlyIncome || ''
+                                        },
+                                        businessInfo: {
+                                            name: client.businessInfo?.name || '',
+                                            type: client.businessInfo?.type || '',
+                                            yearsInOperation: client.businessInfo?.yearsInOperation || '',
+                                            monthlyRevenue: client.businessInfo?.monthlyRevenue || ''
+                                        },
+                                        guarantor: {
+                                            name: client.guarantor?.name || '',
+                                            documentNumber: client.guarantor?.documentNumber || '',
+                                            phone: client.guarantor?.phone || ''
+                                        }
+                                    });
+                                    setShowEditModal(true);
+                                }}
+                                style={{
+                                    background: 'rgba(59, 130, 246, 0.1)', color: 'var(--blue-highlight)', border: 'none', padding: '0.4rem 0.75rem',
+                                    borderRadius: '6px', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem'
+                                }}
+                            >
+                                <FiEdit3 /> Editar
+                            </button>
+                        </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                 <FiPhone style={{ color: 'var(--text-muted)' }} />

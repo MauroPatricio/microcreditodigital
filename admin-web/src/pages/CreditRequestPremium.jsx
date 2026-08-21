@@ -5,7 +5,7 @@ import FinancialSimulator from '../components/FinancialSimulator';
 import api from '../api';
 import {
     FiDollarSign, FiCalendar, FiTarget, FiShield,
-    FiTrendingUp, FiInfo, FiCheckCircle, FiPlus, FiTrash2
+    FiTrendingUp, FiInfo, FiCheckCircle, FiPlus, FiTrash2, FiChevronLeft
 } from 'react-icons/fi';
 
 const CreditRequestPremium = () => {
@@ -99,7 +99,20 @@ const CreditRequestPremium = () => {
     return (
         <Layout>
             <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem 0' }}>
-                <header style={{ marginBottom: '3rem' }}>
+                <header style={{ marginBottom: '3rem', position: 'relative' }}>
+                    <button
+                        onClick={() => navigate(-1)}
+                        style={{
+                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                            background: 'transparent', border: 'none', color: 'var(--text-muted)',
+                            cursor: 'pointer', marginBottom: '1.5rem', fontSize: '0.9rem', padding: 0,
+                            transition: 'color 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.target.style.color = 'var(--accent)'}
+                        onMouseLeave={(e) => e.target.style.color = 'var(--text-muted)'}
+                    >
+                        <FiChevronLeft /> Voltar
+                    </button>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                         <div style={{ padding: '0.5rem', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', color: 'var(--accent)' }}>
                             <FiDollarSign size={24} />
@@ -138,7 +151,7 @@ const CreditRequestPremium = () => {
                             value={requestData.purpose}
                             onChange={(e) => setRequestData({ ...requestData, purpose: e.target.value })}
                             placeholder="Descreva como o valor será utilizado..."
-                            style={{ width: '100%', padding: '1rem', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', color: 'var(--text-main)' }}
+                            style={{ width: '100%', padding: '1rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '12px', color: 'var(--text-main)' }}
                         />
                     </div>
 
@@ -152,7 +165,7 @@ const CreditRequestPremium = () => {
                     </div>
 
                     {requestData.collateral.length === 0 ? (
-                        <p style={{ textAlign: 'center', padding: '2rem', border: '2px dashed rgba(255,255,255,0.05)', borderRadius: '12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
+                        <p style={{ textAlign: 'center', padding: '2rem', border: '2px dashed var(--border-light)', borderRadius: '12px', color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                             Nenhuma garantia física adicionada.
                         </p>
                     ) : (

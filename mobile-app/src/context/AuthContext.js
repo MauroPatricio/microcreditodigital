@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services';
+import { registerForPushNotificationsAsync, updatePushTokenOnServer } from '../services/pushNotificationService';
 
 const AuthContext = createContext({});
 
@@ -14,6 +15,17 @@ export const AuthProvider = ({ children }) => {
         loadUser();
     }, []);
 
+    const handlePushTokenRegistration = async () => {
+        try {
+            const token = await registerForPushNotificationsAsync();
+            if (token) {
+                await updatePushTokenOnServer(token);
+            }
+        } catch (error) {
+            console.log('Push notification registration failed', error);
+        }
+    };
+
     const loadUser = async () => {
         try {
             const [token, storedUser] = await AsyncStorage.multiGet(['token', 'user']);
@@ -21,6 +33,11 @@ export const AuthProvider = ({ children }) => {
             if (token[1] && storedUser[1]) {
                 setUser(JSON.parse(storedUser[1]));
                 setIsAuthenticated(true);
+                // Update user in background to get latest populated fields like institution
+                updateUser();
+                
+                // Register for push notifications
+                handlePushTokenRegistration();
             }
         } catch (error) {
             console.error('Error loading user:', error);
@@ -42,13 +59,22 @@ export const AuthProvider = ({ children }) => {
 
             setUser(userData);
             setIsAuthenticated(true);
+            
+            // Registar para Push Notifications após o login (e após o token estar salvo para a API o enviar)
+            setTimeout(() => {
+                handlePushTokenRegistration();
+            }, 500);
 
             return { success: true, user: userData };
         } catch (error) {
             console.error('Login error:', error);
+            let errorMessage = error.response?.data?.message || 'Erro ao fazer login';
+            if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+                errorMessage = error.response.data.errors[0].msg;
+            }
             return {
                 success: false,
-                message: error.response?.data?.message || 'Erro ao fazer login',
+                message: errorMessage,
             };
         }
     };
@@ -66,13 +92,25 @@ export const AuthProvider = ({ children }) => {
 
             setUser(newUser);
             setIsAuthenticated(true);
+            
+            // Registar para Push Notifications após o registo inicial
+            setTimeout(() => {
+                handlePushTokenRegistration();
+            }, 500);
 
             return { success: true, user: newUser };
         } catch (error) {
             console.error('Register error:', error);
+            let errorMessage = error.response?.data?.message || 'Erro ao registrar';
+            if (error.response?.data?.errors && error.response.data.errors.length > 0) {
+                errorMessage = error.response.data.errors[0].msg;
+            } else if (error.response?.data?.error && typeof error.response.data.error === 'string') {
+                errorMessage = error.response.data.error;
+            }
+
             return {
                 success: false,
-                message: error.response?.data?.message || 'Erro ao registrar',
+                message: errorMessage,
             };
         }
     };
@@ -101,6 +139,19 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const deleteAccount = async () => {
+        try {
+            await authService.deleteAccount();
+        } catch (error) {
+            console.error('Delete account error:', error);
+            throw error;
+        } finally {
+            await AsyncStorage.multiRemove(['token', 'refreshToken', 'user']);
+            setUser(null);
+            setIsAuthenticated(false);
+        }
+    };
+
     return (
         <AuthContext.Provider
             value={{
@@ -111,6 +162,7 @@ export const AuthProvider = ({ children }) => {
                 register,
                 logout,
                 updateUser,
+                deleteAccount,
             }}
         >
             {children}

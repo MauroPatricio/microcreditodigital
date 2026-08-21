@@ -45,7 +45,7 @@ const installmentSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'paid', 'overdue', 'partially_paid'],
+        enum: ['pending', 'paid', 'overdue', 'partially_paid', 'in_analysis'],
         default: 'pending'
     },
     paidAt: {

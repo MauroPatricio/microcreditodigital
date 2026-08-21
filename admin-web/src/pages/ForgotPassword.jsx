@@ -160,7 +160,7 @@ const ForgotPassword = () => {
                                 width: '100%',
                                 padding: '1rem 1rem 1rem 3rem',
                                 background: 'var(--bg-main)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                border: '1px solid var(--border-light)',
                                 borderRadius: '12px',
                                 color: 'var(--text-main)',
                                 fontSize: '0.95rem'

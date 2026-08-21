@@ -138,7 +138,7 @@ const AgentPerformance = () => {
                                         <XAxis dataKey="_id" stroke="var(--text-muted)" fontSize={12} />
                                         <YAxis stroke="var(--text-muted)" fontSize={12} />
                                         <Tooltip
-                                            contentStyle={{ background: '#1a1a2e', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px' }}
+                                            contentStyle={{ background: '#1a1a2e', border: '1px solid var(--border-light)', borderRadius: '8px' }}
                                             itemStyle={{ color: 'var(--accent)' }}
                                         />
                                         <Line type="monotone" dataKey="total" stroke="var(--accent)" strokeWidth={3} dot={{ r: 6 }} activeDot={{ r: 8 }} />
@@ -192,7 +192,7 @@ const AgentPerformance = () => {
                                         }}></div>
                                     </div>
                                 </div>
-                                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between' }}>
+                                <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between' }}>
                                     <span style={{ fontWeight: 600 }}>Total Acumulado</span>
                                     <span style={{ fontWeight: 800, color: 'var(--accent)' }}>{formatCurrency(performance.commissions.total)}</span>
                                 </div>

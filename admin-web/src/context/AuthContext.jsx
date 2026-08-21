@@ -27,9 +27,15 @@ export const AuthProvider = ({ children }) => {
         loadUser();
     }, []);
 
-    const login = async (email, password) => {
+    const login = async (email, password, twoFactorToken) => {
         try {
-            const res = await api.post('/auth/login', { email, password });
+            const res = await api.post('/auth/login', { email, password, twoFactorToken });
+            
+            // If the server requires 2FA but we didn't provide one (or need to prompt)
+            if (res.data.success && res.data.require2FA) {
+                return { success: true, require2FA: true };
+            }
+
             if (res.data.success) {
                 localStorage.setItem('token', res.data.data.token);
                 setUser(res.data.data.user); // Assuming backend returns user object

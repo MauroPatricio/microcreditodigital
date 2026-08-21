@@ -7,19 +7,22 @@ import {
     FiArrowLeft, FiCheckCircle, FiXCircle, FiDollarSign,
     FiCalendar, FiClock, FiFileText, FiInfo, FiShield,
     FiActivity, FiTarget, FiUser, FiMoreVertical, FiAlertCircle,
-    FiHash, FiMessageSquare, FiTrendingDown, FiPrinter
+    FiHash, FiMessageSquare, FiTrendingDown, FiPrinter,
+    FiUploadCloud, FiImage
 } from 'react-icons/fi';
 import ContractViewer from '../components/ContractViewer.jsx';
 import ConfidenceIndicator from '../components/ConfidenceIndicator.jsx';
 import Modal from '../components/Modal.jsx';
 
 const LoanDetail = () => {
+    const { user } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
     const [loan, setLoan] = useState(null);
     const [loading, setLoading] = useState(true);
     const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'success' });
-    const [paymentModal, setPaymentModal] = useState({ isOpen: false, installment: null, amount: '', method: 'mpesa', processing: false });
+    const [paymentModal, setPaymentModal] = useState({ isOpen: false, installment: null, amount: 0, method: 'mpesa', processing: false });
+    const [uploadingCollateralId, setUploadingCollateralId] = useState(null);
 
     const fetchLoanDetails = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -112,8 +115,8 @@ const LoanDetail = () => {
                 setLoan(res.data.data.credit);
                 setModal({
                     isOpen: true,
-                    title: 'Desembolso Efetuado',
-                    message: 'O valor foi creditado ao cliente com sucesso.',
+                    title: 'Pedido de Desembolso Efetuado',
+                    message: res.data.message || 'Pedido aguarda autorização (Checker).',
                     type: 'success'
                 });
             }
@@ -122,6 +125,28 @@ const LoanDetail = () => {
                 isOpen: true,
                 title: 'Erro no Desembolso',
                 message: error.response?.data?.message || 'Erro ao desembolsar.',
+                type: 'error'
+            });
+        }
+    };
+
+    const handleApproveDisbursement = async () => {
+        try {
+            const res = await api.put(`/credits/${id}/approve-disbursement`);
+            if (res.data.success) {
+                setLoan(res.data.data.credit);
+                setModal({
+                    isOpen: true,
+                    title: 'Desembolso Autorizado!',
+                    message: res.data.message || 'Desembolso concluído com sucesso.',
+                    type: 'success'
+                });
+            }
+        } catch (error) {
+            setModal({
+                isOpen: true,
+                title: 'Erro na Autorização',
+                message: error.response?.data?.message || 'Acesso negado ou erro na aprovação.',
                 type: 'error'
             });
         }
@@ -150,6 +175,40 @@ const LoanDetail = () => {
         }
     };
 
+    const handleUploadCollateralPhoto = async (e, collateralId) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('photo', file);
+
+        setUploadingCollateralId(collateralId);
+        try {
+            const res = await api.post(`/credits/${id}/collateral/${collateralId}/photo`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.success) {
+                setModal({
+                    isOpen: true,
+                    title: 'Fotografia Anexada',
+                    message: 'A fotografia da garantia foi carregada com sucesso.',
+                    type: 'success'
+                });
+                fetchLoanDetails(true);
+            }
+        } catch (error) {
+            console.error("Erro ao carregar fotografia da garantia", error);
+            setModal({
+                isOpen: true,
+                title: 'Erro de Upload',
+                message: error.response?.data?.message || 'Falha ao carregar a imagem da garantia.',
+                type: 'error'
+            });
+        } finally {
+            setUploadingCollateralId(null);
+        }
+    };
+
     const handleRestructure = () => {
         const confirm = window.confirm("Deseja iniciar o processo de reestruturação deste crédito? Isso permitirá alterar prazos e condições.");
         if (!confirm) return;
@@ -158,8 +217,7 @@ const LoanDetail = () => {
     };
 
     const handleEarlyLiquidation = async () => {
-        const balance = loan.totalPayable - loan.totalPaid;
-        const confirm = window.confirm(`Deseja efetuar a liquidação antecipada? O saldo devedor atual é de ${balance.toLocaleString()} MT.`);
+        const confirm = window.confirm(`Deseja efetuar a liquidação antecipada deste empréstimo? Todos os juros das parcelas futuras serão perdoados, e o cliente pagará apenas o Capital restante e eventuais juros já vencidos.`);
         if (!confirm) return;
 
         try {
@@ -254,8 +312,8 @@ const LoanDetail = () => {
                                 </span>
                                 <span style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>ID: {loan._id}</span>
                             </div>
-                            <h1 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.02em' }}>
-                                Protocolo #<span style={{ color: 'var(--accent)' }}>{loan._id.substring(loan._id.length - 8).toUpperCase()}</span>
+                            <h1 style={{ fontSize: '2.2rem', fontWeight: 900, letterSpacing: '-0.02em', color: 'var(--text-heading)' }}>
+                                Protocolo #<span style={{ color: 'var(--accent)' }}>{loan.loanNumber || loan._id.substring(loan._id.length - 8).toUpperCase()}</span>
                             </h1>
                         </div>
                         <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -276,10 +334,31 @@ const LoanDetail = () => {
                                     </button>
                                 </>
                             )}
-                            {loan.status === 'approved' && (
-                                <button className="btn-primary" style={{ background: 'var(--accent)' }} onClick={handleDisburse}>
-                                    <FiDollarSign style={{ marginRight: '0.5rem' }} /> EFETUAR DESEMBOLSO
+                            {loan.status === 'approved' && loan.currentStage !== 'awaiting_disbursement' && (
+                                <button
+                                    className="btn-primary"
+                                    style={{
+                                        background: loan.contractStatus === 'signed' ? 'var(--accent)' : 'var(--border-color)',
+                                        cursor: loan.contractStatus === 'signed' ? 'pointer' : 'not-allowed'
+                                    }}
+                                    onClick={loan.contractStatus === 'signed' ? handleDisburse : undefined}
+                                    title={loan.contractStatus !== 'signed' ? 'O contrato precisa estar assinado para solicitar o desembolso' : 'Solicitar Desembolso'}
+                                >
+                                    <FiDollarSign style={{ marginRight: '0.5rem' }} /> SOLICITAR DESEMBOLSO
                                 </button>
+                            )}
+                            {loan.currentStage === 'awaiting_disbursement' && (
+                                <>
+                                    {loan.makerChecker?.requestedBy === user?._id ? (
+                                        <button className="btn-primary" style={{ background: 'var(--bg-card-hover)', cursor: 'not-allowed', opacity: 0.7 }} disabled>
+                                            <FiClock style={{ marginRight: '0.5rem' }} /> AGUARDANDO AUTORIZAÇÃO DE COLEGA
+                                        </button>
+                                    ) : (
+                                        <button className="btn-primary" style={{ background: 'var(--success)' }} onClick={handleApproveDisbursement}>
+                                            <FiCheckCircle style={{ marginRight: '0.5rem' }} /> AUTORIZAR DESEMBOLSO (CHECKER)
+                                        </button>
+                                    )}
+                                </>
                             )}
                             {(loan.status === 'active' || loan.status === 'overdue') && (
                                 <>
@@ -291,7 +370,7 @@ const LoanDetail = () => {
                                     </button>
                                 </>
                             )}
-                            <button className="btn-secondary" style={{ padding: '0.75rem' }} title="Imprimir Detalhes">
+                            <button className="btn-secondary" onClick={() => window.print()} style={{ padding: '0.75rem' }} title="Imprimir Detalhes">
                                 <FiPrinter size={18} />
                             </button>
                         </div>
@@ -333,69 +412,121 @@ const LoanDetail = () => {
                             </div>
                         </div>
 
-                        {/* Plano de Amortização (Parcelas) */}
-                        {hasPopulatedInstallments && (
+                        {/* Amortization Plan / Installments */}
+                        {loan.installments?.length > 0 && (
                             <div className="card" style={{ padding: '2rem' }}>
-                                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, marginBottom: '1.5rem' }}>Plano de Amortização</h3>
-                                <div style={{ overflowX: 'auto' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.6rem', color: 'var(--text-main)' }}>
+                                        <FiCalendar color="var(--accent)" /> Plano de Amortização
+                                    </h3>
+                                    <div style={{ display: 'flex', gap: '1rem' }}>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Total Juros</p>
+                                            <p style={{ fontWeight: 800, color: 'var(--warning)' }}>
+                                                {loan.installments.reduce((sum, inst) => sum + (inst?.interest || 0), 0).toLocaleString()} MT
+                                            </p>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Total Capital</p>
+                                            <p style={{ fontWeight: 800, color: 'var(--success)' }}>
+                                                {loan.installments.reduce((sum, inst) => sum + (inst?.principal || 0), 0).toLocaleString()} MT
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ overflowX: 'auto', borderRadius: '12px', border: '1px solid var(--border-light)' }}>
                                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                                         <thead>
-                                            <tr style={{ background: 'var(--bg-main)' }}>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>Nº</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>VENCIMENTO</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>VALOR PARCELA</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>CAPITAL / JUROS</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>STATUS</th>
-                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 600, fontSize: '0.8rem' }}>AÇÕES</th>
+                                            <tr style={{ background: 'var(--bg-main)', borderBottom: '2px solid var(--border-light)' }}>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Nº</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Vencimento</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Prestação</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Capital</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Juro</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Multa</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Saldo Devedor</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase' }}>Status</th>
+                                                <th style={{ padding: '1rem', color: 'var(--text-muted)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', textAlign: 'right' }}>Ações</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {loan.installments.map(inst => {
-                                                if (!inst || typeof inst === 'string') return null;
-                                                return (
-                                                    <tr key={inst._id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                        <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 700 }}>{inst.installmentNumber}</td>
-                                                        <td style={{ padding: '1rem', fontSize: '0.85rem' }}>{new Date(inst.dueDate).toLocaleDateString('pt-MZ')}</td>
-                                                        <td style={{ padding: '1rem', fontSize: '0.9rem', fontWeight: 800, color: 'var(--accent)' }}>{inst.totalAmount?.toLocaleString()} MT</td>
-                                                        <td style={{ padding: '1rem', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            {inst.principal?.toLocaleString()} / {inst.interest?.toLocaleString()}
-                                                        </td>
-                                                    <td style={{ padding: '1rem' }}>
-                                                        <button
-                                                            onClick={() => handleToggleStatus(inst)}
-                                                            style={{
-                                                                fontSize: '0.7rem', fontWeight: 900, textTransform: 'uppercase',
-                                                                padding: '0.4rem 0.8rem', borderRadius: '8px', cursor: 'pointer',
-                                                                background: inst.status === 'paid' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.1)',
-                                                                color: inst.status === 'paid' ? 'var(--success)' : 'var(--warning)',
-                                                                border: `1px solid ${inst.status === 'paid' ? 'var(--success)' : 'var(--warning)'}`,
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: '0.4rem',
-                                                                width: 'fit-content'
-                                                            }}
-                                                            title="Clique para alternar status"
-                                                        >
-                                                            {inst.status === 'paid' ? <><FiCheckCircle /> PAGO</> : <><FiClock /> PENDENTE</>}
-                                                        </button>
-                                                    </td>
-                                                    <td style={{ padding: '1rem' }}>
-                                                        {inst.status !== 'paid' && loan.status === 'active' && (
-                                                            <button
-                                                                onClick={() => openPaymentModal(inst)}
-                                                                style={{
-                                                                    padding: '0.4rem 0.8rem', borderRadius: '6px', background: 'var(--accent)',
-                                                                    color: 'white', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800,
-                                                                    display: 'flex', alignItems: 'center', gap: '0.4rem'
-                                                                }}
-                                                            >
-                                                                <FiDollarSign size={12} /> Pagar
-                                                            </button>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                                );
-                                            })}
+                                            {(() => {
+                                                let runningBalance = loan.approvedAmount;
+                                                return loan.installments.map((inst) => {
+                                                    if (!inst || typeof inst === 'string') return null;
+                                                    
+                                                    // Saldo devedor após o pagamento da parcela
+                                                    runningBalance -= (inst.principal || 0);
+                                                    const displayBalance = Math.max(0, runningBalance);
+
+                                                    const isOverdue = new Date(inst.dueDate) < new Date() && inst.status !== 'paid';
+
+                                                    return (
+                                                        <tr key={inst._id} style={{ 
+                                                            borderBottom: '1px solid var(--border-light)',
+                                                            background: isOverdue ? 'rgba(239, 68, 68, 0.05)' : 'transparent',
+                                                            transition: 'background 0.2s'
+                                                        }}>
+                                                            <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 800 }}>
+                                                                <div style={{ width: '28px', height: '28px', borderRadius: '6px', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent)' }}>
+                                                                    {inst.installmentNumber}
+                                                                </div>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, color: isOverdue ? 'var(--danger)' : 'var(--text-main)' }}>
+                                                                {new Date(inst.dueDate).toLocaleDateString('pt-MZ')}
+                                                                {isOverdue && <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--danger)', fontWeight: 800 }}>EM ATRASO</span>}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.9rem', fontWeight: 900, color: 'var(--text-main)' }}>
+                                                                {inst.totalAmount?.toLocaleString()} MT
+                                                                {inst.paidAmount > 0 && inst.paidAmount < inst.totalAmount && (
+                                                                    <span style={{ display: 'block', fontSize: '0.65rem', color: 'var(--warning)', fontWeight: 700 }}>Pago: {inst.paidAmount?.toLocaleString()} MT</span>
+                                                                )}
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--success)' }}>
+                                                                {inst.principal?.toLocaleString()} MT
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, color: 'var(--warning)' }}>
+                                                                {inst.interest?.toLocaleString()} MT
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 600, color: inst.lateFee > 0 ? 'var(--danger)' : 'var(--text-muted)' }}>
+                                                                {(inst.lateFee || 0).toLocaleString()} MT
+                                                            </td>
+                                                            <td style={{ padding: '1rem', fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)' }}>
+                                                                {displayBalance.toLocaleString()} MT
+                                                            </td>
+                                                            <td style={{ padding: '1rem' }}>
+                                                                <span style={{
+                                                                    fontSize: '0.65rem', fontWeight: 900, textTransform: 'uppercase',
+                                                                    padding: '0.4rem 0.6rem', borderRadius: '6px',
+                                                                    background: inst.status === 'paid' ? 'rgba(16, 185, 129, 0.15)' : (inst.status === 'partially_paid' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.1)'),
+                                                                    color: inst.status === 'paid' ? 'var(--success)' : (inst.status === 'partially_paid' ? 'var(--blue-highlight)' : 'var(--warning)'),
+                                                                    border: `1px solid ${inst.status === 'paid' ? 'var(--success)' : (inst.status === 'partially_paid' ? 'var(--blue-highlight)' : 'var(--warning)')}`
+                                                                }}>
+                                                                    {inst.status === 'paid' ? 'PAGO' : (inst.status === 'partially_paid' ? 'PARCIAL' : 'PENDENTE')}
+                                                                </span>
+                                                            </td>
+                                                            <td style={{ padding: '1rem', textAlign: 'right' }}>
+                                                                {inst.status !== 'paid' && loan.status === 'active' && (
+                                                                    <button
+                                                                        onClick={() => openPaymentModal(inst)}
+                                                                        style={{
+                                                                            padding: '0.4rem 0.8rem', borderRadius: '6px', background: 'var(--accent)',
+                                                                            color: 'var(--text-heading)', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 800,
+                                                                            display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+                                                                            boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+                                                                        }}
+                                                                    >
+                                                                        <FiDollarSign size={12} /> Pagar
+                                                                    </button>
+                                                                )}
+                                                                {loan.status !== 'active' && inst.status !== 'paid' && (
+                                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>---</span>
+                                                                )}
+                                                            </td>
+                                                        </tr>
+                                                    );
+                                                });
+                                            })()}
                                         </tbody>
                                     </table>
                                 </div>
@@ -426,7 +557,7 @@ const LoanDetail = () => {
                         <div className="card glass" style={{ padding: '2rem' }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
                                 <h3 style={{ fontSize: '1.1rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <FiActivity color="var(--accent)" /> Análise de Risco Fintech
+                                    <FiActivity color="var(--accent)" /> Análise de Risco
                                 </h3>
                                 <span style={{
                                     padding: '0.4rem 0.8rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 900, textTransform: 'uppercase',
@@ -473,21 +604,56 @@ const LoanDetail = () => {
                         {loan.collateral?.length > 0 && (
                             <div className="card" style={{ padding: '2rem' }}>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <FiShield color="var(--accent)" /> Garantias do Crédito
+                                    <FiShield color="var(--accent)" /> Garantias Físicas e Materiais
                                 </h3>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                                    {loan.collateral.map((item, idx) => (
-                                        <div key={idx} style={{
-                                            padding: '1.25rem', background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)',
-                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                                    {loan.collateral.map((item) => (
+                                        <div key={item._id} style={{
+                                            background: 'var(--bg-main)', borderRadius: '12px', border: '1px solid var(--border-light)',
+                                            overflow: 'hidden', display: 'flex', flexDirection: 'column'
                                         }}>
-                                            <div>
-                                                <p style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase' }}>{item.type}</p>
-                                                <p style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '0.25rem' }}>{item.description}</p>
+                                            <div style={{ padding: '1.25rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div>
+                                                    <p style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 800, textTransform: 'uppercase' }}>{item.type}</p>
+                                                    <p style={{ fontSize: '1rem', fontWeight: 700, marginTop: '0.25rem' }}>{item.description}</p>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <p style={{ fontSize: '1.1rem', fontWeight: 900, color: 'var(--success)' }}>{item.value?.toLocaleString()} MT</p>
+                                                    <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Valor Estimado</p>
+                                                </div>
                                             </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <p style={{ fontSize: '1.1rem', fontWeight: 900 }}>{item.value?.toLocaleString()} MT</p>
-                                                <p style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>Valor Estimado</p>
+                                            
+                                            <div style={{ padding: '1.25rem', background: 'rgba(0,0,0,0.2)', flexGrow: 1 }}>
+                                                {item.photos && item.photos.length > 0 ? (
+                                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                                        {item.photos.map((url, i) => (
+                                                            <div key={i} style={{ width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '2px solid var(--border-light)' }}>
+                                                                <img src={`http://localhost:4000${url}`} alt="Garantia" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ textAlign: 'center', padding: '1rem', background: 'var(--bg-card-hover)', borderRadius: '8px', border: '1px dashed var(--border-light)', marginBottom: '1rem' }}>
+                                                        <FiImage size={24} style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }} />
+                                                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Nenhuma fotografia registada.</p>
+                                                    </div>
+                                                )}
+
+                                                <label style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
+                                                    padding: '0.6rem', borderRadius: '8px', background: 'var(--primary-light)',
+                                                    color: 'var(--accent)', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer',
+                                                    transition: 'all 0.2s'
+                                                }}>
+                                                    {uploadingCollateralId === item._id ? 'A carregar...' : <><FiUploadCloud size={16} /> Adicionar Fotografia</>}
+                                                    <input 
+                                                        type="file" 
+                                                        accept="image/*" 
+                                                        style={{ display: 'none' }} 
+                                                        onChange={(e) => handleUploadCollateralPhoto(e, item._id)}
+                                                        disabled={uploadingCollateralId === item._id}
+                                                    />
+                                                </label>
                                             </div>
                                         </div>
                                     ))}
@@ -512,7 +678,7 @@ const LoanDetail = () => {
                                 </div>
                                 <div>
                                     <p style={{ fontWeight: 800, fontSize: '1.1rem', marginBottom: '0.25rem' }}>{loan.client?.name}</p>
-                                    <Link to={`/clients/${loan.client?._id}`} style={{ color: 'var(--accent)', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <Link to={`/clients/${loan.client?._id}`} style={{ color: 'var(--blue-highlight)', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                         <FiUser size={12} /> Ver Perfil Completo
                                     </Link>
                                 </div>

@@ -1,9 +1,19 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-// Configure base URL - change to your backend URL
-// Para Android Emulator, use 10.0.2.2. Para iOS ou dispositivo físico, use o seu IP local.
-const API_URL = 'http://10.0.2.2:5000/api'; // Alterar para o IP real em produção
+// Configure base URL dynamically
+let API_URL = 'http://192.168.0.2:4000/api';
+
+const debuggerHost = Constants.expoConfig?.hostUri;
+if (debuggerHost) {
+    API_URL = `http://${debuggerHost.split(':')[0]}:4000/api`;
+} else if (Platform.OS === 'android') {
+    API_URL = 'http://10.0.2.2:4000/api';
+} else {
+    API_URL = 'http://localhost:4000/api';
+}
 
 // Create axios instance
 const api = axios.create({
@@ -35,7 +45,11 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // If token expired, try to refresh
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !originalRequest.url.includes('/auth/login')
+        ) {
             originalRequest._retry = true;
 
             try {

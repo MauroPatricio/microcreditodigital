@@ -15,9 +15,10 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
     try {
         const {
             name, email, phone, password, identityDocument,
-            dateOfBirth, address, role,
+            dateOfBirth, address, role, institutionId,
             institutionName, institutionNuit, // Apenas para Owners
-            nuit, professionalInfo, businessInfo, references, onboardingStep
+            nuit, professionalInfo, businessInfo, references, onboardingStep,
+            guarantor
         } = req.body;
 
         const userRole = role === 'owner' ? 'owner' : 'client';
@@ -28,21 +29,29 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
             if (existingEmail) {
                 return res.status(400).json({
                     success: false,
-                    message: 'Conta já existe'
+                    message: 'Este email já está registado. Por favor, use outro email ou faça login.'
                 });
             }
         }
 
-        const matchCriteria = [{ phone }, { identityDocument }];
-        const existingUser = await User.findOne({
-            $or: matchCriteria
-        });
+        if (phone) {
+            const existingPhone = await User.findOne({ phone });
+            if (existingPhone) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Este número de telefone já está registado. Por favor, use outro número ou faça login.'
+                });
+            }
+        }
 
-        if (existingUser) {
-            return res.status(400).json({
-                success: false,
-                message: 'Já existe um utilizador com este telefone ou BI'
-            });
+        if (identityDocument) {
+            const existingDoc = await User.findOne({ identityDocument });
+            if (existingDoc) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Este número de BI já está registado no sistema.'
+                });
+            }
         }
 
         // Criar usuário
@@ -59,6 +68,7 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
             professionalInfo,
             businessInfo,
             references,
+            guarantor,
             onboardingStep: onboardingStep || 1
         });
 
@@ -71,11 +81,19 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
                 });
             }
 
+            const trialExpiresAt = new Date();
+            trialExpiresAt.setDate(trialExpiresAt.getDate() + 3);
+
             const institutionData = {
                 name: institutionName,
                 nuit: institutionNuit,
                 email: email,
-                owner: user._id
+                owner: user._id,
+                subscription: {
+                    plan: 'trial',
+                    status: 'active',
+                    expiresAt: trialExpiresAt
+                }
             };
 
             if (req.file) {
@@ -90,9 +108,23 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
             const institution = await Institution.create(institutionData);
 
             user.institution = institution._id;
+        } else if (userRole === 'client' && institutionId) {
+            // Se for Cliente e enviou um institutionId, verificar se existe
+            const institution = await Institution.findById(institutionId);
+            if (!institution || !institution.isActive) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'A instituição selecionada é inválida ou inativa'
+                });
+            }
+            user.institution = institution._id;
         }
 
         await user.save();
+
+        // Popular as instituições para retornar no payload
+        await user.populate('institution');
+        await user.populate('activeInstitution');
 
         // Gerar tokens
         const token = generateToken(user._id);
@@ -121,10 +153,15 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
 // @access  Public
 router.post('/login', auditAction('User', 'login', 'medium'), loginValidation, validate, async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, isMobile, twoFactorToken } = req.body;
 
-        // Buscar usuário com senha
-        const user = await User.findOne({ email }).select('+password');
+        // Buscar usuário com senha (por email ou por telefone)
+        const user = await User.findOne({
+            $or: [
+                { email: email.toLowerCase() },
+                { phone: email }
+            ]
+        }).select('+password').populate('institution').populate('activeInstitution');
 
         if (!user) {
             return res.status(401).json({
@@ -143,12 +180,51 @@ router.post('/login', auditAction('User', 'login', 'medium'), loginValidation, v
             });
         }
 
+        // Verificar 2FA
+        if (user.isTwoFactorEnabled) {
+            if (!twoFactorToken) {
+                return res.json({
+                    success: true,
+                    require2FA: true,
+                    message: 'Autenticação de Dois Fatores obrigatória'
+                });
+            }
+
+            const speakeasy = await import('speakeasy');
+            const verified = speakeasy.default.totp.verify({
+                secret: user.twoFactorSecret,
+                encoding: 'base32',
+                token: twoFactorToken
+            });
+
+            if (!verified) {
+                return res.status(401).json({
+                    success: false,
+                    message: 'Código 2FA inválido ou expirado'
+                });
+            }
+        }
+
         // Verificar se usuário está bloqueado
         if (user.isBlocked) {
             return res.status(403).json({
                 success: false,
                 message: 'Usuário bloqueado. Contate o suporte.'
             });
+        }
+
+        // Restrição de Acesso Mobile baseada no Plano (Standard não permite app mobile)
+        if (isMobile && user.role !== 'super_admin') {
+            const currentInstitution = user.activeInstitution || user.institution;
+            if (currentInstitution && currentInstitution.subscription) {
+                const plan = currentInstitution.subscription.plan;
+                if (plan === 'standard' || plan === 'free' || plan === 'starter') {
+                    return res.status(403).json({
+                        success: false,
+                        message: 'O seu plano actual não inclui acesso à aplicação móvel. Use a plataforma Web ou contacte o suporte para actualizar para o plano Premium.'
+                    });
+                }
+            }
         }
 
         // Atualizar último login
@@ -239,6 +315,36 @@ router.get('/me', protect, async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao obter dados do usuário',
+            error: error.message
+        });
+    }
+});
+
+// @route   DELETE /api/auth/me
+// @desc    Desativar conta do usuário atual (Soft Delete)
+// @access  Private
+router.delete('/me', protect, auditAction('User', 'delete_account', 'critical'), async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        }
+        
+        // Soft delete: set isActive to false or isBlocked to true
+        // If the schema uses `isActive`, we'll set it to false, otherwise isBlocked to true.
+        // The User model has `isBlocked`, let's set it to true to disable login
+        user.isBlocked = true;
+        // Optionally add a deactivated flag if the schema has it, but isBlocked prevents login
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Conta desativada com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao desativar conta',
             error: error.message
         });
     }
@@ -391,6 +497,151 @@ router.get('/users', protect, authorize('manager', 'owner', 'super_admin'), asyn
         res.status(500).json({
             success: false,
             message: 'Erro ao buscar usuários',
+            error: error.message
+        });
+    }
+});
+
+// @route   PUT /api/auth/push-token
+// @desc    Update push token for the current user
+// @access  Private
+router.put('/push-token', protect, async (req, res) => {
+    try {
+        const { pushToken } = req.body;
+        
+        if (!pushToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'Push token é obrigatório'
+            });
+        }
+
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado' });
+        }
+
+        user.pushToken = pushToken;
+        await user.save();
+
+        res.json({
+            success: true,
+            message: 'Push token atualizado com sucesso'
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao atualizar push token',
+            error: error.message
+        });
+    }
+});
+
+// @route   GET /api/auth/2fa/generate
+// @desc    Generate 2FA secret and QR code
+// @access  Private
+router.get('/2fa/generate', protect, async (req, res) => {
+    try {
+        const speakeasy = await import('speakeasy');
+        const qrcode = await import('qrcode');
+
+        const secret = speakeasy.default.generateSecret({
+            name: `MicrocreditoDigital (${req.user.email})`
+        });
+
+        // Atualiza o secret no user temporariamente, ainda não ativo
+        const user = await User.findById(req.user._id);
+        user.twoFactorSecret = secret.base32;
+        await user.save();
+
+        qrcode.default.toDataURL(secret.otpauth_url, (err, data_url) => {
+            if (err) throw err;
+            res.json({
+                success: true,
+                data: {
+                    secret: secret.base32,
+                    qrcode: data_url
+                }
+            });
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao gerar 2FA',
+            error: error.message
+        });
+    }
+});
+
+// @route   POST /api/auth/2fa/enable
+// @desc    Enable 2FA with token
+// @access  Private
+router.post('/2fa/enable', protect, async (req, res) => {
+    try {
+        const { token } = req.body;
+        const user = await User.findById(req.user._id);
+
+        if (!user.twoFactorSecret) {
+            return res.status(400).json({ success: false, message: '2FA não foi gerado' });
+        }
+
+        const speakeasy = await import('speakeasy');
+        const verified = speakeasy.default.totp.verify({
+            secret: user.twoFactorSecret,
+            encoding: 'base32',
+            token: token
+        });
+
+        if (verified) {
+            user.isTwoFactorEnabled = true;
+            await user.save();
+            res.json({ success: true, message: '2FA ativado com sucesso' });
+        } else {
+            res.status(400).json({ success: false, message: 'Código 2FA inválido' });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao ativar 2FA',
+            error: error.message
+        });
+    }
+});
+
+// @route   POST /api/auth/2fa/disable
+// @desc    Disable 2FA
+// @access  Private
+router.post('/2fa/disable', protect, async (req, res) => {
+    try {
+        const { token, password } = req.body;
+        const user = await User.findById(req.user._id).select('+password');
+
+        // Requer password para desativar
+        const isMatch = await user.comparePassword(password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Senha incorreta' });
+        }
+
+        // Verifica o código atual do 2FA
+        const speakeasy = await import('speakeasy');
+        const verified = speakeasy.default.totp.verify({
+            secret: user.twoFactorSecret,
+            encoding: 'base32',
+            token: token
+        });
+
+        if (verified) {
+            user.isTwoFactorEnabled = false;
+            user.twoFactorSecret = null;
+            await user.save();
+            res.json({ success: true, message: '2FA desativado com sucesso' });
+        } else {
+            res.status(400).json({ success: false, message: 'Código 2FA inválido' });
+        }
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao desativar 2FA',
             error: error.message
         });
     }

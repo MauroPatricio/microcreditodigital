@@ -117,8 +117,15 @@ const creditSchema = new mongoose.Schema({
     },
     currentStage: {
         type: String,
-        enum: ['submission', 'analysis', 'approval', 'signature', 'disbursement'],
+        enum: ['submission', 'analysis', 'approval', 'signature', 'awaiting_disbursement', 'disbursement'],
         default: 'submission'
+    },
+    makerChecker: {
+        requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        requestedAt: Date,
+        approvedAt: Date,
+        status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
     },
     workflowHistory: [{
         stage: String,
@@ -194,6 +201,7 @@ const creditSchema = new mongoose.Schema({
         type: { type: String, enum: ['vehicle', 'real_estate', 'guarantor', 'equipment', 'other'] },
         description: String,
         value: Number,
+        photos: [{ type: String }],
         documents: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Document' }]
     }],
     purpose: {
@@ -244,11 +252,22 @@ const creditSchema = new mongoose.Schema({
         timestamp: Date,
         ipAddress: String,
         userAgent: String,
-        method: { type: String, enum: ['otp', 'manuscript'] }
+        method: { type: String, enum: ['otp', 'manuscript', 'digital_confirmation'] }
     },
     notes: {
         type: String
-    }
+    },
+    currentStage: {
+        type: String,
+        default: 'pending'
+    },
+    workflowHistory: [{
+        stage: String,
+        action: String,
+        performedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        comment: String,
+        timestamp: { type: Date, default: Date.now }
+    }]
 }, {
     timestamps: true
 });
@@ -260,9 +279,8 @@ creditSchema.pre('save', async function (next) {
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
 
-        // Contar quantos empréstimos existem no mês atual para esta instituição
+        // Contar quantos empréstimos existem no mês atual globalmente
         const count = await this.constructor.countDocuments({
-            institution: this.institution,
             createdAt: {
                 $gte: new Date(year, date.getMonth(), 1),
                 $lt: new Date(year, date.getMonth() + 1, 1)
@@ -270,7 +288,8 @@ creditSchema.pre('save', async function (next) {
         });
 
         const sequence = String(count + 1).padStart(4, '0');
-        this.loanNumber = `LOAN-${year}${month}-${sequence}`;
+        const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+        this.loanNumber = `LOAN-${year}${month}-${sequence}-${randomStr}`;
     }
     next();
 });
