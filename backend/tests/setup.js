@@ -1,5 +1,5 @@
-import mongoose from 'mongoose';
-import { jest } from '@jest/globals';
+const { default: mongoose } = await import('mongoose');
+const { jest } = await import('@jest/globals');
 
 // Mock Mongoose connect/disconnect to avoid trying to connect to a real DB
 jest.spyOn(mongoose, 'connect').mockImplementation(() => Promise.resolve());

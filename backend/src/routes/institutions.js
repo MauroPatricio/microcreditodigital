@@ -308,4 +308,23 @@ router.post('/my/logo', protect, authorize('owner', 'manager'), upload.single('l
     }
 });
 
+// @route   GET /api/institutions/subscription-requests/all
+// @desc    Listar todos os pedidos de subscrição pendentes (Super Admin)
+// @access  Private (Super Admin)
+router.get('/subscription-requests/all', protect, authorize('super_admin'), async (req, res) => {
+    try {
+        const requests = await SubscriptionRequest.find({ status: 'pending' })
+            .populate('institution', 'name email nuit')
+            .populate('requestedBy', 'name email phone');
+
+        res.json({
+            success: true,
+            data: requests
+        });
+    } catch (error) {
+        console.error('Erro ao buscar pedidos de subscrição:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 export default router;

@@ -465,7 +465,7 @@ router.put('/:id/block', protect, authorize('manager', 'owner', 'super_admin'), 
 // @route   PUT /api/clients/documents/:docId/verify
 // @desc    Verificar/Rejeitar documento individual
 // @access  Private (Manager/Owner)
-router.put('/documents/:docId/verify', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Document', 'verify', 'medium'), async (req, res) => {
+router.put('/documents/:docId/verify', protect, authorize('manager', 'owner', 'super_admin', 'admin', 'supervisor'), auditAction('Document', 'verify', 'medium'), async (req, res) => {
     try {
         const { isVerified, rejectionReason, notes } = req.body;
 

@@ -59,6 +59,7 @@ describe('Auth Routes (ESM Mocks)', () => {
         // Setup default mock return for new User()
         User.mockImplementation(() => ({
             save: jest.fn().mockResolvedValue(true),
+            populate: jest.fn().mockResolvedValue(true),
             comparePassword: jest.fn().mockResolvedValue(true),
             toJSON: jest.fn().mockReturnValue({ ...userData, _id: '507f1f77bcf86cd799439012' })
         }));
@@ -110,7 +111,9 @@ describe('Auth Routes (ESM Mocks)', () => {
             // Using mockReturnValue for chainable query
             // In controller: const user = await User.findOne(...).select('+password');
             // So User.findOne must return an object with select() method.
-            const mockSelect = jest.fn().mockResolvedValue(mockUser);
+            const mockPopulate2 = jest.fn().mockResolvedValue(mockUser);
+            const mockPopulate1 = jest.fn().mockReturnValue({ populate: mockPopulate2 });
+            const mockSelect = jest.fn().mockReturnValue({ populate: mockPopulate1 });
             User.findOne.mockReturnValue({ select: mockSelect });
 
             const res = await request(app)

@@ -185,7 +185,7 @@ const CashFlow = () => {
                 {dailyData.length > 0 && (
                     <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px', marginBottom: '2rem' }}>
                         <h3 style={{ fontWeight: 700, marginBottom: '1.5rem', fontSize: '1rem' }}>📈 Evolução Diária — {monthNames[month - 1]} {year}</h3>
-                        <ResponsiveContainer width="100%" height={220}>
+                        <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0}>
                             <LineChart data={dailyData}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
                                 <XAxis dataKey="name" stroke="#64748b" fontSize={11} />

@@ -1,4 +1,4 @@
-# CrediSmart+ Mobile App
+# TaquiMola Mobile App
 
 Aplicativo móvel para gestão de microcréditos - Cliente
 

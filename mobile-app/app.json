@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "CrediSmart",
-    "slug": "credismart",
+    "name": "TaquiMola",
+    "slug": "taquimola",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -16,8 +16,8 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.microcreditodigital.mobileapp",
       "infoPlist": {
-        "NSCameraUsageDescription": "Microcrédito Digital precisa aceder à sua câmara para envio de documentos.",
-        "NSPhotoLibraryUsageDescription": "Microcrédito Digital precisa aceder às suas fotos para envio de documentos."
+        "NSCameraUsageDescription": "TaquiMola precisa aceder à sua câmara para envio de documentos.",
+        "NSPhotoLibraryUsageDescription": "TaquiMola precisa aceder às suas fotos para envio de documentos."
       }
     },
     "android": {
@@ -48,7 +48,7 @@
       [
         "expo-camera",
         {
-          "cameraPermission": "Permita que o Microcrédito Digital aceda à câmara para enviar fotos de documentos."
+          "cameraPermission": "Permita que o TaquiMola aceda à câmara para enviar fotos de documentos."
         }
       ],
       "expo-notifications",

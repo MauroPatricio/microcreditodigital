@@ -16,7 +16,7 @@ const PrivacyPolicy = () => {
         <div style={{ color: 'var(--text-main)', lineHeight: '1.8' }}>
           <p className="badge-green" style={{ display: 'inline-block', marginBottom: '1rem' }}>Última atualização: Agosto de 2026</p>
           
-          <p>Bem-vindo ao <strong>CrediSmart</strong>. O presente documento estabelece os Termos e Condições de Uso e a Política de Privacidade aplicáveis à utilização da nossa aplicação móvel e aos serviços prestados.</p>
+          <p>Bem-vindo ao <strong>TaquiMola</strong>. O presente documento estabelece os Termos e Condições de Uso e a Política de Privacidade aplicáveis à utilização da nossa aplicação móvel e aos serviços prestados.</p>
 
           <h2 style={{ color: 'var(--text-heading)', marginTop: '2rem', marginBottom: '1rem' }}>1. INFORMAÇÕES FINANCEIRAS</h2>
           <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>
@@ -27,18 +27,18 @@ const PrivacyPolicy = () => {
           <div style={{ background: 'rgba(16, 185, 129, 0.05)', border: '1px solid var(--border-light)', padding: '1.5rem', borderRadius: '12px', marginBottom: '2rem' }}>
             <h3 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Exemplo Representativo do Custo Total</h3>
             <ul style={{ listStyle: 'none', padding: 0, color: 'var(--text-muted)' }}>
-              <li><strong>Valor do Empréstimo (Principal):</strong> 10.000 MTn</li>
+              <li><strong>Valor do Empréstimo (Principal):</strong> 10.000 MT</li>
               <li><strong>Prazo do Empréstimo:</strong> 3 meses (90 dias)</li>
               <li><strong>Taxa de Juro Mensal:</strong> 2%</li>
-              <li><strong>Taxa Administrativa:</strong> 500 MTn</li>
-              <li><strong>Total de Juros a Pagar:</strong> 600 MTn</li>
-              <li><strong>Custo Total do Crédito:</strong> 10.600 MTn</li>
-              <li><strong>Prestações Mensais (3x):</strong> 3.533,33 MTn por mês.</li>
+              <li><strong>Taxa Administrativa:</strong> 500 MT</li>
+              <li><strong>Total de Juros a Pagar:</strong> 600 MT</li>
+              <li><strong>Custo Total do Crédito:</strong> 10.600 MT</li>
+              <li><strong>Prestações Mensais (3x):</strong> 3.533,33 MT por mês.</li>
             </ul>
           </div>
 
           <h2 style={{ color: 'var(--text-heading)', marginTop: '2rem', marginBottom: '1rem' }}>2. RECOLHA DE DADOS E POLÍTICA DE PRIVACIDADE</h2>
-          <p>O CrediSmart compromete-se a proteger a sua privacidade. A recolha e processamento de dados são estritamente utilizados para a avaliação de risco de crédito e prevenção de fraude (KYC).</p>
+          <p>O TaquiMola compromete-se a proteger a sua privacidade. A recolha e processamento de dados são estritamente utilizados para a avaliação de risco de crédito e prevenção de fraude (KYC).</p>
           
           <h3 style={{ marginTop: '1.5rem', marginBottom: '0.5rem' }}>2.1 Que dados recolhemos?</h3>
           <ul style={{ paddingLeft: '1.5rem', marginBottom: '1.5rem', color: 'var(--text-muted)' }}>

@@ -522,7 +522,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Evolução ao Longo do Tempo
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                             <LineChart data={data.timeline.map(t => ({
                                 name: `${String(t._id.day || 1).padStart(2, '0')}/${String(t._id.month).padStart(2, '0')}/${t._id.year}`,
                                 creditos: t.count,
@@ -550,7 +550,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Distribuição por Status
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                             <BarChart data={data.byStatus.map(s => ({
                                 name: s._id,
                                 quantidade: s.count,
@@ -605,7 +605,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Distribuição por Dias de Atraso
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                             <BarChart data={Object.entries(data.distribution).map(([range, count]) => ({
                                 range,
                                 total: count
@@ -658,7 +658,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Métodos de Pagamento
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={data.paymentMethods.map((method, idx) => ({
@@ -721,7 +721,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Distribuição por Nível de Confiança
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                             <BarChart data={data.confidenceDistribution.map(s => ({
                                 range: s._id === 0 ? '0-20%' :
                                     s._id === 21 ? '21-40%' :
@@ -754,7 +754,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Fluxo de Conversão
                         </h3>
-                        <ResponsiveContainer width="100%" height={400}>
+                        <ResponsiveContainer width="100%" height={400} minWidth={0} minHeight={0}>
                             <BarChart
                                 layout="vertical"
                                 data={data.steps}
@@ -871,7 +871,7 @@ const ReportContent = ({ reportId, data, formatCurrency, formatNumber }) => {
                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1.5rem' }}>
                             Breakdown por Status
                         </h3>
-                        <ResponsiveContainer width="100%" height={300}>
+                        <ResponsiveContainer width="100%" height={300} minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={data.statusBreakdown.map(s => ({

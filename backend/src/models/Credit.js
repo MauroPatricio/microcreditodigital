@@ -112,20 +112,24 @@ const creditSchema = new mongoose.Schema({
     nextDueDate: Date,
     status: {
         type: String,
-        enum: ['draft', 'pending', 'under_analysis', 'waiting_documents', 'approved', 'rejected', 'active', 'paid', 'overdue', 'defaulted', 'restructured', 'cancelled'],
+        enum: ['draft', 'submitted', 'pending', 'under_analysis', 'waiting_documents', 'recommended', 'approved', 'rejected', 'awaiting_disbursement', 'disbursed', 'active', 'paid', 'overdue', 'defaulted', 'restructured', 'cancelled', 'uncollectible'],
         default: 'pending'
     },
     currentStage: {
         type: String,
-        enum: ['submission', 'analysis', 'approval', 'signature', 'awaiting_disbursement', 'disbursement'],
+        enum: ['submission', 'analysis', 'recommendation', 'approval', 'signature', 'awaiting_disbursement', 'disbursement', 'completed'],
         default: 'submission'
     },
     makerChecker: {
         requestedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        analyzedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        disbursedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         requestedAt: Date,
+        analyzedAt: Date,
         approvedAt: Date,
-        status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' }
+        disbursedAt: Date,
+        status: { type: String, enum: ['pending', 'analyzed', 'approved', 'rejected', 'disbursed'], default: 'pending' }
     },
     workflowHistory: [{
         stage: String,
@@ -199,6 +203,7 @@ const creditSchema = new mongoose.Schema({
     auditLogId: String,
     collateral: [{
         type: { type: String, enum: ['vehicle', 'real_estate', 'guarantor', 'equipment', 'other'] },
+        customType: String,
         description: String,
         value: Number,
         photos: [{ type: String }],

@@ -111,7 +111,7 @@ const QuarterlyReport = () => {
                         <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
                             <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px' }}>
                                 <h3 style={{ fontWeight: 700, marginBottom: '1.25rem', fontSize: '1rem' }}>📊 Evolução Mensal do Trimestre</h3>
-                                <ResponsiveContainer width="100%" height={220}>
+                                <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0}>
                                     <BarChart data={data.monthlyBreakdown.map(m => ({ ...m, name: MONTH_NAMES[m.month - 1].slice(0, 3) }))}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
                                         <XAxis dataKey="name" stroke="#64748b" fontSize={12} />
@@ -127,7 +127,7 @@ const QuarterlyReport = () => {
                             {data.creditsByType.length > 0 && (
                                 <div className="glass" style={{ padding: '1.5rem', borderRadius: '16px' }}>
                                     <h3 style={{ fontWeight: 700, marginBottom: '1.25rem', fontSize: '1rem' }}>🥧 Por Tipo de Crédito</h3>
-                                    <ResponsiveContainer width="100%" height={220}>
+                                    <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0}>
                                         <PieChart>
                                             <Pie data={data.creditsByType.map(ct => ({ name: ct._id || 'outros', value: ct.valor }))} cx="50%" cy="50%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={2}>
                                                 {data.creditsByType.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}

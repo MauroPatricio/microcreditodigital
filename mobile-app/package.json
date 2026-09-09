@@ -1,7 +1,7 @@
 {
-  "name": "credismart-mobile",
+  "name": "taquimola-mobile",
   "version": "1.0.0",
-  "description": "Aplicativo Mobile para Clientes da plataforma Nhiquela / CrediSmart+",
+  "description": "Aplicativo Mobile para Clientes da plataforma TaquiMola",
   "main": "index.js",
   "engines": {
     "node": ">=18.0.0",

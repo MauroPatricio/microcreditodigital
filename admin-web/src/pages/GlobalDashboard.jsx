@@ -124,7 +124,7 @@ const GlobalDashboard = () => {
                         </div>
 
                         <div style={{ height: '350px', width: '100%' }}>
-                            <ResponsiveContainer width="100%" height="100%">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                 <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
                                     <defs>
                                         <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">

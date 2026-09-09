@@ -66,8 +66,26 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const hasRole = (...roles) => {
+        if (!user) return false;
+        if (user.role === 'super_admin') return true;
+        return roles.includes(user.role);
+    };
+
+    const hasPermission = (permissionCode) => {
+        if (!user) return false;
+        if (user.role === 'super_admin') return true;
+        const perms = user.effectivePermissions || [];
+        if (perms.includes('*')) return true;
+        if (permissionCode && permissionCode.includes('.')) {
+            const [mod] = permissionCode.split('.');
+            if (perms.includes(`${mod}.*`)) return true;
+        }
+        return perms.includes(permissionCode);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateUser, loading }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, loading, hasRole, hasPermission }}>
             {children}
         </AuthContext.Provider>
     );

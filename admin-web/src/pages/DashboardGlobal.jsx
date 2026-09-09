@@ -93,7 +93,7 @@ const DashboardGlobal = () => {
                 <div className="card glass">
                     <h3 style={{ marginBottom: '1.5rem', fontWeight: 700 }}>Receita por Filial</h3>
                     <div style={{ height: '300px', width: '100%' }}>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <BarChart data={breakdown} layout="vertical" margin={{ left: 20 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" horizontal={false} />
                                 <XAxis type="number" stroke="var(--text-muted)" tickFormatter={(val) => `MT ${val / 1000}k`} />

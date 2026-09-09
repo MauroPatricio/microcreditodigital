@@ -75,7 +75,10 @@ import CommunicationTemplates from './pages/CommunicationTemplates.jsx';
 import CommunicationHistory from './pages/CommunicationHistory.jsx';
 import UserList from './pages/UserList.jsx';
 import UserForm from './pages/UserForm.jsx';
-import PrivacyPolicy from './pages/PrivacyPolicy.jsx';
+import PrivacyPolicy from './pages/LegalTerms.jsx';
+import RolesManagement from './pages/RolesManagement.jsx';
+
+import LandingPage from './pages/LandingPage.jsx';
 
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -85,6 +88,8 @@ function App() {
       <AuthProvider>
         <Router>
           <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/landing" element={<LandingPage />} />
             <Route path="/institution-management" element={<ProtectedRoute roles={['super_admin']}><InstitutionManagement /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -105,9 +110,9 @@ function App() {
             <Route path="/my-commissions" element={<ProtectedRoute><MyCommissions /></ProtectedRoute>} />
             <Route path="/sms-logs" element={<ProtectedRoute><SmsLogs /></ProtectedRoute>} />
             <Route path="/audit-logs" element={<ProtectedRoute roles={['owner', 'admin']}><AuditLogs /></ProtectedRoute>} />
-            <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager']}><PendingDocuments /></ProtectedRoute>} />
-            <Route path="/whatsapp-settings" element={<ProtectedRoute roles={['owner', 'manager']}><WhatsAppSettings /></ProtectedRoute>} />
-            <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager']}><ContractTemplates /></ProtectedRoute>} />
+            <Route path="/pending-documents" element={<ProtectedRoute roles={['owner', 'manager', 'admin', 'super_admin', 'supervisor']}><PendingDocuments /></ProtectedRoute>} />
+            <Route path="/whatsapp-settings" element={<ProtectedRoute><WhatsAppSettings /></ProtectedRoute>} />
+            <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager', 'admin', 'super_admin', 'supervisor']}><ContractTemplates /></ProtectedRoute>} />
             <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner', 'super_admin']}><GlobalDashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute roles={['owner', 'admin']}><InstitutionSettings /></ProtectedRoute>} />
             <Route path="/my-subscription" element={<ProtectedRoute roles={['owner']}><MySubscription /></ProtectedRoute>} />
@@ -127,10 +132,9 @@ function App() {
             <Route path="/users" element={<ProtectedRoute roles={['owner', 'admin', 'supervisor', 'manager', 'super_admin']}><UserList /></ProtectedRoute>} />
             <Route path="/users/new" element={<ProtectedRoute roles={['owner', 'admin', 'super_admin']}><UserForm /></ProtectedRoute>} />
             <Route path="/users/:id" element={<ProtectedRoute roles={['owner', 'admin', 'super_admin']}><UserForm /></ProtectedRoute>} />
+            <Route path="/roles" element={<ProtectedRoute><Layout><RolesManagement /></Layout></ProtectedRoute>} />
 
             <Route path="/privacy" element={<PrivacyPolicy />} />
-
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </Router>
       </AuthProvider>

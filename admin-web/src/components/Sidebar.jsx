@@ -6,12 +6,12 @@ import {
     FiHome, FiUsers, FiDollarSign, FiBarChart2, FiActivity,
     FiSettings, FiLogOut, FiBriefcase, FiTrendingUp,
     FiSmartphone, FiFileText, FiMessageCircle, FiChevronLeft, FiMenu, FiServer, FiCreditCard,
-    FiSend, FiCalendar, FiMail, FiBarChart
+    FiSend, FiCalendar, FiMail, FiBarChart, FiShield, FiTruck
 } from 'react-icons/fi';
 import InstitutionSwitcher from './InstitutionSwitcher';
 
 const Sidebar = () => {
-    const { user, logout } = useAuth();
+    const { user, logout, hasPermission, hasRole } = useAuth();
     const [isCollapsed, setIsCollapsed] = React.useState(false);
     const [pendingSubsCount, setPendingSubsCount] = React.useState(0);
 
@@ -67,7 +67,7 @@ const Sidebar = () => {
                 { name: 'Clientes', icon: <FiUsers />, path: '/clients', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
                 { name: 'Documentos', icon: <FiFileText />, path: '/pending-documents', roles: ['owner', 'manager', 'admin'] },
                 { name: 'Empréstimos', icon: <FiBriefcase />, path: '/loans', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
-                { name: 'Contratos', icon: <FiFileText />, path: '/contract-templates', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Contratos', icon: <FiFileText />, path: '/contract-templates', roles: ['owner', 'manager', 'admin', 'super_admin', 'supervisor'] },
                 { name: 'Cobranças', icon: <FiDollarSign />, path: '/payments', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
             ]
         },
@@ -85,26 +85,28 @@ const Sidebar = () => {
         },
         {
             title: 'Comunicação',
-            roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'],
+            roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin', 'super_admin'],
             items: [
-                { name: 'Dashboard', icon: <FiBarChart />, path: '/communication', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
-                { name: 'Enviar', icon: <FiSend />, path: '/communication/send', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
-                { name: 'Agendamentos', icon: <FiCalendar />, path: '/communication/schedules', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
-                { name: 'Templates', icon: <FiMail />, path: '/communication/templates', roles: ['owner', 'manager', 'admin'] },
-                { name: 'Histórico', icon: <FiActivity />, path: '/communication/history', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin'] },
+                { name: 'Dashboard', icon: <FiBarChart />, path: '/communication', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin', 'super_admin'] },
+                { name: 'Conexão WhatsApp', icon: <FiMessageCircle />, path: '/whatsapp-settings', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin', 'super_admin'] },
+                { name: 'Enviar', icon: <FiSend />, path: '/communication/send', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin', 'super_admin'] },
+                { name: 'Agendamentos', icon: <FiCalendar />, path: '/communication/schedules', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin', 'super_admin'] },
+                { name: 'Templates', icon: <FiMail />, path: '/communication/templates', roles: ['owner', 'manager', 'admin', 'super_admin', 'supervisor'] },
+                { name: 'Histórico', icon: <FiActivity />, path: '/communication/history', roles: ['owner', 'manager', 'agent', 'representative', 'supervisor', 'admin', 'super_admin'] },
             ]
         },
         {
             title: 'Sistema',
-            roles: ['owner', 'manager', 'admin', 'supervisor'],
+            roles: ['owner', 'manager', 'admin', 'supervisor', 'super_admin'],
             items: [
-                { name: 'Utilizadores', icon: <FiUsers />, path: '/users', roles: ['owner', 'admin', 'supervisor', 'manager'] },
-                { name: 'WhatsApp', icon: <FiMessageCircle />, path: '/whatsapp-settings', roles: ['owner', 'manager', 'admin'] },
+                { name: 'Utilizadores', icon: <FiUsers />, path: '/users', permission: 'utilizadores.view', roles: ['owner', 'admin', 'supervisor', 'manager', 'super_admin'] },
+                { name: 'Perfis & Permissões', icon: <FiShield />, path: '/roles', permission: 'roles.view', roles: ['owner', 'admin', 'manager', 'super_admin'] },
+                { name: 'WhatsApp', icon: <FiMessageCircle />, path: '/whatsapp-settings', roles: ['owner', 'manager', 'admin', 'super_admin', 'supervisor', 'agent', 'representative'] },
                 { name: 'SMS Logs', icon: <FiSmartphone />, path: '/sms-logs', roles: ['owner', 'manager', 'admin'] },
-                { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', roles: ['owner', 'admin'] },
+                { name: 'Auditoria', icon: <FiActivity />, path: '/audit-logs', permission: 'auditoria.view', roles: ['owner', 'admin', 'auditor'] },
                 { name: 'Performance', icon: <FiTrendingUp />, path: '/agent-performance', roles: ['owner', 'manager', 'supervisor', 'admin'] },
                 { name: 'Minha Subscrição', icon: <FiCreditCard />, path: '/my-subscription', roles: ['owner'] },
-                { name: 'Configurações', icon: <FiSettings />, path: '/settings', roles: ['owner', 'admin'] },
+                { name: 'Configurações', icon: <FiSettings />, path: '/settings', permission: 'configuracoes.view', roles: ['owner', 'admin'] },
             ]
         },
         {
@@ -206,7 +208,11 @@ const Sidebar = () => {
             {/* Navigation */}
             <nav style={{ flex: 1, padding: '1rem 0.5rem', overflowY: 'auto', overflowX: 'hidden' }}>
                 {sections.map((section, idx) => {
-                    const visibleItems = section.items.filter(item => item.roles.includes(user?.role));
+                    const visibleItems = section.items.filter(item => {
+                        if (user?.role === 'super_admin') return true;
+                        if (item.permission) return hasPermission(item.permission);
+                        return item.roles ? item.roles.includes(user?.role) : false;
+                    });
                     if (visibleItems.length === 0) return null;
 
                     return (

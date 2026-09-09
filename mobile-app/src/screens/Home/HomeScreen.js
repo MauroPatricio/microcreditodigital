@@ -160,13 +160,13 @@ export default function HomeScreen({ navigation }) {
                         <Image source={{ uri: getLogoUrl() }} style={styles.headerLogo} />
                     ) : (
                         <View style={[styles.headerLogo, styles.placeholderLogo]}>
-                            <Text style={styles.placeholderLogoText}>CS</Text>
+                            <Text style={styles.placeholderLogoText}>TM</Text>
                         </View>
                     )}
                     <View>
                         <Text style={styles.greeting}>Olá, {user?.name.split(' ')[0]}</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                            <Text style={styles.userName}>{user?.institution?.settings?.appearance?.headerTitle || 'Agente CrediSmart'}</Text>
+                            <Text style={styles.userName}>{user?.institution?.settings?.appearance?.headerTitle || 'Agente TaquiMola'}</Text>
                             {user?.isVerified && (
                                 <ShieldCheck size={18} color="#10b981" />
                             )}

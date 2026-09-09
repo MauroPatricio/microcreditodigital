@@ -41,8 +41,8 @@ const whatsappJobs = cron.schedule('0 9 * * *', async () => {
             console.log(`   - Template [${template.name}]: ${installments.length} parcelas encontradas para data ${targetDate.toLocaleDateString()}`);
 
             for (const installment of installments) {
-                const client = installment.credit.client;
-                if (!client.phone) continue;
+                const client = installment.credit?.client;
+                if (!client || !client.phone) continue;
 
                 await WhatsAppService.sendByTemplate(template.name, client.phone, {
                     client,

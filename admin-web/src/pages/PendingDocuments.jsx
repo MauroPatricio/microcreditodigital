@@ -6,6 +6,7 @@ import api from '../api';
 const PendingDocuments = () => {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [actioning, setActioning] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -17,11 +18,14 @@ const PendingDocuments = () => {
 
     const fetchPending = async () => {
         try {
+            setError(null);
+            setLoading(true);
             const response = await api.get('/documents/pending');
-            setDocuments(response.data.data);
+            setDocuments(response.data.data || []);
             setLoading(false);
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error('Erro ao buscar documentos pendentes:', err);
+            setError(err.response?.data?.message || err.message || 'Erro ao carregar documentos');
             setLoading(false);
         }
     };
@@ -32,16 +36,18 @@ const PendingDocuments = () => {
             await api.put(`/documents/${id}/verify`, { status, reason });
             fetchPending();
         } catch (error) {
-            alert('Erro ao processar documento');
+            alert('Erro ao processar documento: ' + (error.response?.data?.message || error.message));
         } finally {
             setActioning(false);
         }
     };
 
-    const filteredDocs = documents.filter(doc =>
-        doc.client?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        doc.type.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredDocs = (documents || []).filter(doc => {
+        const clientName = doc.client?.name || '';
+        const typeStr = doc.type || '';
+        const term = (searchTerm || '').toLowerCase();
+        return clientName.toLowerCase().includes(term) || typeStr.toLowerCase().includes(term);
+    });
 
     const docTypeLabels = {
         'bi': 'Bilhete de Identidade',
@@ -54,7 +60,12 @@ const PendingDocuments = () => {
         'selfie': 'Selfie de Verificação'
     };
 
-    const getFullUrl = (doc) => {
+    const getViewUrl = (doc) => {
+        const token = localStorage.getItem('token');
+        return `${api.defaults.baseURL}/documents/${doc._id}/view?token=${token}`;
+    };
+
+    const getDownloadUrl = (doc) => {
         const token = localStorage.getItem('token');
         return `${api.defaults.baseURL}/documents/${doc._id}/download?token=${token}`;
     };
@@ -113,6 +124,16 @@ const PendingDocuments = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '5rem' }}>
                         <div className="spinner" style={{ width: '40px', height: '40px', border: '3px solid var(--accent)', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '1.5rem' }}></div>
                         <p style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Sincronizando documentos...</p>
+                    </div>
+                ) : error ? (
+                    <div className="glass fadeIn" style={{ textAlign: 'center', padding: '4rem 2rem', borderRadius: '32px', border: '1px solid rgba(239, 68, 68, 0.2)', background: 'rgba(239, 68, 68, 0.05)' }}>
+                        <h3 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '0.75rem', color: 'var(--danger)' }}>Aviso</h3>
+                        <p style={{ color: 'var(--text-muted)', maxWidth: '450px', margin: '0 auto 1.5rem', fontSize: '1rem' }}>
+                            {error}
+                        </p>
+                        <button className="btn-primary" onClick={fetchPending} style={{ padding: '0.75rem 1.5rem', borderRadius: '12px' }}>
+                            Tentar Novamente
+                        </button>
                     </div>
                 ) : filteredDocs.length === 0 ? (
                     <div className="glass fadeIn" style={{ textAlign: 'center', padding: '6rem 2rem', borderRadius: '32px', border: '1px solid var(--border-light)' }}>
@@ -183,7 +204,7 @@ const PendingDocuments = () => {
                                             <FiSearch size={18} />
                                         </button>
                                         <button
-                                            onClick={() => window.open(getFullUrl(doc), '_blank')}
+                                            onClick={() => window.open(getDownloadUrl(doc), '_blank')}
                                             style={{
                                                 width: '40px',
                                                 height: '40px',
@@ -318,25 +339,59 @@ const PendingDocuments = () => {
                         }}
                         onClick={e => e.stopPropagation()}
                     >
-                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ fontWeight: 800 }}>Visualizar: {docTypeLabels[previewDoc.type] || previewDoc.type}</h3>
-                            <button
-                                onClick={() => setPreviewDoc(null)}
-                                style={{ background: 'var(--bg-main)', border: 'none', color: 'var(--text-main)', width: '40px', height: '40px', borderRadius: '12px', cursor: 'pointer' }}
-                            >
-                                <FiX size={24} />
-                            </button>
+                        <div style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div>
+                                <h3 style={{ fontWeight: 800, margin: 0 }}>Visualizar: {docTypeLabels[previewDoc.type] || previewDoc.type}</h3>
+                                <p style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>Cliente: {previewDoc.client?.name}</p>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                <button
+                                    onClick={() => {
+                                        handleVerify(previewDoc._id, 'approved');
+                                        setPreviewDoc(null);
+                                    }}
+                                    style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: '#10b981', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                >
+                                    <FiCheck size={16} /> Aprovar
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        const reason = window.prompt('Motivo da rejeição:');
+                                        if (reason) {
+                                            handleVerify(previewDoc._id, 'rejected', reason);
+                                            setPreviewDoc(null);
+                                        }
+                                    }}
+                                    style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                >
+                                    <FiX size={16} /> Rejeitar
+                                </button>
+                                <a
+                                    href={getDownloadUrl(previewDoc)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: 'var(--accent)', color: '#000', fontWeight: 700, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                >
+                                    <FiDownload size={16} /> Descarregar
+                                </a>
+                                <button
+                                    onClick={() => setPreviewDoc(null)}
+                                    style={{ background: 'var(--bg-main)', border: 'none', color: 'var(--text-main)', width: '40px', height: '40px', borderRadius: '12px', cursor: 'pointer' }}
+                                >
+                                    <FiX size={24} />
+                                </button>
+                            </div>
                         </div>
                         <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000', minHeight: '500px' }}>
-                            {previewDoc.fileType?.includes('image') ? (
+                            {previewDoc.fileType?.includes('image') || previewDoc.fileName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
                                 <img
-                                    src={getFullUrl(previewDoc)}
+                                    src={getViewUrl(previewDoc)}
                                     alt="Document"
-                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                    style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain' }}
                                 />
                             ) : (
                                 <iframe
-                                    src={getFullUrl(previewDoc)}
+                                    src={getViewUrl(previewDoc)}
                                     style={{ width: '100%', height: '70vh', border: 'none' }}
                                     title="PDF Preview"
                                 />

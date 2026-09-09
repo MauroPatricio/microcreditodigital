@@ -7,7 +7,7 @@ const router = express.Router();
 
 // @route   GET /api/contract-templates
 // @desc    Listar templates de contrato da instituição ativa
-router.get('/', protect, authorize('owner', 'manager', 'super_admin'), async (req, res) => {
+router.get('/', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), async (req, res) => {
     try {
         const templates = await ContractTemplate.find({ institution: req.institutionId });
         res.json({ success: true, data: templates });
@@ -18,7 +18,7 @@ router.get('/', protect, authorize('owner', 'manager', 'super_admin'), async (re
 
 // @route   POST /api/contract-templates
 // @desc    Criar novo template de contrato
-router.post('/', protect, authorize('owner', 'super_admin'), auditAction('ContractTemplate', 'create', 'medium'), async (req, res) => {
+router.post('/', protect, authorize('owner', 'manager', 'admin', 'super_admin'), auditAction('ContractTemplate', 'create', 'medium'), async (req, res) => {
     try {
         const template = await ContractTemplate.create({
             ...req.body,
@@ -32,7 +32,7 @@ router.post('/', protect, authorize('owner', 'super_admin'), auditAction('Contra
 
 // @route   PUT /api/contract-templates/:id
 // @desc    Atualizar template de contrato
-router.put('/:id', protect, authorize('owner', 'super_admin'), auditAction('ContractTemplate', 'update', 'low'), async (req, res) => {
+router.put('/:id', protect, authorize('owner', 'manager', 'admin', 'super_admin'), auditAction('ContractTemplate', 'update', 'low'), async (req, res) => {
     try {
         const template = await ContractTemplate.findOneAndUpdate(
             { _id: req.params.id, institution: req.institutionId },
@@ -47,7 +47,7 @@ router.put('/:id', protect, authorize('owner', 'super_admin'), auditAction('Cont
 
 // @route   DELETE /api/contract-templates/:id
 // @desc    Remover template de contrato
-router.delete('/:id', protect, authorize('owner', 'super_admin'), auditAction('ContractTemplate', 'delete', 'high'), async (req, res) => {
+router.delete('/:id', protect, authorize('owner', 'manager', 'admin', 'super_admin'), auditAction('ContractTemplate', 'delete', 'high'), async (req, res) => {
     try {
         const template = await ContractTemplate.findOneAndDelete({ _id: req.params.id, institution: req.institutionId });
         if (!template) {

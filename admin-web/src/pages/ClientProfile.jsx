@@ -11,7 +11,7 @@ import {
     FiCalendar, FiTrendingUp, FiShield, FiFileText,
     FiCheckCircle, FiXCircle, FiPlus, FiDownload, FiActivity,
     FiUserCheck, FiBriefcase, FiDollarSign,
-    FiEdit3, FiFile, FiFolder, FiLayers, FiAlertCircle
+    FiEdit3, FiFile, FiFolder, FiLayers, FiAlertCircle, FiEye, FiX
 } from 'react-icons/fi';
 import ConfidenceIndicator from '../components/ConfidenceIndicator';
 
@@ -24,6 +24,7 @@ const ClientProfile = () => {
     const [simulations, setSimulations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [uploading, setUploading] = useState(false);
+    const [previewDoc, setPreviewDoc] = useState(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedFile, setSelectedFile] = useState(null);
     const [docType, setDocType] = useState('identity_card');
@@ -87,6 +88,10 @@ const ClientProfile = () => {
 
     useEffect(() => {
         const fetchClientData = async () => {
+            if (!id || id === 'undefined') {
+                setLoading(false);
+                return;
+            }
             try {
                 const res = await api.get(`/clients/${id}`);
                 if (res.data.success) {
@@ -117,6 +122,27 @@ const ClientProfile = () => {
             }
         } catch (error) {
             console.error("Error verifying client", error);
+        }
+    };
+
+    const handleVerifyDocument = async (docId, isVerified, rejectionReason = '') => {
+        try {
+            const res = await api.put(`/documents/${docId}/verify`, {
+                status: isVerified ? 'approved' : 'rejected',
+                reason: rejectionReason
+            });
+            if (res.data.success) {
+                setClient(prev => ({
+                    ...prev,
+                    documents: (prev.documents || []).map(d => d._id === docId ? { ...d, isVerified, rejectionReason: isVerified ? null : rejectionReason } : d)
+                }));
+                if (previewDoc && previewDoc._id === docId) {
+                    setPreviewDoc(prev => ({ ...prev, isVerified, rejectionReason: isVerified ? null : rejectionReason }));
+                }
+            }
+        } catch (error) {
+            console.error("Error verifying document", error);
+            alert('Erro ao atualizar documento: ' + (error.response?.data?.message || error.message));
         }
     };
 
@@ -570,10 +596,17 @@ const ClientProfile = () => {
                         {client.documents?.length > 0 ? (
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                 {client.documents.map(doc => (
-                                    <div key={doc._id} style={{
-                                        padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)',
-                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                                    }}>
+                                    <div key={doc._id} 
+                                        onClick={() => setPreviewDoc(doc)}
+                                        title="Clique para pré-visualizar o documento"
+                                        style={{
+                                            padding: '1rem', borderRadius: '12px', background: 'var(--bg-main)', border: '1px solid rgba(255,255,255,0.05)',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer',
+                                            transition: 'all 0.2s ease'
+                                        }}
+                                        onMouseOver={(e) => e.currentTarget.style.borderColor = 'rgba(0, 255, 0, 0.3)'}
+                                        onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'}
+                                    >
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                             <div style={{
                                                 width: '52px', height: '52px', borderRadius: '14px',
@@ -599,17 +632,33 @@ const ClientProfile = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => window.open(`${api.defaults.baseURL}/documents/${doc._id}/download`, '_blank')}
-                                            className="btn-icon"
-                                            style={{
-                                                width: '36px', height: '36px', borderRadius: '10px',
-                                                background: 'var(--bg-main)', color: 'var(--text-main)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                            }}
-                                        >
-                                            <FiDownload size={18} />
-                                        </button>
+                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }} onClick={e => e.stopPropagation()}>
+                                            <button
+                                                onClick={() => setPreviewDoc(doc)}
+                                                title="Pré-visualizar Documento"
+                                                style={{
+                                                    width: '36px', height: '36px', borderRadius: '10px',
+                                                    background: 'rgba(59, 130, 246, 0.1)', color: 'var(--accent)',
+                                                    border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <FiEye size={18} />
+                                            </button>
+                                            <button
+                                                onClick={() => window.open(`${api.defaults.baseURL}/documents/${doc._id}/download?token=${localStorage.getItem('token')}`, '_blank')}
+                                                title="Descarregar Documento"
+                                                className="btn-icon"
+                                                style={{
+                                                    width: '36px', height: '36px', borderRadius: '10px',
+                                                    background: 'var(--bg-main)', color: 'var(--text-main)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    cursor: 'pointer'
+                                                }}
+                                            >
+                                                <FiDownload size={18} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -674,6 +723,96 @@ const ClientProfile = () => {
                     </div>
                 )
             }
+            {/* Modal de Pré-visualização de Documento */}
+            {previewDoc && (
+                <div
+                    style={{
+                        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                        background: 'rgba(2, 6, 23, 0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 2000, padding: '2rem', backdropFilter: 'blur(10px)'
+                    }}
+                    onClick={() => setPreviewDoc(null)}
+                >
+                    <div
+                        style={{
+                            maxWidth: '900px',
+                            width: '100%',
+                            maxHeight: '90vh',
+                            background: 'var(--bg-card)',
+                            borderRadius: '24px',
+                            border: '1px solid var(--border-light)',
+                            overflow: 'hidden',
+                            position: 'relative',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7)'
+                        }}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div style={{ padding: '1.25rem 2rem', borderBottom: '1px solid var(--border-light)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <FiFileText style={{ color: 'var(--accent)' }} size={22} />
+                                <h3 style={{ fontWeight: 800, fontSize: '1.1rem', margin: 0, color: 'var(--text-main)' }}>
+                                    Visualizar: {t(`client_profile.doc_types.${previewDoc.type}`)} ({client?.name})
+                                </h3>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                {!previewDoc.isVerified && (
+                                    <>
+                                        <button
+                                            onClick={() => handleVerifyDocument(previewDoc._id, true)}
+                                            style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: '#10b981', color: '#fff', border: 'none', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                                        >
+                                            <FiCheck size={16} /> Aprovar
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                const reason = window.prompt('Motivo da rejeição:');
+                                                if (reason) handleVerifyDocument(previewDoc._id, false, reason);
+                                            }}
+                                            style={{ padding: '0.5rem 1rem', borderRadius: '10px', background: 'rgba(239,68,68,0.2)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                                        >
+                                            <FiX size={16} /> Rejeitar
+                                        </button>
+                                    </>
+                                )}
+                                <a
+                                    href={`${api.defaults.baseURL}/documents/${previewDoc._id}/download?token=${localStorage.getItem('token')}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                        padding: '0.5rem 1rem', borderRadius: '10px', background: 'var(--accent)', color: '#000',
+                                        fontWeight: 700, fontSize: '0.85rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem'
+                                    }}
+                                >
+                                    <FiDownload size={16} /> Descarregar
+                                </a>
+                                <button
+                                    onClick={() => setPreviewDoc(null)}
+                                    style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--text-main)', width: '38px', height: '38px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                >
+                                    <FiX size={22} />
+                                </button>
+                            </div>
+                        </div>
+                        <div style={{ flex: 1, overflow: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#090d16', minHeight: '500px', padding: '1rem' }}>
+                            {previewDoc.fileType?.includes('image') || previewDoc.originalName?.match(/\.(jpg|jpeg|png|gif|webp)$/i) || (previewDoc.path && previewDoc.path.match(/\.(jpg|jpeg|png|gif|webp)$/i)) ? (
+                                <img
+                                    src={`${api.defaults.baseURL}/documents/${previewDoc._id}/view?token=${localStorage.getItem('token')}`}
+                                    alt="Pré-visualização do Documento"
+                                    style={{ maxWidth: '100%', maxHeight: '75vh', objectFit: 'contain', borderRadius: '12px' }}
+                                />
+                            ) : (
+                                <iframe
+                                    src={`${api.defaults.baseURL}/documents/${previewDoc._id}/view?token=${localStorage.getItem('token')}`}
+                                    style={{ width: '100%', height: '75vh', border: 'none', borderRadius: '12px' }}
+                                    title="Document Preview"
+                                />
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </Layout >
     );
 };

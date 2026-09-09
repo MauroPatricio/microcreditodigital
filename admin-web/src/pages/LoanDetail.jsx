@@ -8,14 +8,14 @@ import {
     FiCalendar, FiClock, FiFileText, FiInfo, FiShield,
     FiActivity, FiTarget, FiUser, FiMoreVertical, FiAlertCircle,
     FiHash, FiMessageSquare, FiTrendingDown, FiPrinter,
-    FiUploadCloud, FiImage
+    FiUploadCloud, FiImage, FiLock
 } from 'react-icons/fi';
 import ContractViewer from '../components/ContractViewer.jsx';
 import ConfidenceIndicator from '../components/ConfidenceIndicator.jsx';
 import Modal from '../components/Modal.jsx';
 
 const LoanDetail = () => {
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
     const { id } = useParams();
     const navigate = useNavigate();
     const [loan, setLoan] = useState(null);
@@ -27,7 +27,6 @@ const LoanDetail = () => {
     const fetchLoanDetails = useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
         try {
-            // Adicionado cache-buster para evitar dados obsoletos do status
             const res = await api.get(`/credits/${id}?_t=${Date.now()}`);
             if (res.data.success) {
                 setLoan(res.data.data.credit);
@@ -42,6 +41,46 @@ const LoanDetail = () => {
     useEffect(() => {
         fetchLoanDetails();
     }, [fetchLoanDetails]);
+
+    const handleAnalyze = async () => {
+        const riskNotes = window.prompt("Parecer técnico da análise de risco:");
+        if (riskNotes === null) return;
+
+        try {
+            const res = await api.put(`/credits/${id}/analyze`, { riskNotes });
+            if (res.data.success) {
+                setLoan(res.data.data.credit);
+                setModal({
+                    isOpen: true,
+                    title: 'Análise Registada',
+                    message: 'Crédito marcado como em análise.',
+                    type: 'success'
+                });
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erro ao registar análise.');
+        }
+    };
+
+    const handleRecommend = async (recommendation) => {
+        const comment = window.prompt(`Justificação da recomendação (${recommendation === 'approve' ? 'Aprovação' : 'Rejeição'}):`);
+        if (comment === null) return;
+
+        try {
+            const res = await api.put(`/credits/${id}/recommend`, { recommendation, comment });
+            if (res.data.success) {
+                setLoan(res.data.data.credit);
+                setModal({
+                    isOpen: true,
+                    title: 'Recomendação Registada',
+                    message: 'Parecer do analista enviado com sucesso.',
+                    type: 'success'
+                });
+            }
+        } catch (error) {
+            alert(error.response?.data?.message || 'Erro ao registar recomendação.');
+        }
+    };
 
     const handleApprove = async () => {
         const confirm = window.confirm("Deseja realmente aprovar este crédito?");
@@ -316,35 +355,62 @@ const LoanDetail = () => {
                                 Protocolo #<span style={{ color: 'var(--accent)' }}>{loan.loanNumber || loan._id.substring(loan._id.length - 8).toUpperCase()}</span>
                             </h1>
                         </div>
-                        <div style={{ display: 'flex', gap: '0.75rem' }}>
-                            {loan.status === 'pending' && (
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                            {/* Botão de Análise */}
+                            {hasPermission('creditos.analyze') && (loan.status === 'pending' || loan.status === 'submitted') && (
+                                <button className="btn-secondary" onClick={handleAnalyze} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FiActivity /> INICIAR ANÁLISE
+                                </button>
+                            )}
+
+                            {/* Botão de Recomendação */}
+                            {hasPermission('creditos.recommend') && loan.status === 'under_analysis' && (
+                                <button className="btn-secondary" onClick={() => handleRecommend('approve')} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e0f2fe', color: '#0369a1' }}>
+                                    <FiCheckCircle /> RECOMENDAR APROVAÇÃO
+                                </button>
+                            )}
+
+                            {/* Botões de Aprovação e Rejeição */}
+                            {['pending', 'under_analysis', 'recommended'].includes(loan.status) && (
                                 <>
-                                    <button className="btn-primary" onClick={handleApprove} style={{ background: 'var(--success)', color: 'white' }}>
-                                        <FiCheckCircle style={{ marginRight: '0.5rem' }} /> APROVAR CRÉDITO
-                                    </button>
-                                    <button
-                                        onClick={handleReject}
-                                        style={{
-                                            padding: '0.75rem 1.25rem', borderRadius: '10px', border: '1px solid var(--danger)',
-                                            color: 'var(--danger)', background: 'rgba(220, 38, 38, 0.05)', fontWeight: 700,
-                                            cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
-                                        }}
-                                    >
-                                        <FiXCircle /> REJEITAR
-                                    </button>
+                                    {hasPermission('creditos.approve') && (
+                                        (loan.createdBy === user?._id || loan.makerChecker?.analyzedBy === user?._id) && user?.role !== 'super_admin' ? (
+                                            <button className="btn-primary" style={{ background: '#94a3b8', cursor: 'not-allowed' }} disabled title="Segregação de Funções: Não pode aprovar um crédito criado ou analisado por si próprio.">
+                                                <FiLock style={{ marginRight: '0.5rem' }} /> SEGREGADO (MAKER)
+                                            </button>
+                                        ) : (
+                                            <button className="btn-primary" onClick={handleApprove} style={{ background: 'var(--success)', color: 'white' }}>
+                                                <FiCheckCircle style={{ marginRight: '0.5rem' }} /> APROVAR CRÉDITO
+                                            </button>
+                                        )
+                                    )}
+
+                                    {hasPermission('creditos.reject') && (
+                                        <button
+                                            onClick={handleReject}
+                                            style={{
+                                                padding: '0.75rem 1.25rem', borderRadius: '10px', border: '1px solid var(--danger)',
+                                                color: 'var(--danger)', background: 'rgba(220, 38, 38, 0.05)', fontWeight: 700,
+                                                cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem'
+                                            }}
+                                        >
+                                            <FiXCircle /> REJEITAR
+                                        </button>
+                                    )}
                                 </>
                             )}
-                            {loan.status === 'approved' && loan.currentStage !== 'awaiting_disbursement' && (
+
+                            {/* Botão de Desembolso */}
+                            {hasPermission('creditos.disburse') && (loan.status === 'approved' || loan.status === 'awaiting_disbursement') && (
                                 <button
                                     className="btn-primary"
                                     style={{
-                                        background: loan.contractStatus === 'signed' ? 'var(--accent)' : 'var(--border-color)',
-                                        cursor: loan.contractStatus === 'signed' ? 'pointer' : 'not-allowed'
+                                        background: 'var(--accent)',
+                                        cursor: 'pointer'
                                     }}
-                                    onClick={loan.contractStatus === 'signed' ? handleDisburse : undefined}
-                                    title={loan.contractStatus !== 'signed' ? 'O contrato precisa estar assinado para solicitar o desembolso' : 'Solicitar Desembolso'}
+                                    onClick={handleDisburse}
                                 >
-                                    <FiDollarSign style={{ marginRight: '0.5rem' }} /> SOLICITAR DESEMBOLSO
+                                    <FiDollarSign style={{ marginRight: '0.5rem' }} /> EFETUAR DESEMBOLSO
                                 </button>
                             )}
                             {loan.currentStage === 'awaiting_disbursement' && (

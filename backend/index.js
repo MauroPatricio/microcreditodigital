@@ -27,6 +27,8 @@ import confidenceRoutes from './src/routes/confidence.js';
 import simulationRoutes from './src/routes/simulations.js';
 import contractRoutes from './src/routes/contracts.js';
 import userRoutes from './src/routes/users.js';
+import roleRoutes from './src/routes/roles.js';
+import deliveryOrderRoutes from './src/routes/deliveryOrderRoutes.js';
 
 // Services
 import whatsappService from './src/services/whatsappService.js';
@@ -73,13 +75,15 @@ app.use('/api/confidence', confidenceRoutes);
 app.use('/api/simulations', simulationRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/roles', roleRoutes);
+app.use('/api/delivery-orders', deliveryOrderRoutes);
 
 // Root
 app.get('/', (req, res) => {
     res.send(`
     <html>
         <head>
-            <title>MicroCrédito Digital API</title>
+            <title>TaquiMola MicroCrédito Digital API</title>
             <style>
                 body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; background: #0f172a; color: #f8fafc; margin: 0; }
                 .container { text-align: center; padding: 2rem; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; background: #1e293b; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
@@ -90,7 +94,7 @@ app.get('/', (req, res) => {
         </head>
         <body>
             <div class="container">
-                <h1>MicroCrédito Digital API</h1>
+                <h1>TaquiMola MicroCrédito Digital API</h1>
                 <p>Status: <span class="status">OPERATIONAL</span></p>
                 <p>Version: 1.0.0</p>
             </div>

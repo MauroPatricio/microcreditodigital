@@ -24,6 +24,11 @@ export default function CreditSimulatorScreen({ navigation }) {
     const [simulation, setSimulation] = useState(null);
     const [loading, setLoading] = useState(false);
 
+    const handleAmountChange = (text) => {
+        const cleanText = text.replace(/^0+(?=\d)/, '');
+        setAmount(cleanText);
+    };
+
     const handleSimulate = async () => {
         const amountValue = parseFloat(amount);
 
@@ -76,7 +81,7 @@ export default function CreditSimulatorScreen({ navigation }) {
                             style={styles.input}
                             placeholder="Ex: 10000"
                             value={amount}
-                            onChangeText={setAmount}
+                            onChangeText={handleAmountChange}
                             keyboardType="numeric"
                             placeholderTextColor="#cbd5e1"
                         />

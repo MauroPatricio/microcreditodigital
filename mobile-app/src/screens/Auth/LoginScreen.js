@@ -47,7 +47,7 @@ export default function LoginScreen({ navigation }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.header}>
                     <Text style={styles.logo}>💰</Text>
-                    <Text style={[styles.title, { color: colors.primary }]}>CrediSmart+</Text>
+                    <Text style={[styles.title, { color: colors.primary }]}>TaquiMola</Text>
                     <Text style={[styles.subtitle, { color: colors.text.secondary }]}>O seu crédito inteligente</Text>
                 </View>
 

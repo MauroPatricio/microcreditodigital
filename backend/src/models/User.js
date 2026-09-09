@@ -29,8 +29,17 @@ const userSchema = new mongoose.Schema({
     },
     role: {
         type: String,
-        enum: ['client', 'agent', 'manager', 'owner', 'super_admin', 'admin', 'representative', 'supervisor'],
+        enum: ['client', 'agent', 'manager', 'owner', 'super_admin', 'admin', 'representative', 'supervisor', 'analyst', 'approver', 'financial', 'collector', 'support', 'auditor'],
         default: 'client'
+    },
+    customRole: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
+        default: null
+    },
+    approvalLimit: {
+        type: Number,
+        default: null // Se nulo, herdará o limite do perfil (Role)
     },
     institution: {
         type: mongoose.Schema.Types.ObjectId,

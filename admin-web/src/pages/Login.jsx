@@ -144,7 +144,7 @@ const Login = () => {
                     </div>
                     <div className="app-info">
                         <h4>É um cliente individual?</h4>
-                        <p>Baixe a aplicação <strong>Credismart</strong> no seu telemóvel para solicitar o seu crédito.</p>
+                        <p>Baixe a aplicação <strong>TaquiMola</strong> no seu telemóvel para solicitar o seu crédito.</p>
                     </div>
                 </div>
 

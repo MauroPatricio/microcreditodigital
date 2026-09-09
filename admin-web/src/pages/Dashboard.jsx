@@ -86,7 +86,7 @@ const Dashboard = () => {
         <div>
             <div style={{ marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
-                    Olá, {user?.name?.split(' ')[0]}! 👋
+                    Olá, {user?.name?.split(' ')[0]}!
                 </h1>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
                     Bem-vindo ao painel — <strong style={{ color: 'var(--text-main)' }}>{user?.institution?.name}</strong>
@@ -210,7 +210,7 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div style={{ height: 300, minHeight: 300, width: '100%' }}>
-                        <ResponsiveContainer width="99%" height="100%">
+                        <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={revenueData || []}>
                                 <defs>
                                     <linearGradient id="colorValor" x1="0" y1="0" x2="0" y2="1">
@@ -240,7 +240,7 @@ const Dashboard = () => {
                         </div>
                     </div>
                     <div style={{ height: 300, minHeight: 300, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={[

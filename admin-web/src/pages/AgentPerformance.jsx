@@ -132,7 +132,7 @@ const AgentPerformance = () => {
                                 <FiTrendingUp style={{ color: 'var(--accent)' }} /> Evolução Mensal de Comissões
                             </h3>
                             <div style={{ height: '300px' }}>
-                                <ResponsiveContainer width="100%" height="100%">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                                     <LineChart data={performance.monthlyEvolution}>
                                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                                         <XAxis dataKey="_id" stroke="var(--text-muted)" fontSize={12} />

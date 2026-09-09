@@ -8,6 +8,7 @@ import contractService from '../services/contractService.js';
 import smsService from '../services/sms.js';
 import { mpesaService } from '../services/mpesaService.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requirePermission, enforceSegregationOfDuties, requireApprovalLimit } from '../middleware/rbac.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
@@ -337,10 +338,128 @@ router.get('/:id', protect, async (req, res) => {
     }
 });
 
+const resolveCreditFromReq = async (req) => Credit.findById(req.params.id);
+const resolveAmountFromReq = async (req) => {
+    const credit = await Credit.findById(req.params.id);
+    return req.body.approvedAmount || (credit ? credit.amount : 0);
+};
+
+// @route   PUT /api/credits/:id/analyze
+// @desc    Registar análise de crédito
+// @access  Private
+router.put('/:id/analyze', protect, requirePermission('creditos.analyze'), auditAction('Credit', 'analyze', 'medium'), async (req, res) => {
+    try {
+        const { riskNotes, recommendedAmount } = req.body;
+        const credit = await Credit.findById(req.params.id);
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        credit.status = 'under_analysis';
+        credit.currentStage = 'analysis';
+        if (!credit.makerChecker) credit.makerChecker = {};
+        credit.makerChecker.analyzedBy = req.user._id;
+        credit.makerChecker.analyzedAt = new Date();
+
+        credit.workflowHistory.push({
+            stage: 'analysis',
+            action: 'analyzed',
+            performedBy: req.user._id,
+            comment: riskNotes || `Análise concluída. Valor recomendado: ${recommendedAmount || credit.amount} MT`
+        });
+
+        await credit.save();
+        res.json({ success: true, message: 'Análise de crédito registada com sucesso', data: { credit } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao registar análise', error: error.message });
+    }
+});
+
+// @route   PUT /api/credits/:id/recommend
+// @desc    Recomendar aprovação ou rejeição
+// @access  Private
+router.put('/:id/recommend', protect, requirePermission('creditos.recommend'), auditAction('Credit', 'recommend', 'medium'), async (req, res) => {
+    try {
+        const { recommendation, comment } = req.body;
+        const credit = await Credit.findById(req.params.id);
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        credit.status = 'recommended';
+        credit.currentStage = 'recommendation';
+        credit.workflowHistory.push({
+            stage: 'recommendation',
+            action: recommendation === 'reject' ? 'recommended_rejection' : 'recommended_approval',
+            performedBy: req.user._id,
+            comment: comment || `Parecer: ${recommendation}`
+        });
+
+        await credit.save();
+        res.json({ success: true, message: 'Recomendação registada com sucesso', data: { credit } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao registar recomendação', error: error.message });
+    }
+});
+
+// @route   PUT /api/credits/:id/reject
+// @desc    Rejeitar crédito
+// @access  Private
+router.put('/:id/reject', protect, requirePermission('creditos.reject'), auditAction('Credit', 'reject', 'high'), async (req, res) => {
+    try {
+        const { reason } = req.body;
+        const credit = await Credit.findById(req.params.id);
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        credit.status = 'rejected';
+        credit.currentStage = 'completed';
+        credit.workflowHistory.push({
+            stage: 'approval',
+            action: 'rejected',
+            performedBy: req.user._id,
+            comment: reason || 'Solicitação de crédito rejeitada'
+        });
+
+        await credit.save();
+        res.json({ success: true, message: 'Crédito rejeitado com sucesso', data: { credit } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao rejeitar crédito', error: error.message });
+    }
+});
+
+// @route   PUT /api/credits/:id/disburse
+// @desc    Desembolsar crédito aprovado
+// @access  Private
+router.put('/:id/disburse', protect, requirePermission('creditos.disburse'), auditAction('Credit', 'disburse', 'critical'), async (req, res) => {
+    try {
+        const credit = await Credit.findById(req.params.id);
+        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
+
+        if (!['approved', 'awaiting_disbursement'].includes(credit.status)) {
+            return res.status(400).json({ success: false, message: 'Apenas créditos aprovados podem ser desembolsados' });
+        }
+
+        credit.status = 'disbursed';
+        credit.currentStage = 'disbursement';
+        if (!credit.makerChecker) credit.makerChecker = {};
+        credit.makerChecker.disbursedBy = req.user._id;
+        credit.makerChecker.disbursedAt = new Date();
+        credit.startDate = new Date();
+
+        credit.workflowHistory.push({
+            stage: 'disbursement',
+            action: 'disbursed',
+            performedBy: req.user._id,
+            comment: `Crédito desembolsado no valor de ${credit.approvedAmount} MT`
+        });
+
+        await credit.save();
+        res.json({ success: true, message: 'Crédito desembolsado com sucesso', data: { credit } });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Erro ao desembolsar crédito', error: error.message });
+    }
+});
+
 // @route   PUT /api/credits/:id/approve
 // @desc    Aprovar crédito
-// @access  Private (Manager/Owner)
-router.put('/:id/approve', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Credit', 'approve', 'high'), async (req, res) => {
+// @access  Private (Com Segregação de Funções e Limite por Valor)
+router.put('/:id/approve', protect, requirePermission('creditos.approve'), enforceSegregationOfDuties(resolveCreditFromReq), requireApprovalLimit(resolveAmountFromReq), auditAction('Credit', 'approve', 'high'), async (req, res) => {
     try {
         const { approvedAmount } = req.body;
 
@@ -753,8 +872,8 @@ router.post('/request/:id/insist', protect, async (req, res) => {
 
 // @route   POST /api/credits/:id/generate-contract
 // @desc    Gerar PDF do contrato via template
-// @access  Private (Owner/Manager)
-router.post('/:id/generate-contract', protect, authorize('owner', 'manager'), auditAction('Credit', 'generate_contract', 'medium'), async (req, res) => {
+// @access  Private (Owner/Manager/Admin)
+router.post('/:id/generate-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), auditAction('Credit', 'generate_contract', 'medium'), async (req, res) => {
     try {
         const { templateName } = req.body;
         const credit = await Credit.findById(req.params.id);
@@ -828,7 +947,7 @@ router.post('/:id/sign-contract', protect, auditAction('Credit', 'sign_contract'
 // @route   POST /api/credits/:id/approve-contract
 // @desc    Aprovar contrato manualmente (Admin/Manager)
 // @access  Private
-router.post('/:id/approve-contract', protect, authorize('owner', 'manager'), auditAction('Credit', 'approve_contract', 'high'), async (req, res) => {
+router.post('/:id/approve-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), auditAction('Credit', 'approve_contract', 'high'), async (req, res) => {
     try {
         const credit = await Credit.findById(req.params.id);
 
@@ -859,7 +978,7 @@ router.post('/:id/approve-contract', protect, authorize('owner', 'manager'), aud
 // @route   POST /api/credits/:id/reject-contract
 // @desc    Rejeitar/Cancelar contrato (Admin/Manager)
 // @access  Private
-router.post('/:id/reject-contract', protect, authorize('owner', 'manager'), auditAction('Credit', 'reject_contract', 'medium'), async (req, res) => {
+router.post('/:id/reject-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), auditAction('Credit', 'reject_contract', 'medium'), async (req, res) => {
     try {
         const credit = await Credit.findById(req.params.id);
 
@@ -1108,6 +1227,28 @@ router.post('/:id/collateral/:collateralId/photos', protect, authorize('admin', 
         });
     } catch (error) {
         console.error('Upload Collateral Photo Error:', error);
+        res.status(500).json({ success: false, message: 'Erro ao carregar a foto.', error: error.message });
+    }
+});
+
+// @route   POST /api/credits/upload-collateral-photo
+// @desc    Upload de foto de garantia antes da criação do pedido
+// @access  Private (Qualquer utilizador autenticado)
+router.post('/upload-collateral-photo', protect, uploadCollateral.single('photo'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: 'Nenhuma imagem enviada.' });
+        }
+
+        const photoUrl = `/uploads/collateral/${req.file.filename}`;
+
+        res.json({
+            success: true,
+            message: 'Foto de garantia enviada com sucesso.',
+            photoUrl
+        });
+    } catch (error) {
+        console.error('Upload Temp Collateral Photo Error:', error);
         res.status(500).json({ success: false, message: 'Erro ao carregar a foto.', error: error.message });
     }
 });

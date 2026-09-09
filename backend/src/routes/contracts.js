@@ -8,8 +8,8 @@ const router = express.Router();
 
 // @route   POST /api/contracts/generate/:creditId
 // @desc    Gerar contrato PDF para um crédito
-// @access  Private (Manager/Owner)
-router.post('/generate/:creditId', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner/Admin)
+router.post('/generate/:creditId', protect, authorize('manager', 'owner', 'super_admin', 'admin', 'supervisor'), async (req, res) => {
     try {
         const credit = await Credit.findById(req.params.creditId);
 
@@ -61,8 +61,8 @@ router.post('/generate/:creditId', protect, authorize('manager', 'owner', 'super
 
 // @route   POST /api/contracts/:id/send-for-signature
 // @desc    Enviar contrato para assinatura
-// @access  Private (Manager/Owner)
-router.post('/:id/send-for-signature', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+// @access  Private (Manager/Owner/Admin)
+router.post('/:id/send-for-signature', protect, authorize('manager', 'owner', 'super_admin', 'admin', 'supervisor'), async (req, res) => {
     try {
         const contract = await Contract.findById(req.params.id).populate('client');
 
@@ -146,7 +146,7 @@ router.get('/credit/:creditId', protect, async (req, res) => {
 // @route   POST /api/contracts/:id/agent-sign
 // @desc    Receber assinatura digital feita no ecrã do Agente
 // @access  Private (Manager/Owner/Agent)
-router.post('/:id/agent-sign', protect, authorize('manager', 'owner', 'super_admin', 'agent'), async (req, res) => {
+router.post('/:id/agent-sign', protect, authorize('manager', 'owner', 'super_admin', 'admin', 'supervisor', 'agent', 'representative'), async (req, res) => {
     try {
         const { signatureImage } = req.body;
         const contract = await Contract.findById(req.params.id);

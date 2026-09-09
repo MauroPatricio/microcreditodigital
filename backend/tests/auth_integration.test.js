@@ -64,7 +64,9 @@ describe('Auth Integration (Mocked DB)', () => {
             ...userData,
             _id: '507f1f77bcf86cd799439011',
             role: 'client',
-            isBlocked: false
+            isBlocked: false,
+            save: jest.fn().mockResolvedValue(true),
+            toJSON: () => ({ ...userData, _id: '507f1f77bcf86cd799439011', role: 'client' })
         };
         const mockQuery = {
             populate: jest.fn().mockReturnThis(),

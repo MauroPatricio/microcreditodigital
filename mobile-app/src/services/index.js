@@ -49,6 +49,25 @@ export const creditService = {
         const response = await api.get(`/credits/${creditId}`);
         return response.data;
     },
+
+    uploadCollateralPhoto: async (file) => {
+        const formData = new FormData();
+        const uriParts = file.uri.split('.');
+        const fileType = uriParts[uriParts.length - 1] || 'jpg';
+
+        formData.append('photo', {
+            uri: file.uri,
+            name: file.fileName || `collateral_${Date.now()}.${fileType}`,
+            type: file.mimeType || file.type || `image/${fileType === 'jpg' ? 'jpeg' : fileType}`
+        });
+
+        const response = await api.post('/credits/upload-collateral-photo', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    },
 };
 
 // Payment Services

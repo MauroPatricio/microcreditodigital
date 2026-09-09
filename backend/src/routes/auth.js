@@ -303,12 +303,28 @@ router.get('/me', protect, async (req, res) => {
         const user = await User.findById(req.user._id)
             .populate('documents')
             .populate('institution')
-            .populate('activeInstitution');
+            .populate('activeInstitution')
+            .populate('customRole');
+
+        const userData = user.toJSON();
+
+        // Calcular permissões efetivas do utilizador
+        let effectivePermissions = [];
+        if (user.role === 'super_admin') {
+            effectivePermissions = ['*'];
+        } else if (user.customRole && user.customRole.permissions) {
+            effectivePermissions = user.customRole.permissions;
+        } else {
+            const { DEFAULT_ROLE_PERMISSIONS } = await import('../middleware/rbac.js');
+            effectivePermissions = DEFAULT_ROLE_PERMISSIONS[user.role] || [];
+        }
+
+        userData.effectivePermissions = effectivePermissions;
 
         res.json({
             success: true,
             data: {
-                user
+                user: userData
             }
         });
     } catch (error) {

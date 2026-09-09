@@ -5,7 +5,7 @@ import FinancialSimulator from '../components/FinancialSimulator';
 import api from '../api';
 import {
     FiDollarSign, FiCalendar, FiTarget, FiShield,
-    FiTrendingUp, FiInfo, FiCheckCircle, FiPlus, FiTrash2, FiChevronLeft
+    FiTrendingUp, FiInfo, FiCheckCircle, FiPlus, FiTrash2, FiChevronLeft, FiUpload, FiImage, FiX
 } from 'react-icons/fi';
 
 const CreditRequestPremium = () => {
@@ -14,6 +14,7 @@ const CreditRequestPremium = () => {
     const [client, setClient] = useState(null);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [uploadingPhotoIndex, setUploadingPhotoIndex] = useState(null);
 
     const [requestData, setRequestData] = useState({
         amount: 5000,
@@ -59,7 +60,7 @@ const CreditRequestPremium = () => {
     const handleAddCollateral = () => {
         setRequestData({
             ...requestData,
-            collateral: [...requestData.collateral, { type: 'vehicle', description: '', value: 0 }]
+            collateral: [...requestData.collateral, { type: 'vehicle', customType: '', description: '', value: 0, photos: [] }]
         });
     };
 
@@ -74,12 +75,37 @@ const CreditRequestPremium = () => {
         setRequestData({ ...requestData, collateral: newCollateral });
     };
 
+    const handleCollateralPhotoUpload = async (index, file) => {
+        if (!file) return;
+        setUploadingPhotoIndex(index);
+        try {
+            const formData = new FormData();
+            formData.append('photo', file);
+            const res = await api.post('/credits/upload-collateral-photo', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
+            if (res.data.success && res.data.photoUrl) {
+                const newCollateral = [...requestData.collateral];
+                const currentPhotos = newCollateral[index].photos || [];
+                newCollateral[index].photos = [...currentPhotos, res.data.photoUrl];
+                setRequestData({ ...requestData, collateral: newCollateral });
+            }
+        } catch (error) {
+            alert("Erro ao fazer upload da foto: " + (error.response?.data?.message || error.message));
+        } finally {
+            setUploadingPhotoIndex(null);
+        }
+    };
+
+    const handleRemovePhoto = (collateralIndex, photoIndex) => {
+        const newCollateral = [...requestData.collateral];
+        newCollateral[collateralIndex].photos = newCollateral[collateralIndex].photos.filter((_, pIdx) => pIdx !== photoIndex);
+        setRequestData({ ...requestData, collateral: newCollateral });
+    };
+
     const handleSubmit = async () => {
         setSubmitting(true);
         try {
-            // No backend real, o `req.user` seria o cliente se ele estivesse logado, 
-            // mas aqui o agente está solicitando PARA o cliente. 
-            // Precisamos ajustar a rota de request para aceitar clientId opcional se for agente.
             const res = await api.post('/credits/request', {
                 ...requestData,
                 clientId
@@ -131,8 +157,8 @@ const CreditRequestPremium = () => {
                                 ...prev,
                                 amount: data.amount,
                                 term: data.term,
-                                periodicity: data.periodicity, // Sync periodicity
-                                interestRate: data.interestRate // Sync interest rate
+                                periodicity: data.periodicity,
+                                interestRate: data.interestRate
                             }));
                             setSimulation(data);
                         }}
@@ -160,7 +186,7 @@ const CreditRequestPremium = () => {
                             <FiShield color="var(--accent)" /> Garantias Adicionais
                         </h3>
                         <button className="btn-secondary" onClick={handleAddCollateral} style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}>
-                            <FiPlus /> Adicionar
+                            <FiPlus /> Adicionar Garantia
                         </button>
                     </div>
 
@@ -169,18 +195,88 @@ const CreditRequestPremium = () => {
                             Nenhuma garantia física adicionada.
                         </p>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                             {requestData.collateral.map((item, idx) => (
-                                <div key={idx} className="glass" style={{ padding: '1rem', display: 'grid', gridTemplateColumns: '1fr 1.5fr 1fr auto', gap: '1rem', alignItems: 'center' }}>
-                                    <select value={item.type} onChange={(e) => handleCollateralChange(idx, 'type', e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: 'none' }}>
-                                        <option value="vehicle">Veículo</option>
-                                        <option value="real_estate">Imóvel</option>
-                                        <option value="guarantor">Fiador</option>
-                                        <option value="equipment">Equipamento</option>
-                                    </select>
-                                    <input type="text" placeholder="Descrição" value={item.description} onChange={(e) => handleCollateralChange(idx, 'description', e.target.value)} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: 'none' }} />
-                                    <input type="number" placeholder="Valor Est." value={item.value} onChange={(e) => handleCollateralChange(idx, 'value', parseFloat(e.target.value))} style={{ padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: 'none' }} />
-                                    <button onClick={() => handleRemoveCollateral(idx)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer' }}><FiTrash2 /></button>
+                                <div key={idx} className="glass" style={{ padding: '1.25rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: item.type === 'other' ? '1fr 1fr 1.5fr 1fr auto' : '1fr 1.5fr 1fr auto', gap: '1rem', alignItems: 'center' }}>
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Tipo de Garantia</label>
+                                            <select value={item.type} onChange={(e) => handleCollateralChange(idx, 'type', e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-light)' }}>
+                                                <option value="vehicle">Veículo</option>
+                                                <option value="real_estate">Imóvel</option>
+                                                <option value="guarantor">Fiador</option>
+                                                <option value="equipment">Equipamento</option>
+                                                <option value="other">Outro</option>
+                                            </select>
+                                        </div>
+
+                                        {item.type === 'other' && (
+                                            <div>
+                                                <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Especificar Garantia</label>
+                                                <input type="text" placeholder="Qual é a garantia?" value={item.customType || ''} onChange={(e) => handleCollateralChange(idx, 'customType', e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-light)' }} />
+                                            </div>
+                                        )}
+
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Descrição</label>
+                                            <input type="text" placeholder="Detalhes (marca, modelo, etc)" value={item.description} onChange={(e) => handleCollateralChange(idx, 'description', e.target.value)} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-light)' }} />
+                                        </div>
+
+                                        <div>
+                                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.25rem' }}>Valor Est. (MT)</label>
+                                            <input type="number" placeholder="Valor Est." value={item.value} onChange={(e) => handleCollateralChange(idx, 'value', parseFloat(e.target.value) || 0)} style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', background: 'var(--bg-card)', color: 'var(--text-main)', border: '1px solid var(--border-light)' }} />
+                                        </div>
+
+                                        <button onClick={() => handleRemoveCollateral(idx)} style={{ color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', marginTop: '1rem' }} title="Remover Garantia"><FiTrash2 size={18} /></button>
+                                    </div>
+
+                                    {/* Sub-seção para Upload de Fotos da Garantia */}
+                                    <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '0.75rem', marginTop: '0.25rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <FiImage /> Fotos da Garantia ({item.photos?.length || 0})
+                                            </span>
+                                            <label className="btn-secondary" style={{ padding: '0.3rem 0.8rem', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                                <FiUpload /> {uploadingPhotoIndex === idx ? 'Enviando...' : 'Carregar Foto'}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    disabled={uploadingPhotoIndex === idx}
+                                                    onChange={(e) => {
+                                                        if (e.target.files && e.target.files[0]) {
+                                                            handleCollateralPhotoUpload(idx, e.target.files[0]);
+                                                            e.target.value = '';
+                                                        }
+                                                    }}
+                                                    style={{ display: 'none' }}
+                                                />
+                                            </label>
+                                        </div>
+
+                                        {item.photos && item.photos.length > 0 && (
+                                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                                                {item.photos.map((photoUrl, pIdx) => (
+                                                    <div key={pIdx} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border-light)' }}>
+                                                        <img src={photoUrl} alt={`Garantia ${pIdx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleRemovePhoto(idx, pIdx)}
+                                                            style={{
+                                                                position: 'absolute', top: '2px', right: '2px',
+                                                                background: 'rgba(239, 68, 68, 0.85)', color: 'white',
+                                                                border: 'none', borderRadius: '50%', width: '20px', height: '20px',
+                                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                cursor: 'pointer', fontSize: '10px'
+                                                            }}
+                                                            title="Remover foto"
+                                                        >
+                                                            <FiX />
+                                                        </button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>

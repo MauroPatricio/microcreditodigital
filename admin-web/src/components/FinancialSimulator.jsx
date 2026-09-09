@@ -66,12 +66,18 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
     }, [amount, term, periodicity, interestRate, amortizationType]);
 
     const fetchSimulation = async () => {
+        const numAmount = amount === '' ? 0 : Number(amount);
+        const numTerm = term === '' ? 1 : Number(term);
+        const numRate = interestRate === '' ? 0 : Number(interestRate);
+
+        if (numAmount < 1000 || numTerm < 1) return;
+
         setLoading(true);
         try {
             const response = await api.post('/credits/simulate', {
-                amount,
-                term,
-                interestRate,
+                amount: numAmount,
+                term: numTerm,
+                interestRate: numRate,
                 periodicity,
                 startDate,
                 amortizationType
@@ -166,10 +172,14 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
     const handleDownloadPDF = async () => {
         setLoading(true);
         try {
+            const numAmount = amount === '' ? 0 : Number(amount);
+            const numTerm = term === '' ? 1 : Number(term);
+            const numRate = interestRate === '' ? 0 : Number(interestRate);
+
             const saveResponse = await api.post('/simulations', {
-                amount,
-                term,
-                rate: interestRate,
+                amount: numAmount,
+                term: numTerm,
+                rate: numRate,
                 period: periodicity,
                 start: startDate,
                 clientName,
@@ -206,10 +216,14 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
     const handleWhatsAppShare = async () => {
         setLoading(true);
         try {
+            const numAmount = amount === '' ? 0 : Number(amount);
+            const numTerm = term === '' ? 1 : Number(term);
+            const numRate = interestRate === '' ? 0 : Number(interestRate);
+
             const saveResponse = await api.post('/simulations', {
-                amount,
-                term,
-                rate: interestRate,
+                amount: numAmount,
+                term: numTerm,
+                rate: numRate,
                 period: periodicity,
                 start: startDate,
                 clientName,
@@ -231,7 +245,8 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
             console.error("Erro ao enviar via WhatsApp:", error);
             alert("Erro ao enviar WhatsApp. Verifique se o telefone está correto e o serviço está ativo.");
 
-            const message = `Olá ${clientName},\n\nAqui está a sua simulação de ${amount.toLocaleString()} MT.\nPrestação: ${simulation?.paymentAmount?.toLocaleString()} MT`;
+            const numAmount = amount === '' ? 0 : Number(amount);
+            const message = `Olá ${clientName},\n\nAqui está a sua simulação de ${numAmount.toLocaleString()} MT.\nPrestação: ${simulation?.paymentAmount?.toLocaleString()} MT`;
             const url = `https://wa.me/${phone?.replace(/\s/g, '') || ''}?text=${encodeURIComponent(message)}`;
             window.open(url, '_blank');
         } finally {
@@ -242,7 +257,7 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
     const periodLabels = {
         daily: 'Dias',
         weekly: 'Semanas',
-        biweekly: 'Quinzenas',
+        biweekly: 'Quinzenal',
         monthly: 'Meses'
     };
 
@@ -254,8 +269,9 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
     }));
 
     const getRiskLabel = () => {
-        if (interestRate <= 7) return { label: 'Baixo', color: 'var(--success)' };
-        if (interestRate <= 15) return { label: 'Médio', color: 'var(--warning)' };
+        const numRate = interestRate === '' ? 0 : Number(interestRate);
+        if (numRate <= 7) return { label: 'Baixo', color: 'var(--success)' };
+        if (numRate <= 15) return { label: 'Médio', color: 'var(--warning)' };
         return { label: 'Alto', color: 'var(--danger)' };
     };
 
@@ -284,7 +300,13 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                             <input 
                                 type="number" 
                                 value={amount} 
-                                onChange={(e) => setAmount(Number(e.target.value))} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setAmount(val === '' ? '' : parseFloat(val));
+                                }}
+                                onBlur={() => {
+                                    if (amount === '' || Number(amount) < 1000) setAmount(1000);
+                                }}
                                 style={{ fontWeight: 600, fontSize: '1.1rem' }} 
                             />
                         </div>
@@ -293,7 +315,13 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                             <input 
                                 type="number" 
                                 value={interestRate} 
-                                onChange={(e) => setInterestRate(Math.max(0, Number(e.target.value)))} 
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setInterestRate(val === '' ? '' : Math.max(0, parseFloat(val)));
+                                }}
+                                onBlur={() => {
+                                    if (interestRate === '') setInterestRate(10);
+                                }}
                                 style={{ fontWeight: 600, fontSize: '1.1rem', textAlign: 'center' }} 
                             />
                         </div>
@@ -313,9 +341,20 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                         <div>
                             <label>Prazo em {periodLabels[periodicity]}</label>
                             <div style={{ display: 'flex', alignItems: 'center' }}>
-                                <button onClick={() => setTerm(Math.max(1, term - 1))} style={{ width: '40px', padding: '0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px 0 0 8px', color: 'var(--text-main)' }}>-</button>
-                                <input type="number" value={term} onChange={(e) => setTerm(Math.max(1, Number(e.target.value)))} style={{ borderRadius: 0, borderLeft: 'none', borderRight: 'none', textAlign: 'center', fontWeight: 600 }} />
-                                <button onClick={() => setTerm(term + 1)} style={{ width: '40px', padding: '0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '0 8px 8px 0', color: 'var(--text-main)' }}>+</button>
+                                <button onClick={() => setTerm(Math.max(1, (Number(term) || 1) - 1))} style={{ width: '40px', padding: '0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '8px 0 0 8px', color: 'var(--text-main)' }}>-</button>
+                                <input 
+                                    type="number" 
+                                    value={term} 
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setTerm(val === '' ? '' : Math.max(1, parseInt(val)));
+                                    }} 
+                                    onBlur={() => {
+                                        if (term === '' || Number(term) < 1) setTerm(1);
+                                    }}
+                                    style={{ borderRadius: 0, borderLeft: 'none', borderRight: 'none', textAlign: 'center', fontWeight: 600 }} 
+                                />
+                                <button onClick={() => setTerm((Number(term) || 1) + 1)} style={{ width: '40px', padding: '0.875rem', background: 'var(--bg-main)', border: '1px solid var(--border-light)', borderRadius: '0 8px 8px 0', color: 'var(--text-main)' }}>+</button>
                             </div>
                         </div>
                     </div>
@@ -366,7 +405,7 @@ const FinancialSimulator = ({ onSimulationComplete, initialAmount = 5000, templa
                                 </div>
                             </div>
                             <div style={{ width: '100%', height: 300, minHeight: 300 }}>
-                                <ResponsiveContainer width="99%" height="100%">
+                                <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0}>
                                     <AreaChart data={chartData}>
                                         <XAxis dataKey="month" stroke="var(--text-muted)" fontSize={12} tickLine={false} axisLine={false} />
                                         <Tooltip contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border-light)', borderRadius: '8px', color: 'var(--text-main)' }} cursor={false} />
