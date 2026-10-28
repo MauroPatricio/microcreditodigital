@@ -9,13 +9,15 @@ import {
     ActivityIndicator,
     RefreshControl,
     Image,
-    Platform
+    Platform,
+    Modal,
+    FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useAlert } from '../../context/AlertContext';
-import { Bell, UserPlus, Receipt, AlertCircle, FileSignature, Wallet, CheckCircle2, ShieldCheck, ChevronRight, Activity, Timer } from 'lucide-react-native';
+import { Bell, UserPlus, Receipt, AlertCircle, FileSignature, Wallet, CheckCircle2, ShieldCheck, ChevronRight, Activity, Timer, X, Check } from 'lucide-react-native';
 
 const CountdownTimer = ({ credit, onInsist }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -82,7 +84,36 @@ export default function HomeScreen({ navigation }) {
     const [data, setData] = useState({ credits: [], notifications: [], collections: [] });
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [markingAll, setMarkingAll] = useState(false);
     const { showAlert } = useAlert();
+
+    const handleMarkAsRead = async (id) => {
+        try {
+            await api.put(`/notifications/${id}/read`);
+            setData(prev => ({
+                ...prev,
+                notifications: prev.notifications.map(n => n._id === id ? { ...n, isRead: true } : n)
+            }));
+        } catch (e) {
+            console.error('Erro ao marcar notificação como lida:', e);
+        }
+    };
+
+    const handleMarkAllAsRead = async () => {
+        try {
+            setMarkingAll(true);
+            await api.put('/notifications/mark-all-read');
+            setData(prev => ({
+                ...prev,
+                notifications: prev.notifications.map(n => ({ ...n, isRead: true }))
+            }));
+        } catch (e) {
+            console.error('Erro ao marcar todas as notificações:', e);
+        } finally {
+            setMarkingAll(false);
+        }
+    };
 
     const handleInsist = async (creditId) => {
         try {
@@ -173,7 +204,11 @@ export default function HomeScreen({ navigation }) {
                         </View>
                     </View>
                 </View>
-                <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
+                <TouchableOpacity 
+                    style={styles.notificationBtn} 
+                    activeOpacity={0.7}
+                    onPress={() => setModalVisible(true)}
+                >
                     <Bell size={24} color="#1e293b" />
                     {unreadCount > 0 && (
                         <View style={styles.badge}>
@@ -242,7 +277,11 @@ export default function HomeScreen({ navigation }) {
                             )}
                         </View>
                     </View>
-                    <TouchableOpacity style={styles.notificationBtn} activeOpacity={0.7}>
+                    <TouchableOpacity 
+                        style={styles.notificationBtn} 
+                        activeOpacity={0.7}
+                        onPress={() => setModalVisible(true)}
+                    >
                         <Bell size={24} color="#1e293b" />
                         {unreadCount > 0 && (
                             <View style={styles.badge}>
@@ -354,6 +393,82 @@ export default function HomeScreen({ navigation }) {
             >
                 {user?.role === 'agent' ? renderAgentHome() : renderClientHome()}
             </ScrollView>
+
+            {/* Modal de Notificações */}
+            <Modal
+                visible={modalVisible}
+                animationType="slide"
+                transparent={true}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                <Text style={styles.modalTitle}>Notificações</Text>
+                                {unreadCount > 0 && (
+                                    <View style={styles.modalBadge}>
+                                        <Text style={styles.modalBadgeText}>{unreadCount}</Text>
+                                    </View>
+                                )}
+                            </View>
+                            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeBtn}>
+                                <X size={20} color="#64748b" />
+                            </TouchableOpacity>
+                        </View>
+
+                        {unreadCount > 0 && (
+                            <TouchableOpacity 
+                                style={styles.markAllBtn} 
+                                onPress={handleMarkAllAsRead}
+                                disabled={markingAll}
+                            >
+                                <Check size={14} color="#3b82f6" />
+                                <Text style={styles.markAllText}>Marcar todas como lidas</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        <FlatList
+                            data={data.notifications}
+                            keyExtractor={(item) => item._id}
+                            showsVerticalScrollIndicator={false}
+                            contentContainerStyle={{ paddingVertical: 10 }}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.notificationItem,
+                                        !item.isRead && styles.unreadNotificationItem
+                                    ]}
+                                    activeOpacity={0.7}
+                                    onPress={() => !item.isRead && handleMarkAsRead(item._id)}
+                                >
+                                    <View style={[styles.notifIconBox, !item.isRead ? { backgroundColor: '#dbeafe' } : { backgroundColor: '#f1f5f9' }]}>
+                                        <Bell size={18} color={!item.isRead ? '#3b82f6' : '#94a3b8'} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <Text style={[styles.notifTitle, !item.isRead && styles.unreadNotifTitle]}>
+                                                {item.title}
+                                            </Text>
+                                            {!item.isRead && <View style={styles.notifDot} />}
+                                        </View>
+                                        <Text style={styles.notifMessage}>{item.message}</Text>
+                                        <Text style={styles.notifDate}>
+                                            {new Date(item.createdAt).toLocaleDateString('pt-MZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                                        </Text>
+                                    </View>
+                                </TouchableOpacity>
+                            )}
+                            ListEmptyComponent={
+                                <View style={styles.emptyContainer}>
+                                    <Bell size={40} color="#cbd5e1" style={{ marginBottom: 12 }} />
+                                    <Text style={styles.emptyText}>Não tem notificações no momento.</Text>
+                                </View>
+                            }
+                        />
+                    </View>
+                </View>
+            </Modal>
         </SafeAreaView>
     );
 }
@@ -491,4 +606,122 @@ const styles = StyleSheet.create({
     },
     metricLabel: { fontSize: 13, color: '#64748b', fontWeight: '600', marginBottom: 8 },
     metricValue: { fontSize: 22, fontWeight: '900', color: '#1e293b' },
+
+    /* Modal de Notificações */
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)',
+        justifyContent: 'flex-end',
+    },
+    modalContent: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 20,
+        paddingTop: 20,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 25,
+        maxHeight: '80%',
+    },
+    modalHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingBottom: 14,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: '800',
+        color: '#1e293b',
+    },
+    modalBadge: {
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 12,
+    },
+    modalBadgeText: {
+        color: '#3b82f6',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    closeBtn: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#f1f5f9',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    markAllBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        alignSelf: 'flex-end',
+        paddingVertical: 10,
+    },
+    markAllText: {
+        color: '#3b82f6',
+        fontSize: 13,
+        fontWeight: '600',
+    },
+    notificationItem: {
+        flexDirection: 'row',
+        padding: 14,
+        borderRadius: 16,
+        backgroundColor: '#f8fafc',
+        marginBottom: 10,
+        gap: 12,
+        alignItems: 'flex-start',
+    },
+    unreadNotificationItem: {
+        backgroundColor: '#eff6ff',
+        borderWidth: 1,
+        borderColor: '#bfdbfe',
+    },
+    notifIconBox: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 2,
+    },
+    notifTitle: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#334155',
+    },
+    unreadNotifTitle: {
+        fontWeight: '800',
+        color: '#1e293b',
+    },
+    notifDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#3b82f6',
+    },
+    notifMessage: {
+        fontSize: 13,
+        color: '#64748b',
+        marginTop: 4,
+        lineHeight: 18,
+    },
+    notifDate: {
+        fontSize: 11,
+        color: '#94a3b8',
+        marginTop: 6,
+    },
+    emptyContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    emptyText: {
+        color: '#94a3b8',
+        fontSize: 14,
+        fontWeight: '500',
+    },
 });

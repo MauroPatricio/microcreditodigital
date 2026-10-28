@@ -28,12 +28,14 @@ import simulationRoutes from './src/routes/simulations.js';
 import contractRoutes from './src/routes/contracts.js';
 import userRoutes from './src/routes/users.js';
 import roleRoutes from './src/routes/roles.js';
-import deliveryOrderRoutes from './src/routes/deliveryOrderRoutes.js';
+
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 
 // Services
 import whatsappService from './src/services/whatsappService.js';
 import whatsappJobs from './src/jobs/whatsappJobs.js';
-import { messageQueueJob, automatedRemindersJob } from './src/jobs/messageWorker.js';
+import { automatedRemindersJob } from './src/jobs/messageWorker.js';
 import cronService from './src/services/cronService.js';
 
 // Config
@@ -45,6 +47,33 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
+// Security Headers
+app.use(helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+    frameguard: false // Permite visualização de comprovativos e PDFs em iframes na aplicação
+}));
+
+// Rate Limiting global (500 requisições por 15 minutos por IP)
+const globalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 500,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Muitos pedidos a partir deste IP, tente novamente mais tarde.' }
+});
+
+// Rate Limiting mais rigoroso para autenticação (100 requisições por 15 minutos)
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: { success: false, message: 'Demasiadas tentativas de autenticação, tente novamente mais tarde.' }
+});
+
+app.use(globalLimiter);
+
 // Middleware
 app.use(cors());
 app.use(express.json());
@@ -54,7 +83,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes Middleware
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/clients', clientRoutes);
 app.use('/api/institutions', institutionRoutes);
 app.use('/api/credits', creditRoutes);
@@ -76,7 +105,6 @@ app.use('/api/simulations', simulationRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
-app.use('/api/delivery-orders', deliveryOrderRoutes);
 
 // Root
 app.get('/', (req, res) => {
@@ -118,7 +146,7 @@ try {
     import('./src/services/communicationService.js').then(m => m.default.seedTemplates());
     whatsappService.initializeClient();
     whatsappJobs.start();
-    messageQueueJob.start();
+    // messageQueueJob removido daqui para evitar execução duplicada a cada minuto (gerenciado pelo cronService.queueJob)
     automatedRemindersJob.start();
     console.log('   ✓ Serviços de Comunicação e WhatsApp iniciados');
 } catch (error) {

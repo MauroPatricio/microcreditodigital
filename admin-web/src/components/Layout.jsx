@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { FiMoon, FiSun, FiAlertTriangle, FiLock } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
+import NotificationBell from './NotificationBell';
 
 const Layout = ({ children }) => {
     const { user } = useAuth();
@@ -85,6 +86,9 @@ const Layout = ({ children }) => {
                     >
                         {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
                     </button>
+
+                    {/* Notificações Web */}
+                    <NotificationBell />
                     
                     {/* Subscription Badge */}
                     {subscription && !isExpired && (

@@ -5,6 +5,7 @@ import { protect, authorize, generateToken, generateRefreshToken, verifyRefreshT
 import { registerValidation, loginValidation, validate } from '../middleware/validation.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import upload from '../middleware/uploadMiddleware.js';
+import emailService from '../services/emailService.js';
 
 const router = express.Router();
 
@@ -398,15 +399,40 @@ router.post('/forgot-password', async (req, res) => {
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
         await user.save();
 
-        // Em produção, enviar email com o link
-        // Para desenvolvimento, retornar o token no console ou na resposta
+        // Enviar email com o link de recuperação
+        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+        const resetLink = `${clientUrl}/reset-password/${resetToken}`;
+
+        try {
+            await emailService.sendEmail(
+                user.email,
+                'Recuperação de Palavra-passe - Microcrédito Digital',
+                `
+                <h2>Olá, ${user.name}</h2>
+                <p>Recebemos um pedido para redefinir a palavra-passe da sua conta.</p>
+                <p>Clique no botão ou link abaixo para prosseguir:</p>
+                <p style="margin: 20px 0;">
+                    <a href="${resetLink}" style="background-color: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+                        Redefinir Palavra-passe
+                    </a>
+                </p>
+                <p>Ou copie e cole o seguinte link no seu navegador:</p>
+                <p><a href="${resetLink}">${resetLink}</a></p>
+                <p><small>Este link é válido por 1 hora. Se não solicitou esta redefinição, por favor ignore este email.</small></p>
+                <br/>
+                <p>Com os melhores cumprimentos,<br/>A Equipa do Microcrédito Digital</p>
+                `
+            );
+        } catch (emailErr) {
+            console.error('Erro ao enviar email de reset de senha:', emailErr);
+        }
+
         console.log(`Password reset token for ${email}: ${resetToken}`);
-        console.log(`Reset link: http://localhost:5173/reset-password/${resetToken}`);
+        console.log(`Reset link: ${resetLink}`);
 
         res.json({
             success: true,
             message: 'Se o email existir, você receberá instruções para redefinir a senha',
-            // Em desenvolvimento, incluir o token
             ...(process.env.NODE_ENV === 'development' && { token: resetToken })
         });
     } catch (error) {

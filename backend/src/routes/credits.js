@@ -291,6 +291,77 @@ router.get('/', protect, async (req, res) => {
     }
 });
 
+// @route   GET /api/credits/overdue
+// @desc    Créditos com prestações vencidas ou a vencer hoje (carteira de cobranças)
+// @access  Private (Staff). Agentes/representantes só veem os créditos que lhes estão atribuídos.
+// NOTA: tem de estar declarada antes de GET /:id
+router.get('/overdue', protect, async (req, res) => {
+    try {
+        if (req.user.role === 'client') {
+            return res.status(403).json({ success: false, message: 'Acesso negado' });
+        }
+
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const installments = await Installment.find({
+            institution: req.institution._id,
+            status: { $in: ['pending', 'overdue', 'partially_paid'] },
+            dueDate: { $lte: endOfToday }
+        }).sort({ dueDate: 1 });
+
+        // Agrupar prestações por crédito
+        const byCredit = new Map();
+        for (const inst of installments) {
+            const key = inst.credit.toString();
+            const outstanding = Math.max((inst.totalAmount || 0) - (inst.paidAmount || 0), 0);
+            if (outstanding <= 0) continue;
+
+            if (!byCredit.has(key)) {
+                byCredit.set(key, {
+                    amountDue: 0,
+                    overdueInstallments: 0,
+                    nextInstallmentId: inst._id, // a mais antiga (ordenado por dueDate)
+                    oldestDueDate: inst.dueDate
+                });
+            }
+            const entry = byCredit.get(key);
+            entry.amountDue += outstanding;
+            entry.overdueInstallments += 1;
+        }
+
+        const creditQuery = {
+            _id: { $in: [...byCredit.keys()] },
+            institution: req.institution._id,
+            status: { $in: ['disbursed', 'active', 'overdue', 'restructured'] }
+        };
+        if (['agent', 'representative'].includes(req.user.role)) {
+            creditQuery.agent = req.user._id;
+        }
+
+        const credits = await Credit.find(creditQuery)
+            .populate('client', 'name phone')
+            .lean();
+
+        const today = new Date();
+        const result = credits
+            .map(c => {
+                const info = byCredit.get(c._id.toString());
+                const daysPastDue = Math.max(Math.floor((today - new Date(info.oldestDueDate)) / 86400000), 0);
+                return { ...c, ...info, amountDue: Math.round(info.amountDue * 100) / 100, daysPastDue };
+            })
+            .sort((a, b) => b.daysPastDue - a.daysPastDue);
+
+        res.json({ success: true, data: { credits: result, total: result.length } });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao listar cobranças',
+            error: error.message
+        });
+    }
+});
+
 // @route   GET /api/credits/:id
 // @desc    Obter detalhes de crédito
 // @access  Private

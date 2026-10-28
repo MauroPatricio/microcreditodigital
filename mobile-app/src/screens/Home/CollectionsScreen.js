@@ -23,7 +23,7 @@ export default function CollectionsScreen() {
 
     const fetchCollections = async () => {
         try {
-            // Em produção, este endpoint retornaria parcelas vencendo hoje/atrasadas
+            // Créditos com prestações vencidas ou a vencer hoje
             const res = await api.get('/credits/overdue');
             setCollections(res.data.data.credits || []);
         } catch (error) {
@@ -36,7 +36,7 @@ export default function CollectionsScreen() {
     const handleRegisterPayment = (loan) => {
         showAlert(
             'Registrar Pagamento',
-            `Deseja registrar o pagamento de ${loan.client.name}?`,
+            `Deseja registrar o pagamento de ${(loan.amountDue || 0).toLocaleString()} MT de ${loan.client?.name}?`,
             [
                 { text: 'Cancelar', style: 'cancel' },
                 {
@@ -46,7 +46,8 @@ export default function CollectionsScreen() {
                             // Chamar endpoint de pagamento
                             await api.post('/payments', {
                                 creditId: loan._id,
-                                amount: loan.amount / loan.term, // Exemplo: valor de uma parcela
+                                installmentId: loan.nextInstallmentId,
+                                amount: loan.amountDue ?? (loan.amount / loan.term),
                                 paymentMethod: 'cash'
                             });
                             showAlert('Sucesso', 'Pagamento registrado');
@@ -81,7 +82,8 @@ export default function CollectionsScreen() {
                     <View style={styles.card}>
                         <View>
                             <Text style={styles.clientName}>{item.client?.name}</Text>
-                            <Text style={styles.loanInfo}>{(item.amount || 0).toLocaleString()} MT | {item.status}</Text>
+                            <Text style={styles.loanInfo}>Em dívida: {(item.amountDue || 0).toLocaleString()} MT</Text>
+                            <Text style={styles.loanInfo}>{item.overdueInstallments || 0} prestação(ões) | {item.daysPastDue || 0} dia(s) de atraso</Text>
                         </View>
                         <TouchableOpacity
                             style={styles.payButton}
