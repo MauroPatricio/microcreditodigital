@@ -143,7 +143,9 @@ app.use((err, req, res, next) => {
 
 // Start Services
 try {
-    import('./src/services/communicationService.js').then(m => m.default.seedTemplates());
+    import('./src/services/communicationService.js')
+        .then(m => m.default.seedTemplates())
+        .catch(err => console.warn('Aviso ao semear templates de comunicação:', err.message));
     whatsappService.initializeClient();
     whatsappJobs.start();
     // messageQueueJob removido daqui para evitar execução duplicada a cada minuto (gerenciado pelo cronService.queueJob)

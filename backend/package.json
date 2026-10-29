@@ -13,9 +13,11 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "build": "echo 'Sem passo de compilação necessário para o backend Node'",
-    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest",
+    "test": "cross-env NODE_ENV=test NODE_OPTIONS=--experimental-vm-modules jest --runInBand",
     "test:mongo": "node test-mongo.js",
-    "seed:admin": "node src/seedSuperAdmin.js"
+    "seed:admin": "node src/seedSuperAdmin.js",
+    "seed:owner": "node src/seedSuperUser.js",
+    "seed:all": "node src/seedAllAdmins.js"
   },
   "author": "",
   "license": "ISC",

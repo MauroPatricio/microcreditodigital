@@ -55,7 +55,7 @@ describe('E2E Mobile Flow Test (against localhost:4000)', () => {
         expect(data.data.user.institution).toBeDefined();
         
         ownerToken = data.data.token;
-        institutionId = data.data.user.institution;
+        institutionId = data.data.user.institution?._id || data.data.user.institution;
     });
 
     it('Step 1: Should register a new user as a client', async () => {
@@ -96,8 +96,8 @@ describe('E2E Mobile Flow Test (against localhost:4000)', () => {
         const response = await fetch('http://localhost:4000/api/clients/documents/me', {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${clientToken}`
-                // node-fetch will automatically add the correct Content-Type with boundary for FormData
+                'Authorization': `Bearer ${clientToken}`,
+                ...formData.getHeaders()
             },
             body: formData
         });

@@ -258,7 +258,13 @@ router.put('/:id/reject', protect, authorize('admin', 'manager', 'owner'), audit
 router.get('/', protect, async (req, res) => {
     try {
         const { creditId, status, page = 1, limit = 20 } = req.query;
-        let query = { institution: req.institution._id };
+        let query = {};
+        const instId = req.institutionId || req.institution?._id;
+        if (instId) {
+            query.institution = instId;
+        } else if (req.user.role !== 'super_admin') {
+            return res.status(400).json({ success: false, message: 'Instituição não identificada' });
+        }
         if (req.user.role === 'client') query.client = req.user._id;
         if (creditId) query.credit = creditId;
         if (status) query.status = status;

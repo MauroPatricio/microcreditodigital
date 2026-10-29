@@ -430,7 +430,6 @@ const OwnerRegister = () => {
                                 name="logo" 
                                 accept="image/*" 
                                 onChange={handleFileChange}
-                                required
                                 style={{ display: 'none' }}
                             />
                             <label 

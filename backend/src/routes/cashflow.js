@@ -20,7 +20,7 @@ router.get('/summary', async (req, res) => {
         const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
 
         // Resolve o ObjectId correcto (req.institutionId é definido pelo middleware auth)
-        const institutionId = req.institutionId || req.user.institution._id || req.user.institution;
+        const institutionId = req.institutionId || req.user?.institution?._id || req.user.institution;
 
         // Saldo Inicial = Base da Instituição + todas as entradas até ao início do mês - todas as saídas
         const institution = await Institution.findById(institutionId).select('settings.initialBalance');
@@ -103,7 +103,7 @@ router.put('/initial-balance', protect, authorize('owner', 'manager', 'super_adm
         }
 
         const institution = await Institution.findByIdAndUpdate(
-            req.institutionId || req.user.institution._id || req.user.institution,
+            req.institutionId || req.user?.institution?._id || req.user.institution,
             { 'settings.initialBalance': parseFloat(initialBalance) },
             { new: true, select: 'settings.initialBalance name' }
         );
@@ -127,7 +127,7 @@ router.put('/initial-balance', protect, authorize('owner', 'manager', 'super_adm
 router.get('/transactions', async (req, res) => {
     try {
         const { page = 1, limit = 30, type, category, startDate, endDate } = req.query;
-        const query = { institution: req.institutionId || req.user.institution._id || req.user.institution };
+        const query = { institution: req.institutionId || req.user?.institution?._id || req.user.institution };
 
         if (type) query.type = type;
         if (category) query.category = category;
@@ -167,7 +167,7 @@ router.post('/transaction', async (req, res) => {
         }
 
         const tx = await CashTransaction.create({
-            institution: req.institutionId || req.user.institution._id || req.user.institution,
+            institution: req.institutionId || req.user?.institution?._id || req.user.institution,
             type,
             category,
             amount: parseFloat(amount),
@@ -189,7 +189,7 @@ router.post('/transaction', async (req, res) => {
 router.put('/transaction/:id', async (req, res) => {
     try {
         const tx = await CashTransaction.findOneAndUpdate(
-            { _id: req.params.id, institution: req.institutionId || req.user.institution._id || req.user.institution },
+            { _id: req.params.id, institution: req.institutionId || req.user?.institution?._id || req.user.institution },
             req.body,
             { new: true, runValidators: true }
         );
@@ -204,7 +204,7 @@ router.put('/transaction/:id', async (req, res) => {
 // @desc    Eliminar transação
 router.delete('/transaction/:id', async (req, res) => {
     try {
-        const tx = await CashTransaction.findOneAndDelete({ _id: req.params.id, institution: req.institutionId || req.user.institution._id || req.user.institution });
+        const tx = await CashTransaction.findOneAndDelete({ _id: req.params.id, institution: req.institutionId || req.user?.institution?._id || req.user.institution });
         if (!tx) return res.status(404).json({ success: false, message: 'Transação não encontrada' });
         res.json({ success: true, message: 'Transação eliminada' });
     } catch (error) {
@@ -224,7 +224,7 @@ router.get('/daily-balance', async (req, res) => {
         const txs = await CashTransaction.aggregate([
             {
                 $match: {
-                    institution: req.institutionId || req.user.institution._id || req.user.institution,
+                    institution: req.institutionId || req.user?.institution?._id || req.user.institution,
                     date: { $gte: start, $lte: end }
                 }
             },

@@ -25,7 +25,11 @@ const Login = () => {
                 setError('');
                 return;
             } else if (res.success) {
-                navigate('/dashboard');
+                if (res.user?.role === 'super_admin') {
+                    navigate('/global-dashboard');
+                } else {
+                    navigate('/dashboard');
+                }
             } else {
                 setError(res.message);
             }

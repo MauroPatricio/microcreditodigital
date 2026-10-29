@@ -9,7 +9,8 @@ const router = express.Router();
 // @desc    Listar templates de contrato da instituição ativa
 router.get('/', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), async (req, res) => {
     try {
-        const templates = await ContractTemplate.find({ institution: req.institutionId });
+        const query = req.institutionId ? { institution: req.institutionId } : {};
+        const templates = await ContractTemplate.find(query);
         res.json({ success: true, data: templates });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });

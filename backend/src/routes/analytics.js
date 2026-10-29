@@ -14,7 +14,7 @@ const router = express.Router();
 // @access  Private (Manager/Owner)
 router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
-        const institutionId = req.user.institution._id;
+        const institutionId = req.institutionId || req.user.institution?._id || req.user.institution;
 
         // Total de clientes
         const totalClients = await User.countDocuments({ role: 'client', institution: institutionId });
@@ -47,7 +47,7 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
         const totalRevenue = jurosTxs.reduce((sum, tx) => sum + tx.amount, 0);
 
         // Dinheiro disponível no Caixa
-        const currentBalance = await cashflowService.getCurrentBalance(institutionId);
+        const currentBalance = institutionId ? await cashflowService.getCurrentBalance(institutionId) : 0;
 
         // Créditos pendentes de aprovação
         const pendingCredits = await Credit.countDocuments({ status: 'pending', institution: institutionId });
@@ -196,7 +196,7 @@ router.get('/dashboard', protect, authorize('manager', 'owner', 'super_admin'), 
 router.get('/portfolio', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
     try {
         const credits = await Credit.find({
-            institution: req.user.institution._id,
+            ...(req.institutionId || req.user.institution?._id ? { institution: req.institutionId || req.user.institution._id } : {}),
             status: { $in: ['active', 'paid', 'defaulted'] }
         });
 
@@ -250,7 +250,7 @@ router.get('/revenue', protect, authorize('manager', 'owner', 'super_admin'), as
         monthsAgo.setMonth(monthsAgo.getMonth() - parseInt(months));
 
         const payments = await Payment.find({
-            institution: req.user.institution._id,
+            ...(req.institutionId || req.user.institution?._id ? { institution: req.institutionId || req.user.institution._id } : {}),
             status: 'completed',
             createdAt: { $gte: monthsAgo }
         });

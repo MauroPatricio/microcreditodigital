@@ -14,7 +14,7 @@ router.get('/', protect, async (req, res) => {
     try {
         const { agent, period, status, page = 1, limit = 20 } = req.query;
 
-        let query = { institution: req.user.institution._id };
+        let query = { institution: req.institutionId || req.user.institution?._id || req.user.institution };
 
         // Se for agente, só pode ver suas próprias comissões
         if (req.user.role === 'agent') {
@@ -58,7 +58,7 @@ router.get('/', protect, async (req, res) => {
 // @route   GET /api/commissions/my-commissions
 // @desc    Comissões do agente logado
 // @access  Private (Agent)
-router.get('/my-commissions', protect, authorize('agent'), async (req, res) => {
+router.get('/my-commissions', protect, authorize('agent', 'super_admin'), async (req, res) => {
     try {
         const { period, status } = req.query;
 
@@ -118,7 +118,7 @@ router.get('/summary/:period', protect, authorize('manager', 'owner', 'super_adm
         const { period } = req.params;
 
         const commissions = await Commission.find({
-            institution: req.user.institution._id,
+            institution: req.institutionId || req.user.institution?._id || req.user.institution,
             period
         }).populate('agent', 'name email');
 
@@ -456,7 +456,7 @@ router.get('/agent/:agentId/performance', protect, authorize('manager', 'owner',
 // @route   GET /api/commissions/targets/my-targets
 // @desc    Metas do agente logado
 // @access  Private (Agent)
-router.get('/targets/my-targets', protect, authorize('agent'), async (req, res) => {
+router.get('/targets/my-targets', protect, authorize('agent', 'super_admin'), async (req, res) => {
     try {
         const currentPeriod = new Date().toISOString().slice(0, 7);
 

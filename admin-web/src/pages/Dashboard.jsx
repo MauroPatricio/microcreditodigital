@@ -89,9 +89,34 @@ const Dashboard = () => {
                     Olá, {user?.name?.split(' ')[0]}!
                 </h1>
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>
-                    Bem-vindo ao painel — <strong style={{ color: 'var(--text-main)' }}>{user?.institution?.name}</strong>
+                    Bem-vindo ao painel — <strong style={{ color: 'var(--text-main)' }}>{user?.institution?.name || 'Administração Global'}</strong>
                 </p>
             </div>
+
+            {user?.role === 'super_admin' && (
+                <div style={{
+                    background: 'rgba(59, 130, 246, 0.12)',
+                    border: '1px solid rgba(59, 130, 246, 0.35)',
+                    padding: '1rem 1.5rem',
+                    borderRadius: '16px',
+                    marginBottom: '2rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '1rem'
+                }}>
+                    <div>
+                        <strong style={{ color: 'var(--accent)', fontSize: '0.95rem' }}>Perfil Super Administrador</strong>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.2rem' }}>
+                            Para visualizar a performance unificada e gerir todas as instituições e subscrições, use a visão global.
+                        </p>
+                    </div>
+                    <button onClick={() => navigate('/global-dashboard')} className="btn-primary" style={{ padding: '0.6rem 1.25rem', fontSize: '0.85rem', borderRadius: '12px', fontWeight: 700 }}>
+                        Dashboard Global
+                    </button>
+                </div>
+            )}
 
             {/* KPI Row 1 */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1.25rem', marginBottom: '1.5rem' }}>

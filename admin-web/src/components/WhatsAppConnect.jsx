@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiRefreshCw, FiCheckCircle, FiSmartphone, FiAlertCircle, FiSend, FiQrCode, FiLogOut, FiHelpCircle } from 'react-icons/fi';
+import { FiRefreshCw, FiCheckCircle, FiSmartphone, FiAlertCircle, FiSend, FiLogOut, FiHelpCircle } from 'react-icons/fi';
 import api from '../api';
 
 const WhatsAppConnect = () => {

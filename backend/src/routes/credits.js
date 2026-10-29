@@ -248,7 +248,13 @@ router.get('/', protect, async (req, res) => {
     try {
         const { status, page = 1, limit = 10 } = req.query;
 
-        let query = { institution: req.institution._id };
+        let query = {};
+        const instId = req.institutionId || req.institution?._id;
+        if (instId) {
+            query.institution = instId;
+        } else if (req.user.role !== 'super_admin') {
+            return res.status(400).json({ success: false, message: 'Instituição não identificada' });
+        }
 
         // Se for cliente, só pode ver seus próprios créditos
         if (req.user.role === 'client') {
@@ -383,7 +389,7 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        const isSameInstitution = credit.institution.toString() === req.institution._id.toString();
+        const isSameInstitution = req.user.role === 'super_admin' || (credit.institution && (req.institution?._id || req.institutionId) && credit.institution.toString() === (req.institution._id || req.institutionId).toString());
         const isOwnCredit = req.user.role === 'client' && credit.client._id.toString() === req.user._id.toString();
         const isAdminOrStaff = ['owner', 'manager', 'agent'].includes(req.user.role);
 
@@ -491,39 +497,6 @@ router.put('/:id/reject', protect, requirePermission('creditos.reject'), auditAc
         res.json({ success: true, message: 'Crédito rejeitado com sucesso', data: { credit } });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Erro ao rejeitar crédito', error: error.message });
-    }
-});
-
-// @route   PUT /api/credits/:id/disburse
-// @desc    Desembolsar crédito aprovado
-// @access  Private
-router.put('/:id/disburse', protect, requirePermission('creditos.disburse'), auditAction('Credit', 'disburse', 'critical'), async (req, res) => {
-    try {
-        const credit = await Credit.findById(req.params.id);
-        if (!credit) return res.status(404).json({ success: false, message: 'Crédito não encontrado' });
-
-        if (!['approved', 'awaiting_disbursement'].includes(credit.status)) {
-            return res.status(400).json({ success: false, message: 'Apenas créditos aprovados podem ser desembolsados' });
-        }
-
-        credit.status = 'disbursed';
-        credit.currentStage = 'disbursement';
-        if (!credit.makerChecker) credit.makerChecker = {};
-        credit.makerChecker.disbursedBy = req.user._id;
-        credit.makerChecker.disbursedAt = new Date();
-        credit.startDate = new Date();
-
-        credit.workflowHistory.push({
-            stage: 'disbursement',
-            action: 'disbursed',
-            performedBy: req.user._id,
-            comment: `Crédito desembolsado no valor de ${credit.approvedAmount} MT`
-        });
-
-        await credit.save();
-        res.json({ success: true, message: 'Crédito desembolsado com sucesso', data: { credit } });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Erro ao desembolsar crédito', error: error.message });
     }
 });
 

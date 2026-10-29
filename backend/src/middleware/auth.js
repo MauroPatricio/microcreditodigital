@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import Institution from '../models/Institution.js';
 
 // Middleware para verificar JWT token
 export const protect = async (req, res, next) => {
@@ -43,9 +44,20 @@ export const protect = async (req, res, next) => {
                 });
             }
 
-            // Lógica Multi-Tenant: Priorizar activeInstitution para Owners
+            // Lógica Multi-Tenant: Priorizar activeInstitution para Owners e Super Admins
             if (req.user.role === 'owner' || req.user.role === 'super_admin') {
-                req.institution = req.user.activeInstitution || req.user.institution;
+                const headerInstId = req.headers['x-institution-id'] || req.query.institutionId;
+                if (headerInstId && req.user.role === 'super_admin') {
+                    req.institution = await Institution.findById(headerInstId);
+                } else {
+                    req.institution = req.user.activeInstitution || req.user.institution;
+                }
+
+                // Se for super_admin e ainda não tiver nenhuma instituição ativa selecionada,
+                // usar por padrão a primeira instituição ativa do sistema como contexto operacional
+                if (req.user.role === 'super_admin' && !req.institution) {
+                    req.institution = await Institution.findOne({ isActive: true });
+                }
             } else {
                 req.institution = req.user.institution;
             }
@@ -53,6 +65,9 @@ export const protect = async (req, res, next) => {
             if (req.institution) {
                 // Se estiver populado é um objeto com _id, se não é o próprio ID (string/ObjectId)
                 req.institutionId = req.institution._id || req.institution;
+                if (!req.user.institution) {
+                    req.user.institution = req.institution;
+                }
             }
 
             next();
