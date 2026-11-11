@@ -24,6 +24,7 @@ const { default: notificationRoutes } = await import('../src/routes/notification
 const { default: paymentRoutes } = await import('../src/routes/payments.js');
 const { default: subscriptionRoutes } = await import('../src/routes/subscriptions.js');
 const { default: institutionRoutes } = await import('../src/routes/institutions.js');
+const { default: userRoutes } = await import('../src/routes/users.js');
 
 describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/Recepção)', () => {
   let notificationsStore = [];
@@ -52,6 +53,7 @@ describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/
   app.use('/api/payments', paymentRoutes);
   app.use('/api/subscriptions', subscriptionRoutes);
   app.use('/api/institutions', institutionRoutes);
+  app.use('/api/users', userRoutes);
 
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -134,7 +136,10 @@ describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/
       name: 'Super Admin',
       email: 'mauro.patricio1@gmail.com',
       role: 'super_admin',
+      receivePaymentEmails: true,
       isBlocked: false,
+      async save() { return this; },
+      toJSON() { return { ...this }; },
     };
     ownerUser = {
       _id: 'u_own',
@@ -143,7 +148,10 @@ describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/
       role: 'owner',
       institution: instDoc,
       activeInstitution: instDoc,
+      receivePaymentEmails: true,
       isBlocked: false,
+      async save() { return this; },
+      toJSON() { return { ...this }; },
     };
     adminUser = {
       _id: 'u_adm',
@@ -152,7 +160,10 @@ describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/
       role: 'admin',
       institution: instDoc,
       activeInstitution: instDoc,
+      receivePaymentEmails: true,
       isBlocked: false,
+      async save() { return this; },
+      toJSON() { return { ...this }; },
     };
     clientUser = {
       _id: 'u_cli',
@@ -162,6 +173,8 @@ describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/
       institution: instDoc,
       activeInstitution: instDoc,
       isBlocked: false,
+      async save() { return this; },
+      toJSON() { return { ...this }; },
     };
     usersStore = [superAdminUser, ownerUser, adminUser, clientUser];
 
@@ -377,5 +390,71 @@ describe('Badges de Pagamento, Notificações & Configuração de Emails (Envio/
       .send({});
     expect(testInstRes.status).toBe(200);
     expect(sentEmails.some((e) => e.to.includes('financas@horizonte.co.mz'))).toBe(true);
+  });
+
+  it('3. Super Admin e o próprio utilizador configuram email dedicado para receber alertas de pagamentos', async () => {
+    // 1. Utilizador (owner) configura o seu email preferencial para pagamentos
+    const selfCfg = await request(app)
+      .put('/api/notifications/email-preferences')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ paymentNotificationEmail: 'alerta.owner@horizonte.co.mz', receivePaymentEmails: true });
+    expect(selfCfg.status).toBe(200);
+    expect(ownerUser.paymentNotificationEmail).toBe('alerta.owner@horizonte.co.mz');
+
+    const getPrefs = await request(app)
+      .get('/api/notifications/email-preferences')
+      .set('Authorization', `Bearer ${ownerToken}`);
+    expect(getPrefs.status).toBe(200);
+    expect(getPrefs.body.data.paymentNotificationEmail).toBe('alerta.owner@horizonte.co.mz');
+
+    // Teste rápido a partir das preferências do utilizador
+    const testUserRes = await request(app)
+      .post('/api/notifications/email-preferences/test')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({});
+    expect(testUserRes.status).toBe(200);
+    expect(sentEmails.some((e) => e.to.includes('alerta.owner@horizonte.co.mz'))).toBe(true);
+
+    // 2. Super Admin configura email de pagamentos de um utilizador via PUT /api/users/:id
+    //    e desactiva recepção de outro (adminUser)
+    const saEditAdmin = await request(app)
+      .put(`/api/users/${adminUser._id}`)
+      .set('Authorization', `Bearer ${superAdminToken}`)
+      .send({ paymentNotificationEmail: 'nao.receber@horizonte.co.mz', receivePaymentEmails: false });
+    expect(saEditAdmin.status).toBe(200);
+    expect(adminUser.receivePaymentEmails).toBe(false);
+
+    const saEditSa = await request(app)
+      .put(`/api/users/${superAdminUser._id}`)
+      .set('Authorization', `Bearer ${superAdminToken}`)
+      .send({ paymentNotificationEmail: 'pagamentos.sa@nhiquela.co.mz', receivePaymentEmails: true });
+    expect(saEditSa.status).toBe(200);
+
+    // 3. Novo pagamento de cliente envia para alerta.owner@horizonte.co.mz e EXCLUI adminUser (desactivado)
+    sentEmails = [];
+    const payRes = await request(app)
+      .post('/api/payments')
+      .set('Authorization', `Bearer ${clientToken}`)
+      .send({
+        creditId: creditDoc._id,
+        amount: 2000,
+        paymentMethod: 'mpesa',
+        transactionId: 'MP-778899',
+      });
+    expect(payRes.status).toBe(201);
+    expect(sentEmails.length).toBeGreaterThanOrEqual(1);
+    expect(sentEmails[0].to).toContain('alerta.owner@horizonte.co.mz');
+    expect(sentEmails[0].to).not.toContain('nao.receber@horizonte.co.mz');
+
+    // 4. Novo comprovativo de subscrição inclui também o email personalizado do Super Admin
+    const dummyPdf = Buffer.from('%PDF-1.4 sub2');
+    await request(app)
+      .post('/api/subscriptions/submit')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .field('packageId', 'pkg_std')
+      .field('amountPaid', 3200)
+      .attach('proof', dummyPdf, { filename: 'talao_sa.pdf', contentType: 'application/pdf' });
+    await new Promise((r) => setTimeout(r, 30));
+    expect(sentEmails.some((e) => e.to.includes('pagamentos.sa@nhiquela.co.mz'))).toBe(true);
   });
 });

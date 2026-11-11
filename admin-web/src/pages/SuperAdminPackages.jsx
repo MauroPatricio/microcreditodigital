@@ -77,6 +77,11 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
     const [testingEmail, setTestingEmail] = useState(false);
     const [savingConfig, setSavingConfig] = useState(false);
 
+    // Emails por utilizador (configurável pelo Super Admin)
+    const [usersList, setUsersList] = useState([]);
+    const [userEmailSearch, setUserEmailSearch] = useState('');
+    const [savingUserEmailId, setSavingUserEmailId] = useState(null);
+
     // Modal Rejeição de Pagamento
     const [rejectModal, setRejectModal] = useState({ open: false, reqId: null, reason: '' });
     const [processingReq, setProcessingReq] = useState(false);
@@ -86,11 +91,12 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
     const fetchAll = async () => {
         try {
             setLoading(true);
-            const [pkgSettled, cfgSettled, reqSettled, instSettled] = await Promise.allSettled([
+            const [pkgSettled, cfgSettled, reqSettled, instSettled, usersSettled] = await Promise.allSettled([
                 api.get('/subscriptions/admin/packages'),
                 api.get('/subscriptions/admin/config'),
                 api.get('/subscriptions/admin/requests'),
                 api.get('/subscriptions/admin/institutions'),
+                api.get('/users'),
             ]);
 
             if (pkgSettled.status === 'fulfilled' && pkgSettled.value.data.success) {
@@ -125,6 +131,17 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
             }
             if (reqSettled.status === 'fulfilled' && reqSettled.value.data.success) {
                 setRequests(reqSettled.value.data.data || []);
+            }
+            if (usersSettled.status === 'fulfilled' && usersSettled.value.data.success) {
+                setUsersList(
+                    (usersSettled.value.data.data || [])
+                        .filter((u) => u.role !== 'client')
+                        .map((u) => ({
+                            ...u,
+                            _draftEmail: u.paymentNotificationEmail || '',
+                            _draftReceive: u.receivePaymentEmails !== false,
+                        }))
+                );
             }
             if (instSettled.status === 'fulfilled' && instSettled.value.data.success) {
                 setInstitutionsSubs(instSettled.value.data.data || []);
@@ -336,6 +353,31 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
         }
     };
 
+    const handleSaveUserPaymentEmail = async (u) => {
+        setSavingUserEmailId(u._id);
+        setFeedback({ type: '', text: '' });
+        try {
+            const res = await api.put(`/users/${u._id}`, {
+                paymentNotificationEmail: (u._draftEmail || '').trim(),
+                receivePaymentEmails: u._draftReceive !== false,
+            });
+            if (res.data?.success) {
+                setUsersList((prev) =>
+                    prev.map((item) =>
+                        item._id === u._id
+                            ? { ...item, paymentNotificationEmail: res.data.data.paymentNotificationEmail || '', receivePaymentEmails: res.data.data.receivePaymentEmails !== false }
+                            : item
+                    )
+                );
+                setFeedback({ type: 'success', text: `Email de pagamentos actualizado para ${u.name}!` });
+            }
+        } catch (err) {
+            setFeedback({ type: 'error', text: err.response?.data?.message || 'Erro ao guardar email do utilizador.' });
+        } finally {
+            setSavingUserEmailId(null);
+        }
+    };
+
     // Aprovar / Rejeitar Pedidos
     const handleApprove = async (reqId) => {
         if (!window.confirm('Confirmar recebimento e activar o pacote + funcionalidades desta instituição?')) return;
@@ -516,6 +558,12 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
                     onClick={() => setActiveTab('accounts')}
                 >
                     <FiCreditCard /> Contas da Nhiquela ({configForm.paymentAccounts.length})
+                </button>
+                <button
+                    className={activeTab === 'emails' ? 'btn-primary' : 'btn-secondary'}
+                    onClick={() => setActiveTab('emails')}
+                >
+                    <FiMail /> Emails de Pagamento
                 </button>
                 <button
                     className={activeTab === 'requests' ? 'btn-primary' : 'btn-secondary'}
@@ -913,22 +961,45 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
                                 ))}
                             </div>
 
-                            {/* Configuração de Emails (Envio & Recepção de Notificações e Alertas) */}
                             <div style={{
-                                marginTop: '1.75rem',
-                                marginBottom: '1.5rem',
-                                paddingTop: '1.25rem',
-                                borderTop: '1px solid var(--border-light)',
+                                marginBottom: '1.25rem',
+                                padding: '0.85rem 1rem',
+                                borderRadius: '8px',
+                                background: 'var(--bg-secondary)',
+                                border: '1px solid var(--border-light)',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                gap: '1rem',
+                                flexWrap: 'wrap',
                             }}>
-                                <h4 style={{ fontSize: '1.05rem', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <FiMail color="#0284c7" /> Configuração de Emails — Envio & Recepção de Notificações e Alertas
-                                </h4>
-                                <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-                                    Configure o servidor de envio da plataforma Nhiquela e os emails da equipa financeira que devem receber alertas quando houver pagamentos de subscrição.
+                                <span style={{ fontSize: '0.85rem', color: 'var(--text-main)' }}>
+                                    Configure os emails de recepção, servidor SMTP e preferências por utilizador na aba <strong>Emails de Pagamento</strong>.
+                                </span>
+                                <button type="button" className="btn-secondary" onClick={() => setActiveTab('emails')}>
+                                    <FiMail /> Ir para Emails de Pagamento →
+                                </button>
+                            </div>
+
+                            <button type="submit" className="btn-primary" disabled={savingConfig}>
+                                <FiSave /> {savingConfig ? 'A guardar...' : 'Guardar Contas da Nhiquela'}
+                            </button>
+                        </form>
+                    )}
+
+                    {/* ABA DEDICADA: EMAILS DE PAGAMENTO (PLATAFORMA + POR UTILIZADOR) */}
+                    {activeTab === 'emails' && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            <form onSubmit={handleSaveConfig} className="card">
+                                <h3 style={{ fontSize: '1.15rem', marginBottom: '0.35rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <FiMail color="#0284c7" /> Emails de Envio (SMTP) & Recepção de Pagamentos da Plataforma
+                                </h3>
+                                <p style={{ fontSize: '0.84rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+                                    Defina os emails que recebem notificações ao entrar um pagamento de subscrição e o servidor SMTP usado para enviar os alertas.
                                 </p>
 
                                 <div style={{ marginBottom: '1rem' }}>
-                                    <label>Emails para Recepção de Alertas e Comprovativos de Subscrição (separados por vírgula)</label>
+                                    <label>Emails para Recepção de Alertas de Pagamentos (separados por vírgula)</label>
                                     <input
                                         type="text"
                                         placeholder="ex: financeiro@nhiquela.co.mz, mauro.patricio1@gmail.com"
@@ -948,7 +1019,7 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
                                             })}
                                             style={{ width: 'auto' }}
                                         />
-                                        Enviar email de alerta ao receber pagamento de subscrição
+                                        Notificar por email ao receber pagamento de subscrição
                                     </label>
                                     <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, cursor: 'pointer', fontSize: '0.84rem' }}>
                                         <input
@@ -1037,7 +1108,7 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
                                     </div>
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap', marginBottom: '1rem' }}>
                                     <input
                                         type="email"
                                         placeholder="Email de teste (opcional — se vazio usa os configurados)"
@@ -1049,12 +1120,107 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
                                         <FiMail /> {testingEmail ? 'A testar...' : 'Enviar Email de Teste'}
                                     </button>
                                 </div>
-                            </div>
 
-                            <button type="submit" className="btn-primary" disabled={savingConfig}>
-                                <FiSave /> {savingConfig ? 'A guardar...' : 'Guardar Contas & Configurações da Nhiquela'}
-                            </button>
-                        </form>
+                                <button type="submit" className="btn-primary" disabled={savingConfig}>
+                                    <FiSave /> {savingConfig ? 'A guardar...' : 'Guardar Configurações de Email'}
+                                </button>
+                            </form>
+
+                            <div className="card">
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1.1rem', marginBottom: '0.2rem' }}>Configurar Email de Pagamentos por Utilizador</h3>
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                                            Defina ou altere o endereço de email onde cada utilizador (Super Admin, Proprietário, Admin, Gestor, Financeiro) recebe alertas de pagamentos.
+                                        </p>
+                                    </div>
+                                    <div style={{ position: 'relative', minWidth: '240px' }}>
+                                        <FiSearch style={{ position: 'absolute', left: '0.8rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                                        <input
+                                            type="text"
+                                            placeholder="Filtrar utilizador ou email..."
+                                            value={userEmailSearch}
+                                            onChange={(e) => setUserEmailSearch(e.target.value)}
+                                            style={{ paddingLeft: '2.3rem' }}
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="table-responsive">
+                                    <table className="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Utilizador</th>
+                                                <th>Perfil</th>
+                                                <th>Email de Recepção de Pagamentos</th>
+                                                <th>Receber Alertas</th>
+                                                <th style={{ textAlign: 'right' }}>Acção</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {usersList
+                                                .filter((u) => {
+                                                    const q = userEmailSearch.trim().toLowerCase();
+                                                    if (!q) return true;
+                                                    return (
+                                                        u.name?.toLowerCase().includes(q) ||
+                                                        u.email?.toLowerCase().includes(q) ||
+                                                        u.role?.toLowerCase().includes(q) ||
+                                                        (u._draftEmail || '').toLowerCase().includes(q)
+                                                    );
+                                                })
+                                                .map((u) => (
+                                                    <tr key={u._id}>
+                                                        <td>
+                                                            <strong>{u.name}</strong>
+                                                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Login: {u.email || u.phone}</div>
+                                                        </td>
+                                                        <td>
+                                                            <span style={{ fontSize: '0.78rem', fontWeight: 700, textTransform: 'uppercase' }}>{u.role}</span>
+                                                        </td>
+                                                        <td style={{ minWidth: '240px' }}>
+                                                            <input
+                                                                type="email"
+                                                                placeholder={u.email || 'email@empresa.co.mz'}
+                                                                value={u._draftEmail}
+                                                                onChange={(e) => {
+                                                                    const val = e.target.value;
+                                                                    setUsersList((prev) => prev.map((it) => it._id === u._id ? { ...it, _draftEmail: val } : it));
+                                                                }}
+                                                            />
+                                                        </td>
+                                                        <td>
+                                                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, cursor: 'pointer', fontSize: '0.82rem' }}>
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={u._draftReceive}
+                                                                    onChange={(e) => {
+                                                                        const checked = e.target.checked;
+                                                                        setUsersList((prev) => prev.map((it) => it._id === u._id ? { ...it, _draftReceive: checked } : it));
+                                                                    }}
+                                                                    style={{ width: 'auto' }}
+                                                                />
+                                                                Activo
+                                                            </label>
+                                                        </td>
+                                                        <td style={{ textAlign: 'right' }}>
+                                                            <button
+                                                                type="button"
+                                                                className="btn-primary"
+                                                                style={{ padding: '0.35rem 0.75rem', fontSize: '0.78rem' }}
+                                                                disabled={savingUserEmailId === u._id}
+                                                                onClick={() => handleSaveUserPaymentEmail(u)}
+                                                            >
+                                                                <FiSave size={13} /> {savingUserEmailId === u._id ? 'A guardar...' : 'Guardar'}
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     )}
 
                     {/* ABA 3: VALIDAÇÃO DE PAGAMENTOS */}
