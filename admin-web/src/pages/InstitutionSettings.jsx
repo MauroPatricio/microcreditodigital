@@ -15,6 +15,9 @@ const InstitutionSettings = () => {
     const [uploadingLogo, setUploadingLogo] = useState(false);
     const [logoPreview, setLogoPreview] = useState(null);
     const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'error' });
+    const [testingEmail, setTestingEmail] = useState(false);
+    const [testEmailAddress, setTestEmailAddress] = useState('');
+    const [alertRecipientsText, setAlertRecipientsText] = useState('');
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -29,7 +32,20 @@ const InstitutionSettings = () => {
             notificationSettings: {
                 channels: { sms: true, email: true, push: true },
                 remindersBeforeDue: [7, 3, 1],
-                overdueReminderFrequency: 'weekly'
+                overdueReminderFrequency: 'weekly',
+                emailConfig: {
+                    senderName: '',
+                    senderEmail: '',
+                    smtpHost: '',
+                    smtpPort: 587,
+                    smtpSecure: false,
+                    smtpUser: '',
+                    smtpPassword: '',
+                    hasSmtpPassword: false,
+                    alertRecipients: [],
+                    notifyOnPaymentReceived: true,
+                    notifyOnPaymentConfirmed: true,
+                }
             }
         }
     });
@@ -40,8 +56,11 @@ const InstitutionSettings = () => {
             try {
                 const res = await api.get('/institutions/my');
                 if (res.data.success) {
-                    setInstitution(res.data.data);
-                    setFormData(res.data.data);
+                    const inst = res.data.data;
+                    setInstitution(inst);
+                    setFormData(inst);
+                    const recips = inst?.settings?.notificationSettings?.emailConfig?.alertRecipients || [];
+                    setAlertRecipientsText(Array.isArray(recips) ? recips.join(', ') : '');
                 }
                 // Fetch owner/representative profile
                 const userRes = await api.get('/auth/me');
@@ -180,11 +199,93 @@ const InstitutionSettings = () => {
         }));
     };
 
+    const updateEmailConfig = (field, value) => {
+        setFormData((prev) => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                notificationSettings: {
+                    ...(prev.settings?.notificationSettings || {}),
+                    emailConfig: {
+                        ...(prev.settings?.notificationSettings?.emailConfig || {}),
+                        [field]: value,
+                    },
+                },
+            },
+        }));
+    };
+
+    const toggleNotificationChannel = (channel, checked) => {
+        setFormData((prev) => ({
+            ...prev,
+            settings: {
+                ...prev.settings,
+                notificationSettings: {
+                    ...(prev.settings?.notificationSettings || {}),
+                    channels: {
+                        ...(prev.settings?.notificationSettings?.channels || {}),
+                        [channel]: checked,
+                    },
+                },
+            },
+        }));
+    };
+
+    const handleTestEmail = async () => {
+        setTestingEmail(true);
+        try {
+            const parsedRecipients = alertRecipientsText
+                .split(/[,;\s]+/)
+                .map((s) => s.trim())
+                .filter(Boolean);
+            const emailConfigPayload = {
+                ...(formData.settings?.notificationSettings?.emailConfig || {}),
+                alertRecipients: parsedRecipients,
+            };
+            const res = await api.post('/institutions/my/test-email', {
+                to: testEmailAddress.trim() || undefined,
+                emailConfig: emailConfigPayload,
+            });
+            setModal({
+                isOpen: true,
+                title: 'Email Enviado',
+                message: res.data.message || 'Email de teste enviado com sucesso!',
+                type: 'success',
+            });
+        } catch (error) {
+            setModal({
+                isOpen: true,
+                title: 'Erro no Envio de Email',
+                message: error.response?.data?.message || 'Não foi possível enviar o email de teste.',
+                type: 'error',
+            });
+        } finally {
+            setTestingEmail(false);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setSaving(true);
         try {
-            const res = await api.put('/institutions/my', formData);
+            const parsedRecipients = alertRecipientsText
+                .split(/[,;\s]+/)
+                .map((s) => s.trim())
+                .filter(Boolean);
+            const payload = {
+                ...formData,
+                settings: {
+                    ...formData.settings,
+                    notificationSettings: {
+                        ...(formData.settings?.notificationSettings || {}),
+                        emailConfig: {
+                            ...(formData.settings?.notificationSettings?.emailConfig || {}),
+                            alertRecipients: parsedRecipients,
+                        },
+                    },
+                },
+            };
+            const res = await api.put('/institutions/my', payload);
             if (res.data.success) {
                 setModal({
                     isOpen: true,
@@ -196,6 +297,12 @@ const InstitutionSettings = () => {
             }
         } catch (error) {
             console.error("Error updating settings", error);
+            setModal({
+                isOpen: true,
+                title: 'Erro',
+                message: error.response?.data?.message || 'Erro ao salvar configurações.',
+                type: 'error'
+            });
         } finally {
             setSaving(false);
         }
@@ -537,6 +644,147 @@ uplodar logo</span>
                                 {(!formData.settings?.paymentAccounts || formData.settings?.paymentAccounts?.length === 0) && (
                                     <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>Nenhuma conta configurada. Adicione contas para os clientes realizarem pagamentos.</p>
                                 )}
+                            </div>
+                        </div>
+
+                        {/* Notificações & Emails (Envio e Recepção de Alertas) */}
+                        <div className="card">
+                            <h3 style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <FiMail style={{ color: 'var(--accent)' }} /> Emails de Notificação & Alertas
+                            </h3>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '1.25rem' }}>
+                                Configure quais emails recebem alertas ao receber pagamentos de clientes e, opcionalmente, o servidor SMTP de envio da instituição.
+                            </p>
+
+                            <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                {[
+                                    { key: 'email', label: 'Alertas por Email' },
+                                    { key: 'push', label: 'Notificações Push / App' },
+                                    { key: 'sms', label: 'Alertas por SMS' },
+                                ].map((ch) => (
+                                    <label key={ch.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, cursor: 'pointer', fontSize: '0.85rem' }}>
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.settings?.notificationSettings?.channels?.[ch.key] !== false}
+                                            onChange={(e) => toggleNotificationChannel(ch.key, e.target.checked)}
+                                            style={{ width: 'auto' }}
+                                        />
+                                        {ch.label}
+                                    </label>
+                                ))}
+                            </div>
+
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label>Emails para Recepção de Notificações e Alertas (separados por vírgula) *</label>
+                                <input
+                                    type="text"
+                                    placeholder="ex: financeiro@empresa.co.mz, gerente@empresa.co.mz"
+                                    value={alertRecipientsText}
+                                    onChange={(e) => setAlertRecipientsText(e.target.value)}
+                                />
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '1.25rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, cursor: 'pointer', fontSize: '0.82rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.settings?.notificationSettings?.emailConfig?.notifyOnPaymentReceived !== false}
+                                        onChange={(e) => updateEmailConfig('notifyOnPaymentReceived', e.target.checked)}
+                                        style={{ width: 'auto' }}
+                                    />
+                                    Notificar ao receber pagamento de cliente
+                                </label>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, cursor: 'pointer', fontSize: '0.82rem' }}>
+                                    <input
+                                        type="checkbox"
+                                        checked={formData.settings?.notificationSettings?.emailConfig?.notifyOnPaymentConfirmed !== false}
+                                        onChange={(e) => updateEmailConfig('notifyOnPaymentConfirmed', e.target.checked)}
+                                        style={{ width: 'auto' }}
+                                    />
+                                    Enviar email ao confirmar/rejeitar pagamento
+                                </label>
+                            </div>
+
+                            <div style={{ borderTop: '1px solid var(--border-light)', paddingTop: '1rem', marginBottom: '1rem' }}>
+                                <p style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', marginBottom: '0.75rem' }}>
+                                    Configuração de Envio (SMTP Próprio — opcional; se vazio usa o servidor padrão da Nhiquela)
+                                </p>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '0.75rem' }}>
+                                    <div>
+                                        <label>Nome do Remetente</label>
+                                        <input
+                                            type="text"
+                                            placeholder={formData.name || 'Microcrédito Digital'}
+                                            value={formData.settings?.notificationSettings?.emailConfig?.senderName || ''}
+                                            onChange={(e) => updateEmailConfig('senderName', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>Email Remetente</label>
+                                        <input
+                                            type="email"
+                                            placeholder="notificacoes@suaempresa.co.mz"
+                                            value={formData.settings?.notificationSettings?.emailConfig?.senderEmail || ''}
+                                            onChange={(e) => updateEmailConfig('senderEmail', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>Servidor SMTP (Host)</label>
+                                        <input
+                                            type="text"
+                                            placeholder="smtp.gmail.com"
+                                            value={formData.settings?.notificationSettings?.emailConfig?.smtpHost || ''}
+                                            onChange={(e) => updateEmailConfig('smtpHost', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>Porta SMTP</label>
+                                        <input
+                                            type="number"
+                                            placeholder="587"
+                                            value={formData.settings?.notificationSettings?.emailConfig?.smtpPort || 587}
+                                            onChange={(e) => updateEmailConfig('smtpPort', Number(e.target.value))}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>Utilizador SMTP</label>
+                                        <input
+                                            type="text"
+                                            placeholder="utilizador@gmail.com"
+                                            value={formData.settings?.notificationSettings?.emailConfig?.smtpUser || ''}
+                                            onChange={(e) => updateEmailConfig('smtpUser', e.target.value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>
+                                            Senha / App Password {formData.settings?.notificationSettings?.emailConfig?.hasSmtpPassword ? '(já configurada)' : ''}
+                                        </label>
+                                        <input
+                                            type="password"
+                                            placeholder="Deixe em branco para manter a actual"
+                                            value={formData.settings?.notificationSettings?.emailConfig?.smtpPassword || ''}
+                                            onChange={(e) => updateEmailConfig('smtpPassword', e.target.value)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '0.6rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                                <input
+                                    type="email"
+                                    placeholder="Email para teste (opcional)"
+                                    value={testEmailAddress}
+                                    onChange={(e) => setTestEmailAddress(e.target.value)}
+                                    style={{ flex: '1 1 200px' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleTestEmail}
+                                    disabled={testingEmail}
+                                    className="btn-secondary"
+                                >
+                                    <FiMail /> {testingEmail ? 'A enviar teste...' : 'Testar Envio de Email'}
+                                </button>
                             </div>
                         </div>
 

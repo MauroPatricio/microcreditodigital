@@ -1,8 +1,10 @@
 import express from 'express';
 import SmsLog from '../models/SmsLog.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('sms'));
 
 // @route   GET /api/sms/logs
 // @desc    Listar logs de SMS

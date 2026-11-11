@@ -3,8 +3,10 @@ import Contract from '../models/Contract.js';
 import Credit from '../models/Credit.js';
 import contractService from '../services/contractService.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('contracts'));
 
 // @route   POST /api/contracts/generate/:creditId
 // @desc    Gerar contrato PDF para um crédito

@@ -3,11 +3,13 @@ import Document from '../models/Document.js';
 import User from '../models/User.js';
 import Notification from '../models/Notification.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import fs from 'fs';
 import path from 'path';
 
 const router = express.Router();
+router.use(protect, requireFeature('documents'));
 
 // @route   GET /api/documents/pending
 // @desc    Listar documentos aguardando validação

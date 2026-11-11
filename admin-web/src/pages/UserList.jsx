@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom';
 
 const UserList = () => {
     const [users, setUsers] = useState([]);
+    const [userLimitInfo, setUserLimitInfo] = useState(null);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const { user: currentUser } = useAuth();
@@ -21,6 +22,7 @@ const UserList = () => {
             const res = await api.get('/users');
             if (res.data.success) {
                 setUsers(res.data.data);
+                setUserLimitInfo(res.data.userLimitInfo || null);
             }
         } catch (error) {
             console.error("Error fetching users", error);
@@ -59,21 +61,72 @@ const UserList = () => {
         return roles[role] || role;
     };
 
+    const limitReached = currentUser?.role !== 'super_admin' &&
+        userLimitInfo?.maxUsers > 0 &&
+        userLimitInfo.currentUsers >= userLimitInfo.maxUsers;
+
     return (
         <Layout>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', gap: '1rem', flexWrap: 'wrap' }}>
                 <div>
                     <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Gestão de Utilizadores</h1>
                     <p style={{ color: 'var(--text-muted)' }}>Visualize e gerencie os utilizadores do sistema.</p>
                 </div>
-                {['owner', 'admin', 'super_admin'].includes(currentUser?.role) && (
-                    <Link to="/users/new">
-                        <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <FiUserPlus /> Novo Utilizador
-                        </button>
-                    </Link>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    {userLimitInfo && currentUser?.role !== 'super_admin' && (
+                        <div style={{
+                            padding: '0.45rem 0.85rem',
+                            borderRadius: '8px',
+                            fontSize: '0.82rem',
+                            fontWeight: 700,
+                            background: limitReached ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.12)',
+                            color: limitReached ? 'var(--danger)' : 'var(--success)',
+                            border: `1px solid ${limitReached ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+                        }}>
+                            Utilizadores Activos: {userLimitInfo.currentUsers} / {userLimitInfo.maxUsers > 0 ? userLimitInfo.maxUsers : 'Ilimitado'}
+                        </div>
+                    )}
+                    {['owner', 'admin', 'super_admin'].includes(currentUser?.role) && (
+                        limitReached ? (
+                            <Link to="/my-subscription">
+                                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#d97706', borderColor: '#d97706' }}>
+                                    <FiUserPlus /> Limite Atingido — Actualizar Pacote
+                                </button>
+                            </Link>
+                        ) : (
+                            <Link to="/users/new">
+                                <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <FiUserPlus /> Novo Utilizador
+                                </button>
+                            </Link>
+                        )
+                    )}
+                </div>
             </div>
+
+            {limitReached && (
+                <div style={{
+                    marginBottom: '1.25rem',
+                    padding: '0.85rem 1.15rem',
+                    borderRadius: '10px',
+                    background: '#fffbeb',
+                    border: '1px solid #f59e0b',
+                    color: '#78350f',
+                    fontSize: '0.88rem',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
+                }}>
+                    <span>
+                        <strong>Limite de utilizadores do pacote atingido ({userLimitInfo.currentUsers}/{userLimitInfo.maxUsers}).</strong> Para adicionar mais membros da equipa, actualize a subscrição ou solicite ao Super Admin o aumento do limite.
+                    </span>
+                    <Link to="/my-subscription" style={{ fontWeight: 700, color: '#b45309', textDecoration: 'underline' }}>
+                        Ir para Minha Subscrição
+                    </Link>
+                </div>
+            )}
 
             <div className="card" style={{ padding: '0' }}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border-light)', position: 'relative' }}>

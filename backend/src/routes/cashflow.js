@@ -3,9 +3,10 @@ import CashTransaction from '../models/CashTransaction.js';
 import Institution from '../models/Institution.js';
 import cashflowService from '../services/cashflowService.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
-router.use(protect);
+router.use(protect, requireFeature('cashflow'));
 
 // @route   GET /api/cashflow/summary
 // @desc    Resumo financeiro do mês (saldo inicial, entradas, saídas, saldo final)

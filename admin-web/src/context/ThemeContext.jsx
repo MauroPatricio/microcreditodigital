@@ -3,21 +3,19 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-    // Check local storage for theme, default to 'dark'
+    // Tema padrão 'light' inspirado no DDJ Law (canvas #f1f5f9, sidebar #0f172a, accent #0284c7)
     const [theme, setTheme] = useState(() => {
-        const storedTheme = localStorage.getItem('theme');
-        return storedTheme ? storedTheme : 'dark';
+        const storedTheme = localStorage.getItem('theme_v2');
+        return storedTheme ? storedTheme : 'light';
     });
 
     useEffect(() => {
-        // Apply theme to document root
         document.documentElement.setAttribute('data-theme', theme);
-        // Persist theme to local storage
-        localStorage.setItem('theme', theme);
+        localStorage.setItem('theme_v2', theme);
     }, [theme]);
 
     const toggleTheme = () => {
-        setTheme(prevTheme => (prevTheme === 'dark' ? 'light' : 'dark'));
+        setTheme(prevTheme => (prevTheme === 'light' ? 'dark' : 'light'));
     };
 
     return (

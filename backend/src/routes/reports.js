@@ -4,12 +4,13 @@ import User from '../models/User.js';
 import Payment from '../models/Payment.js';
 import Institution from '../models/Institution.js';
 import { protect } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 import * as XLSX from 'xlsx';
 
 const router = express.Router();
 
-// Aplicar proteção a todas as rotas
-router.use(protect);
+// Aplicar proteção e verificação de funcionalidade do pacote a todas as rotas
+router.use(protect, requireFeature('reports'));
 
 // @route   GET /api/reports/credit-performance
 // @desc    Relatório de performance de créditos

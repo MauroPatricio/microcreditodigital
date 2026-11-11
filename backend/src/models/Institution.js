@@ -78,6 +78,18 @@ const institutionSchema = new mongoose.Schema({
                 push: { type: Boolean, default: true },
                 email: { type: Boolean, default: true },
                 sms: { type: Boolean, default: false }
+            },
+            emailConfig: {
+                senderName: { type: String, trim: true, default: '' },
+                senderEmail: { type: String, trim: true, default: '' },
+                smtpHost: { type: String, trim: true, default: '' },
+                smtpPort: { type: Number, default: 587 },
+                smtpSecure: { type: Boolean, default: false },
+                smtpUser: { type: String, trim: true, default: '' },
+                smtpPassword: { type: String, default: '' },
+                alertRecipients: { type: [String], default: [] },
+                notifyOnPaymentReceived: { type: Boolean, default: true },
+                notifyOnPaymentConfirmed: { type: Boolean, default: true }
             }
         },
         onboardingSettings: {
@@ -89,15 +101,35 @@ const institutionSchema = new mongoose.Schema({
     subscription: {
         plan: {
             type: String,
-            enum: ['starter', 'business', 'enterprise', 'free', 'trial', 'standard', 'premium'],
-            default: 'trial'
+            default: 'trial',
+            trim: true
+        },
+        packageId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'SubscriptionPackage',
+            default: null
+        },
+        packageName: {
+            type: String,
+            default: 'Período Experimental (7 Dias)'
+        },
+        enabledFeatures: {
+            type: [String],
+            default: null
+        },
+        maxUsers: {
+            type: Number,
+            default: 0
         },
         status: {
             type: String,
-            enum: ['active', 'expired', 'pending', 'cancelled'],
+            enum: ['active', 'expired', 'pending', 'cancelled', 'rejected'],
             default: 'active'
         },
         expiresAt: {
+            type: Date
+        },
+        lastPaymentDate: {
             type: Date
         }
     },

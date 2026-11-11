@@ -9,7 +9,7 @@ const notificationSchema = new mongoose.Schema({
     institution: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Institution',
-        required: true
+        default: null
     },
     type: {
         type: String,
@@ -18,6 +18,9 @@ const notificationSchema = new mongoose.Schema({
             'payment_submitted',
             'payment_confirmed',
             'payment_rejected',
+            'subscription_submitted',
+            'subscription_approved',
+            'subscription_rejected',
             'credit_approved',
             'credit_rejected',
             'credit_disbursed',

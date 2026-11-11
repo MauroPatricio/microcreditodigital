@@ -184,6 +184,16 @@ const userSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    paymentNotificationEmail: {
+        type: String,
+        trim: true,
+        lowercase: true,
+        default: ''
+    },
+    receivePaymentEmails: {
+        type: Boolean,
+        default: true
+    },
     lastLogin: {
         type: Date
     },

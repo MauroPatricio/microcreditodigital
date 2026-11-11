@@ -83,7 +83,7 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
             }
 
             const trialExpiresAt = new Date();
-            trialExpiresAt.setDate(trialExpiresAt.getDate() + 3);
+            trialExpiresAt.setDate(trialExpiresAt.getDate() + 7);
 
             const institutionData = {
                 name: institutionName,
@@ -92,6 +92,7 @@ router.post('/register', upload.single('logo'), auditAction('User', 'register', 
                 owner: user._id,
                 subscription: {
                     plan: 'trial',
+                    packageName: 'Período Experimental (7 Dias)',
                     status: 'active',
                     expiresAt: trialExpiresAt
                 }
@@ -162,7 +163,7 @@ router.post('/login', auditAction('User', 'login', 'medium'), loginValidation, v
                 { email: email.toLowerCase() },
                 { phone: email }
             ]
-        }).select('+password').populate('institution').populate('activeInstitution');
+        }).select('+password').populate('institution').populate('activeInstitution').populate('customRole');
 
         if (!user) {
             return res.status(401).json({
@@ -214,17 +215,21 @@ router.post('/login', auditAction('User', 'login', 'medium'), loginValidation, v
             });
         }
 
-        // Restrição de Acesso Mobile baseada no Plano (Standard não permite app mobile)
+        const { DEFAULT_ROLE_PERMISSIONS, resolveInstitutionFeatures } = await import('../middleware/rbac.js');
+        const { ALL_FEATURE_CODES } = await import('../config/packageFeatures.js');
+
+        const currentInstitution = user.activeInstitution || user.institution;
+        const effectiveFeatures = user.role === 'super_admin'
+            ? ALL_FEATURE_CODES
+            : await resolveInstitutionFeatures(currentInstitution);
+
+        // Restrição de Acesso Mobile baseada nas funcionalidades do pacote contratado
         if (isMobile && user.role !== 'super_admin') {
-            const currentInstitution = user.activeInstitution || user.institution;
-            if (currentInstitution && currentInstitution.subscription) {
-                const plan = currentInstitution.subscription.plan;
-                if (plan === 'standard' || plan === 'free' || plan === 'starter') {
-                    return res.status(403).json({
-                        success: false,
-                        message: 'O seu plano actual não inclui acesso à aplicação móvel. Use a plataforma Web ou contacte o suporte para actualizar para o plano Premium.'
-                    });
-                }
+            if (!effectiveFeatures.includes('mobile_app') && !effectiveFeatures.includes('*')) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'O seu pacote actual não inclui acesso à aplicação móvel. Use a plataforma Web ou contacte a Nhiquela para actualizar o seu pacote.'
+                });
             }
         }
 
@@ -236,11 +241,21 @@ router.post('/login', auditAction('User', 'login', 'medium'), loginValidation, v
         const token = generateToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
 
+        const userData = user.toJSON();
+        if (user.role === 'super_admin') {
+            userData.effectivePermissions = ['*'];
+        } else if (user.customRole && user.customRole.permissions) {
+            userData.effectivePermissions = user.customRole.permissions;
+        } else {
+            userData.effectivePermissions = DEFAULT_ROLE_PERMISSIONS[user.role] || [];
+        }
+        userData.effectiveFeatures = effectiveFeatures;
+
         res.json({
             success: true,
             message: 'Login realizado com sucesso',
             data: {
-                user: user.toJSON(),
+                user: userData,
                 token,
                 refreshToken
             }
@@ -309,6 +324,9 @@ router.get('/me', protect, async (req, res) => {
 
         const userData = user.toJSON();
 
+        const { DEFAULT_ROLE_PERMISSIONS, resolveInstitutionFeatures } = await import('../middleware/rbac.js');
+        const { ALL_FEATURE_CODES } = await import('../config/packageFeatures.js');
+
         // Calcular permissões efetivas do utilizador
         let effectivePermissions = [];
         if (user.role === 'super_admin') {
@@ -316,11 +334,16 @@ router.get('/me', protect, async (req, res) => {
         } else if (user.customRole && user.customRole.permissions) {
             effectivePermissions = user.customRole.permissions;
         } else {
-            const { DEFAULT_ROLE_PERMISSIONS } = await import('../middleware/rbac.js');
             effectivePermissions = DEFAULT_ROLE_PERMISSIONS[user.role] || [];
         }
 
+        const activeInst = user.activeInstitution || user.institution;
+        const effectiveFeatures = user.role === 'super_admin'
+            ? ALL_FEATURE_CODES
+            : await resolveInstitutionFeatures(activeInst);
+
         userData.effectivePermissions = effectivePermissions;
+        userData.effectiveFeatures = effectiveFeatures;
 
         res.json({
             success: true,

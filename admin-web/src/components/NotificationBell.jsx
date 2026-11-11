@@ -1,12 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FiBell, FiCheck, FiCheckCircle, FiAlertCircle, FiDollarSign, FiFileText } from 'react-icons/fi';
+import { FiBell, FiCheckCircle, FiAlertCircle, FiDollarSign, FiFileText, FiCreditCard, FiSettings, FiMail } from 'react-icons/fi';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import api from '../api';
 
 export default function NotificationBell() {
+    const navigate = useNavigate();
+    const { user } = useAuth();
     const [notifications, setNotifications] = useState([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [showEmailPrefs, setShowEmailPrefs] = useState(false);
+    const [emailPrefs, setEmailPrefs] = useState({
+        email: '',
+        paymentNotificationEmail: '',
+        receivePaymentEmails: true,
+    });
+    const [savingPrefs, setSavingPrefs] = useState(false);
+    const [testingPrefs, setTestingPrefs] = useState(false);
+    const [prefsMsg, setPrefsMsg] = useState({ type: '', text: '' });
     const dropdownRef = useRef(null);
 
     const fetchNotifications = async () => {
@@ -23,9 +36,13 @@ export default function NotificationBell() {
 
     useEffect(() => {
         fetchNotifications();
-        // Polling a cada 45 segundos
-        const interval = setInterval(fetchNotifications, 45000);
-        return () => clearInterval(interval);
+        // Polling a cada 20 segundos
+        const interval = setInterval(fetchNotifications, 20000);
+        window.addEventListener('badges:refresh', fetchNotifications);
+        return () => {
+            clearInterval(interval);
+            window.removeEventListener('badges:refresh', fetchNotifications);
+        };
     }, []);
 
     // Fechar ao clicar fora
@@ -44,6 +61,7 @@ export default function NotificationBell() {
             await api.put(`/notifications/${id}/read`);
             setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
             setUnreadCount(prev => Math.max(0, prev - 1));
+            window.dispatchEvent(new Event('badges:refresh'));
         } catch (err) {
             console.error('Erro ao marcar como lida:', err);
         }
@@ -55,6 +73,7 @@ export default function NotificationBell() {
             await api.put('/notifications/mark-all-read');
             setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
             setUnreadCount(0);
+            window.dispatchEvent(new Event('badges:refresh'));
         } catch (err) {
             console.error('Erro ao marcar todas como lidas:', err);
         } finally {
@@ -62,7 +81,76 @@ export default function NotificationBell() {
         }
     };
 
+    const handleNotificationClick = async (n) => {
+        if (!n.isRead) {
+            await markAsRead(n._id);
+        }
+        const target = n.metadata?.link || (
+            n.type?.includes('subscription')
+                ? (user?.role === 'super_admin' ? '/superadmin-subscriptions' : '/my-subscription')
+                : n.type?.includes('payment')
+                    ? '/payments'
+                    : null
+        );
+        if (target) {
+            setIsOpen(false);
+            navigate(target);
+        }
+    };
+
+    const loadEmailPrefs = async () => {
+        try {
+            const res = await api.get('/notifications/email-preferences');
+            if (res.data?.success && res.data.data) {
+                setEmailPrefs(res.data.data);
+            }
+        } catch (_) {}
+    };
+
+    const toggleEmailPrefsPanel = () => {
+        const next = !showEmailPrefs;
+        setShowEmailPrefs(next);
+        setPrefsMsg({ type: '', text: '' });
+        if (next) loadEmailPrefs();
+    };
+
+    const saveEmailPrefs = async (e) => {
+        e.preventDefault();
+        setSavingPrefs(true);
+        setPrefsMsg({ type: '', text: '' });
+        try {
+            const res = await api.put('/notifications/email-preferences', {
+                paymentNotificationEmail: emailPrefs.paymentNotificationEmail,
+                receivePaymentEmails: emailPrefs.receivePaymentEmails,
+            });
+            if (res.data?.success) {
+                setEmailPrefs(res.data.data);
+                setPrefsMsg({ type: 'success', text: 'Email guardado!' });
+            }
+        } catch (err) {
+            setPrefsMsg({ type: 'error', text: err.response?.data?.message || 'Erro ao guardar email.' });
+        } finally {
+            setSavingPrefs(false);
+        }
+    };
+
+    const testEmailPrefs = async () => {
+        setTestingPrefs(true);
+        setPrefsMsg({ type: '', text: '' });
+        try {
+            const res = await api.post('/notifications/email-preferences/test', {
+                email: emailPrefs.paymentNotificationEmail || emailPrefs.email,
+            });
+            setPrefsMsg({ type: 'success', text: res.data?.message || 'Email de teste enviado!' });
+        } catch (err) {
+            setPrefsMsg({ type: 'error', text: err.response?.data?.message || 'Erro no teste de email.' });
+        } finally {
+            setTestingPrefs(false);
+        }
+    };
+
     const getIcon = (type) => {
+        if (type?.includes('subscription')) return <FiCreditCard color="#0284c7" />;
         if (type?.includes('payment')) return <FiDollarSign color="#10B981" />;
         if (type?.includes('document')) return <FiFileText color="#3B82F6" />;
         return <FiAlertCircle color="#F59E0B" />;
@@ -154,26 +242,91 @@ export default function NotificationBell() {
                                 </span>
                             )}
                         </div>
-                        {unreadCount > 0 && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            {unreadCount > 0 && (
+                                <button
+                                    onClick={markAllAsRead}
+                                    disabled={loading}
+                                    style={{
+                                        background: 'none',
+                                        border: 'none',
+                                        color: '#3B82F6',
+                                        fontSize: '12px',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}
+                                >
+                                    <FiCheckCircle size={13} /> Marcar todas
+                                </button>
+                            )}
                             <button
-                                onClick={markAllAsRead}
-                                disabled={loading}
+                                onClick={toggleEmailPrefsPanel}
+                                title="Configurar Email para Alertas de Pagamentos"
                                 style={{
-                                    background: 'none',
+                                    background: showEmailPrefs ? 'rgba(59, 130, 246, 0.14)' : 'transparent',
                                     border: 'none',
-                                    color: '#3B82F6',
-                                    fontSize: '12px',
-                                    fontWeight: 600,
+                                    color: showEmailPrefs ? '#3B82F6' : 'var(--text-muted)',
+                                    borderRadius: '6px',
+                                    padding: '4px',
                                     cursor: 'pointer',
                                     display: 'flex',
                                     alignItems: 'center',
-                                    gap: '4px'
                                 }}
                             >
-                                <FiCheckCircle size={13} /> Marcar todas
+                                <FiSettings size={14} />
                             </button>
-                        )}
+                        </div>
                     </div>
+
+                    {showEmailPrefs && (
+                        <form onSubmit={saveEmailPrefs} style={{
+                            padding: '12px 16px',
+                            borderBottom: '1px solid var(--border-light)',
+                            background: 'var(--bg-main)',
+                            fontSize: '12px',
+                        }}>
+                            <div style={{ fontWeight: 700, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-main)' }}>
+                                <FiMail size={13} color="#0284c7" /> Email para Alertas de Pagamentos
+                            </div>
+                            <input
+                                type="email"
+                                placeholder={emailPrefs.email || 'seu.email@empresa.co.mz'}
+                                value={emailPrefs.paymentNotificationEmail}
+                                onChange={(e) => setEmailPrefs({ ...emailPrefs, paymentNotificationEmail: e.target.value })}
+                                style={{ marginBottom: '8px', padding: '6px 8px', fontSize: '12px' }}
+                            />
+                            <label style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', cursor: 'pointer', fontSize: '11.5px', color: 'var(--text-main)' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={emailPrefs.receivePaymentEmails}
+                                    onChange={(e) => setEmailPrefs({ ...emailPrefs, receivePaymentEmails: e.target.checked })}
+                                    style={{ width: 'auto' }}
+                                />
+                                Receber notificações de pagamentos por email
+                            </label>
+                            {prefsMsg.text && (
+                                <div style={{
+                                    marginBottom: '8px',
+                                    fontSize: '11px',
+                                    color: prefsMsg.type === 'success' ? '#10b981' : '#ef4444',
+                                    fontWeight: 600,
+                                }}>
+                                    {prefsMsg.text}
+                                </div>
+                            )}
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                                <button type="submit" disabled={savingPrefs} className="btn-primary" style={{ flex: 1, padding: '5px 8px', fontSize: '11px' }}>
+                                    {savingPrefs ? 'A guardar...' : 'Guardar'}
+                                </button>
+                                <button type="button" onClick={testEmailPrefs} disabled={testingPrefs} className="btn-secondary" style={{ padding: '5px 8px', fontSize: '11px' }}>
+                                    {testingPrefs ? '...' : 'Testar'}
+                                </button>
+                            </div>
+                        </form>
+                    )}
 
                     <div style={{ maxHeight: '380px', overflowY: 'auto' }}>
                         {notifications.length === 0 ? (
@@ -185,12 +338,12 @@ export default function NotificationBell() {
                             notifications.map(n => (
                                 <div
                                     key={n._id}
-                                    onClick={() => !n.isRead && markAsRead(n._id)}
+                                    onClick={() => handleNotificationClick(n)}
                                     style={{
                                         padding: '12px 16px',
                                         borderBottom: '1px solid var(--border-light)',
                                         background: n.isRead ? 'transparent' : 'rgba(59, 130, 246, 0.05)',
-                                        cursor: n.isRead ? 'default' : 'pointer',
+                                        cursor: 'pointer',
                                         transition: 'background 0.2s ease',
                                         display: 'flex',
                                         gap: '12px',

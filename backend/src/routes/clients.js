@@ -4,12 +4,14 @@ import Document from '../models/Document.js';
 import Credit from '../models/Credit.js';
 import Notification from '../models/Notification.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { clientValidation, validate } from '../middleware/validation.js';
 import multer from 'multer';
 import path from 'path';
 
 const router = express.Router();
+router.use(protect, requireFeature('clients'));
 
 // Configurar multer para upload de documentos
 const storage = multer.diskStorage({

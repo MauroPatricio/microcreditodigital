@@ -6,8 +6,10 @@ import Installment from '../models/Installment.js';
 import CashTransaction from '../models/CashTransaction.js';
 import cashflowService from '../services/cashflowService.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('dashboard'));
 
 // @route   GET /api/analytics/dashboard
 // @desc    Métricas do dashboard

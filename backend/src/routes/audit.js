@@ -1,8 +1,10 @@
 import express from 'express';
 import AuditLog from '../models/AuditLog.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('audit'));
 
 // @route   GET /api/audit/logs
 // @desc    Listar logs de auditoria

@@ -34,20 +34,25 @@ const PaymentList = () => {
         if (!selectedPayment) return;
         setProcessing(true);
         try {
-            const res = await api.post(`/payments/${selectedPayment._id}/confirm`, {
-                status,
-                notes: status === 'rejected' ? 'Comprovativo inválido.' : 'Pagamento confirmado com sucesso.'
-            });
+            const isConfirm = status === 'completed' || status === 'confirmed';
+            const res = isConfirm
+                ? await api.put(`/payments/${selectedPayment._id}/confirm`, {
+                    notes: 'Pagamento confirmado com sucesso.'
+                })
+                : await api.put(`/payments/${selectedPayment._id}/reject`, {
+                    reason: 'Comprovativo inválido ou divergente.'
+                });
 
             if (res.data.success) {
                 setModal({
                     isOpen: true,
                     title: 'Sucesso',
-                    message: `Pagamento ${status === 'completed' ? 'aprovado' : 'rejeitado'} com sucesso!`,
+                    message: `Pagamento ${isConfirm ? 'aprovado' : 'rejeitado'} com sucesso!`,
                     type: 'success'
                 });
                 setSelectedPayment(null);
                 fetchPayments();
+                window.dispatchEvent(new Event('badges:refresh'));
             }
         } catch (error) {
             console.error("Error confirming payment", error);
@@ -64,18 +69,36 @@ const PaymentList = () => {
 
     const getStatusBadge = (status) => {
         switch (status) {
-            case 'completed': return <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}><FiCheckCircle /> CONFIRMADO</span>;
+            case 'confirmed':
+            case 'completed':
+                return <span style={{ color: 'var(--success)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}><FiCheckCircle /> CONFIRMADO</span>;
             case 'pending': return <span style={{ color: 'var(--warning)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}><FiClock /> EM ANÁLISE</span>;
             case 'rejected': return <span style={{ color: 'var(--error)', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', fontWeight: 'bold' }}><FiXCircle /> REJEITADO</span>;
             default: return <span>{status}</span>;
         }
     };
 
+    const pendingCount = payments.filter((p) => p.status === 'pending').length;
+
     return (
         <Layout>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Gestão de Cobranças</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <h1 style={{ fontSize: '1.8rem', fontWeight: 800 }}>Gestão de Cobranças</h1>
+                        {pendingCount > 0 && (
+                            <span style={{
+                                background: '#ef4444',
+                                color: '#fff',
+                                padding: '0.2rem 0.65rem',
+                                borderRadius: '9999px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                            }}>
+                                {pendingCount} pendente(s)
+                            </span>
+                        )}
+                    </div>
                     <p style={{ color: 'var(--text-muted)' }}>Aprove ou rejeite pagamentos submetidos pelos clientes.</p>
                 </div>
                 <button style={{

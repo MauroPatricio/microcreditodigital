@@ -28,6 +28,7 @@ import simulationRoutes from './src/routes/simulations.js';
 import contractRoutes from './src/routes/contracts.js';
 import userRoutes from './src/routes/users.js';
 import roleRoutes from './src/routes/roles.js';
+import subscriptionRoutes from './src/routes/subscriptions.js';
 
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -105,6 +106,7 @@ app.use('/api/simulations', simulationRoutes);
 app.use('/api/contracts', contractRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/subscriptions', subscriptionRoutes);
 
 // Root
 app.get('/', (req, res) => {

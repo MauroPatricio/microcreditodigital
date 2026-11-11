@@ -84,8 +84,23 @@ export const AuthProvider = ({ children }) => {
         return perms.includes(permissionCode);
     };
 
+    const hasFeature = (featureCode) => {
+        if (!user || !featureCode) return true;
+        if (user.role === 'super_admin') return true;
+        const inst = user.activeInstitution || user.institution;
+        const features =
+            user.effectiveFeatures ||
+            inst?.subscription?.enabledFeatures ||
+            null;
+        if (!Array.isArray(features) || features.length === 0) {
+            return true;
+        }
+        if (features.includes('*')) return true;
+        return features.includes(featureCode);
+    };
+
     return (
-        <AuthContext.Provider value={{ user, login, logout, updateUser, loading, hasRole, hasPermission }}>
+        <AuthContext.Provider value={{ user, login, logout, updateUser, loading, hasRole, hasPermission, hasFeature }}>
             {children}
         </AuthContext.Provider>
     );

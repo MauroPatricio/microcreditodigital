@@ -77,6 +77,7 @@ import UserList from './pages/UserList.jsx';
 import UserForm from './pages/UserForm.jsx';
 import PrivacyPolicy from './pages/LegalTerms.jsx';
 import RolesManagement from './pages/RolesManagement.jsx';
+import SuperAdminPackages from './pages/SuperAdminPackages.jsx';
 
 import LandingPage from './pages/LandingPage.jsx';
 
@@ -91,6 +92,9 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/landing" element={<LandingPage />} />
             <Route path="/institution-management" element={<ProtectedRoute roles={['super_admin']}><InstitutionManagement /></ProtectedRoute>} />
+            <Route path="/superadmin-packages" element={<ProtectedRoute roles={['super_admin']}><SuperAdminPackages initialTab="packages" /></ProtectedRoute>} />
+            <Route path="/superadmin-subscriptions" element={<ProtectedRoute roles={['super_admin']}><SuperAdminPackages initialTab="subscriptions" /></ProtectedRoute>} />
+            <Route path="/superadmin-emails" element={<ProtectedRoute roles={['super_admin']}><SuperAdminPackages initialTab="emails" /></ProtectedRoute>} />
             <Route path="/login" element={<Login />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password/:token" element={<ResetPassword />} />
@@ -115,7 +119,7 @@ function App() {
             <Route path="/contract-templates" element={<ProtectedRoute roles={['owner', 'manager', 'admin', 'super_admin', 'supervisor']}><ContractTemplates /></ProtectedRoute>} />
             <Route path="/global-dashboard" element={<ProtectedRoute roles={['owner', 'super_admin']}><GlobalDashboard /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute roles={['owner', 'admin']}><InstitutionSettings /></ProtectedRoute>} />
-            <Route path="/my-subscription" element={<ProtectedRoute roles={['owner']}><MySubscription /></ProtectedRoute>} />
+            <Route path="/my-subscription" element={<ProtectedRoute roles={['owner', 'admin', 'super_admin']}><MySubscription /></ProtectedRoute>} />
             <Route path="/institutions/new" element={<ProtectedRoute roles={['owner']}><InstitutionOnboarding /></ProtectedRoute>} />
             <Route path="/system-status" element={<ProtectedRoute roles={['owner', 'admin']}><SystemStatus /></ProtectedRoute>} />
             <Route path="/cashflow" element={<ProtectedRoute><CashFlow /></ProtectedRoute>} />

@@ -4,8 +4,10 @@ import AgentTarget from '../models/AgentTarget.js';
 import User from '../models/User.js';
 import Credit from '../models/Credit.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('commissions'));
 
 // @route   GET /api/commissions
 // @desc    Listar comissões

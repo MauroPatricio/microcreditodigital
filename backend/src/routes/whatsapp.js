@@ -2,8 +2,10 @@ import express from 'express';
 import whatsappService from '../services/whatsappService.js';
 import notificationService from '../services/notificationService.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('whatsapp'));
 
 // @route   GET /api/whatsapp/status
 // @desc    Get connection status and QR code

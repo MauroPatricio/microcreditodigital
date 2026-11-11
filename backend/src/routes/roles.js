@@ -2,12 +2,12 @@ import express from 'express';
 import Role from '../models/Role.js';
 import AuditLog from '../models/AuditLog.js';
 import { protect } from '../middleware/auth.js';
-import { requirePermission, PERMISSIONS_CATALOG, DEFAULT_ROLE_PERMISSIONS } from '../middleware/rbac.js';
+import { requirePermission, requireFeature, PERMISSIONS_CATALOG, DEFAULT_ROLE_PERMISSIONS } from '../middleware/rbac.js';
 
 const router = express.Router();
 
-// Todas as rotas exigem autenticação
-router.use(protect);
+// Todas as rotas exigem autenticação e funcionalidade rbac no pacote
+router.use(protect, requireFeature('rbac'));
 
 // GET /api/roles/permissions-catalog - Obter catálogo de permissões
 router.get('/permissions-catalog', requirePermission('roles.view'), (req, res) => {

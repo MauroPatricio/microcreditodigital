@@ -3,10 +3,11 @@ import {
     sendMessage, scheduleMessage, getHistory, getStats, getTemplates, createTemplate
 } from '../controllers/communicationController.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 
 const router = express.Router();
 
-router.use(protect);
+router.use(protect, requireFeature('communication'));
 
 router.post('/send', sendMessage);
 router.post('/schedule', scheduleMessage);

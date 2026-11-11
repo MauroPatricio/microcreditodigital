@@ -8,7 +8,7 @@ import contractService from '../services/contractService.js';
 import smsService from '../services/sms.js';
 import { mpesaService } from '../services/mpesaService.js';
 import { protect, authorize } from '../middleware/auth.js';
-import { requirePermission, enforceSegregationOfDuties, requireApprovalLimit } from '../middleware/rbac.js';
+import { requirePermission, enforceSegregationOfDuties, requireApprovalLimit, requireFeature } from '../middleware/rbac.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
@@ -21,6 +21,7 @@ import emailService from '../services/emailService.js';
 import notificationService from '../services/notificationService.js';
 
 const router = express.Router();
+router.use(protect, requireFeature('loans'));
 
 // @route   POST /api/credits/simulate
 // @desc    Simular crédito

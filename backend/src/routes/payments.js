@@ -4,15 +4,19 @@ import Installment from '../models/Installment.js';
 import Credit from '../models/Credit.js';
 import Notification from '../models/Notification.js';
 import User from '../models/User.js';
+import Institution from '../models/Institution.js';
 import smsService from '../services/sms.js';
+import emailService from '../services/emailService.js';
 import CashTransaction from '../models/CashTransaction.js';
 import { protect, authorize } from '../middleware/auth.js';
+import { requireFeature } from '../middleware/rbac.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { paymentValidation, validate } from '../middleware/validation.js';
 import uploadPaymentReceipt from '../middleware/uploadPaymentMiddleware.js';
 import fs from 'fs';
 
 const router = express.Router();
+router.use(protect, requireFeature('payments'));
 
 // @route   POST /api/payments
 // @desc    Registrar pagamento com comprovativo
@@ -64,16 +68,44 @@ router.post('/', protect, uploadPaymentReceipt.single('receipt'), async (req, re
             receiptUrl
         });
 
-        // Notificar Instituição
-        // Aqui deve notificar administradores da instituição
-        await Notification.create({
-            user: credit.agent || credit.institution, // Pode ser broadcast para admin
-            institution: req.institution._id,
-            type: 'payment_submitted',
-            title: 'Novo pagamento submetido',
-            message: `Cliente submeteu um comprovativo de pagamento de ${amount} MT pendente de confirmação.`,
-            metadata: { paymentId: payment._id }
-        });
+        // Notificar gestores, admins e equipa financeira da instituição (in-app + email configurado)
+        const [institutionDoc, staffRecipients] = await Promise.all([
+            Institution.findById(req.institution._id),
+            User.find({
+                institution: req.institution._id,
+                role: { $in: ['owner', 'admin', 'manager', 'financial', 'collector'] },
+                isBlocked: { $ne: true },
+            }).select('_id email name paymentNotificationEmail receivePaymentEmails'),
+        ]);
+
+        const notifyUserIds = new Set(staffRecipients.map((u) => String(u._id)));
+        if (credit.agent) notifyUserIds.add(String(credit.agent));
+
+        const clientDisplayName = req.user?.name || 'Cliente';
+        await Promise.all(
+            Array.from(notifyUserIds).map((uid) =>
+                Notification.create({
+                    user: uid,
+                    institution: req.institution._id,
+                    type: 'payment_submitted',
+                    title: 'Novo pagamento recebido',
+                    message: `${clientDisplayName} submeteu um pagamento de ${Number(amount).toLocaleString()} MT (${payment.transactionId}) pendente de confirmação.`,
+                    metadata: { paymentId: payment._id, creditId: credit._id, amount: Number(amount), link: '/payments' }
+                }).catch(() => {})
+            )
+        );
+
+        // Enviar alerta por email para os destinatários configurados na instituição e nos utilizadores elegíveis
+        const adminStaffEmails = staffRecipients
+            .filter((u) => u.receivePaymentEmails !== false)
+            .map((u) => u.paymentNotificationEmail || u.email)
+            .filter(Boolean);
+        emailService.sendPaymentReceivedAlert({
+            institution: institutionDoc || req.institution,
+            payment,
+            client: req.user,
+            recipients: adminStaffEmails,
+        }).catch(() => {});
 
         res.status(201).json({
             success: true,
@@ -152,8 +184,18 @@ router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner'), audi
         });
 
         // Registrar no Fluxo de Caixa (Cash Flow)
-        const creditClient = await User.findById(credit.client);
+        const [creditClient, institutionDoc] = await Promise.all([
+            User.findById(credit.client),
+            Institution.findById(req.institution._id),
+        ]);
         const clientName = creditClient ? creditClient.name : 'Cliente';
+
+        emailService.sendPaymentConfirmedReceipt({
+            institution: institutionDoc || req.institution,
+            payment,
+            client: creditClient,
+            confirmed: true,
+        }).catch(() => {});
         const isFullLiquidation = credit.totalPaid >= credit.totalPayable;
         const txDescription = isFullLiquidation 
             ? `Liquidação do empréstimo de ${clientName}`
@@ -243,8 +285,21 @@ router.put('/:id/reject', protect, authorize('admin', 'manager', 'owner'), audit
             type: 'payment_rejected',
             title: 'Pagamento Rejeitado',
             message: `O seu pagamento de ${payment.amount} MT não foi confirmado. Motivo: ${reason}`,
-            metadata: { paymentId: payment._id }
+            metadata: { paymentId: payment._id, link: '/payments' }
         });
+
+        Promise.all([
+            User.findById(payment.client),
+            Institution.findById(req.institution._id),
+        ]).then(([creditClient, institutionDoc]) =>
+            emailService.sendPaymentConfirmedReceipt({
+                institution: institutionDoc || req.institution,
+                payment,
+                client: creditClient,
+                confirmed: false,
+                reason,
+            })
+        ).catch(() => {});
 
         res.json({ success: true, message: 'Pagamento rejeitado', data: { payment } });
     } catch (error) {

@@ -18,6 +18,8 @@ const UserForm = () => {
         identityDocument: '',
         role: 'agent',
         isActive: true,
+        paymentNotificationEmail: '',
+        receivePaymentEmails: true,
         isPublicServant: false,
         company: '',
         guarantorName: '',
@@ -46,6 +48,8 @@ const UserForm = () => {
                     identityDocument: u.identityDocument || '',
                     role: u.role || 'agent',
                     isActive: !u.isBlocked,
+                    paymentNotificationEmail: u.paymentNotificationEmail || '',
+                    receivePaymentEmails: u.receivePaymentEmails !== false,
                     isPublicServant: u.professionalInfo?.employmentStatus === 'civil_servant',
                     company: u.professionalInfo?.employer || '',
                     guarantorName: u.guarantor?.name || '',
@@ -255,6 +259,32 @@ const UserForm = () => {
                             </div>
                         </div>
                     )}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', alignItems: 'center', padding: '1rem', background: 'var(--bg-main)', borderRadius: '10px', border: '1px solid var(--border-light)' }}>
+                        <div>
+                            <label>Email para Receber Alertas de Pagamentos (Opcional)</label>
+                            <input
+                                type="email"
+                                name="paymentNotificationEmail"
+                                value={formData.paymentNotificationEmail}
+                                onChange={handleChange}
+                                placeholder="Se vazio usa o email principal"
+                            />
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', paddingTop: '1.1rem' }}>
+                            <input
+                                type="checkbox"
+                                name="receivePaymentEmails"
+                                checked={formData.receivePaymentEmails}
+                                onChange={handleChange}
+                                style={{ width: 'auto', transform: 'scale(1.2)' }}
+                                id="receivePaymentEmailsCheckbox"
+                            />
+                            <label htmlFor="receivePaymentEmailsCheckbox" style={{ margin: 0, textTransform: 'none', letterSpacing: 0, fontSize: '0.88rem', cursor: 'pointer' }}>
+                                Receber notificações de pagamentos por email
+                            </label>
+                        </div>
+                    </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.5rem' }}>
                         <input 

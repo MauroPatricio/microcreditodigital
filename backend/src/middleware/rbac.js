@@ -1,4 +1,6 @@
 import Role from '../models/Role.js';
+import SubscriptionPackage from '../models/SubscriptionPackage.js';
+import { ALL_FEATURE_CODES, DEFAULT_FEATURES_BY_LEGACY_PLAN } from '../config/packageFeatures.js';
 
 // Catálogo Mestre de Permissões
 export const PERMISSIONS_CATALOG = [
@@ -302,6 +304,112 @@ export const requireApprovalLimit = (amountResolverFn) => {
             return res.status(500).json({
                 success: false,
                 message: 'Erro na verificação de limite de aprovação',
+                error: error.message
+            });
+        }
+    };
+};
+
+// Resolver funcionalidades habilitadas pelo pacote da instituição
+export const resolveInstitutionFeatures = async (institution) => {
+    if (!institution || !institution.subscription) {
+        return ALL_FEATURE_CODES;
+    }
+
+    const sub = institution.subscription;
+
+    if (Array.isArray(sub.enabledFeatures) && sub.enabledFeatures.length > 0) {
+        return sub.enabledFeatures;
+    }
+
+    if (sub.packageId) {
+        try {
+            const pkg = typeof sub.packageId === 'object' && sub.packageId.features
+                ? sub.packageId
+                : await SubscriptionPackage.findById(sub.packageId);
+            if (pkg && Array.isArray(pkg.features)) {
+                return pkg.features;
+            }
+        } catch (e) {
+            console.error('Erro ao resolver funcionalidades do pacote:', e.message);
+        }
+    }
+
+    if (sub.plan) {
+        try {
+            const pkgBySlug = await SubscriptionPackage.findOne({ slug: sub.plan.toLowerCase() });
+            if (pkgBySlug && Array.isArray(pkgBySlug.features)) {
+                return pkgBySlug.features;
+            }
+        } catch (e) {
+            // fallback para mapa estático
+        }
+        if (DEFAULT_FEATURES_BY_LEGACY_PLAN[sub.plan]) {
+            return DEFAULT_FEATURES_BY_LEGACY_PLAN[sub.plan];
+        }
+    }
+
+    return ALL_FEATURE_CODES;
+};
+
+// Middleware para verificar se a subscrição da instituição está ativa e inclui a funcionalidade
+export const requireFeature = (featureCode) => {
+    return async (req, res, next) => {
+        try {
+            if (!req.user) {
+                return res.status(401).json({ success: false, message: 'Não autenticado' });
+            }
+
+            if (req.user.role === 'super_admin') {
+                return next();
+            }
+
+            const inst = req.institution || req.user.activeInstitution || req.user.institution;
+            if (!inst) {
+                return next();
+            }
+
+            const sub = inst.subscription || {};
+            const now = new Date();
+            const isExpired =
+                sub.status === 'expired' ||
+                sub.status === 'rejected' ||
+                sub.status === 'cancelled' ||
+                (sub.expiresAt && new Date(sub.expiresAt) < now);
+
+            if (isExpired) {
+                return res.status(403).json({
+                    success: false,
+                    subscriptionBlocked: true,
+                    message: 'A subscrição da sua instituição expirou ou aguarda regularização. Por favor actualize o pacote em Minha Subscrição.'
+                });
+            }
+
+            if (sub.status === 'pending') {
+                return res.status(403).json({
+                    success: false,
+                    subscriptionBlocked: true,
+                    message: 'Pagamento submetido a aguardar aprovação pelo Super Admin. Sem aprovação o acesso permanece bloqueado.'
+                });
+            }
+
+            if (featureCode) {
+                const enabledFeatures = await resolveInstitutionFeatures(inst);
+                if (!enabledFeatures.includes('*') && !enabledFeatures.includes(featureCode)) {
+                    return res.status(403).json({
+                        success: false,
+                        featureBlocked: true,
+                        requiredFeature: featureCode,
+                        message: `O seu pacote actual (${sub.packageName || sub.plan || 'Trial'}) não inclui acesso à funcionalidade '${featureCode}'. Actualize o seu plano para desbloquear.`
+                    });
+                }
+            }
+
+            next();
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: 'Erro ao validar funcionalidades do pacote',
                 error: error.message
             });
         }

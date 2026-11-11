@@ -9,6 +9,7 @@ const InstitutionManagement = () => {
     const { user } = useAuth();
     const [institutions, setInstitutions] = useState([]);
     const [pendingRequests, setPendingRequests] = useState([]);
+    const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState('institutions');
@@ -16,19 +17,25 @@ const InstitutionManagement = () => {
     // Modal states
     const [statusModal, setStatusModal] = useState({ isOpen: false, inst: null });
     const [deleteModal, setDeleteModal] = useState({ isOpen: false, inst: null });
-    const [subModal, setSubModal] = useState({ isOpen: false, inst: null, plan: 'standard', days: 30 });
+    const [subModal, setSubModal] = useState({ isOpen: false, inst: null, plan: 'standard', days: 30, maxUsers: 0 });
     const [actionLoading, setActionLoading] = useState(false);
 
     const fetchInstitutions = async () => {
         try {
             setLoading(true);
-            const res = await api.get('/institutions/all');
-            const reqRes = await api.get('/institutions/subscription-requests/all');
+            const [res, reqRes, pkgRes] = await Promise.all([
+                api.get('/institutions/all'),
+                api.get('/institutions/subscription-requests/all'),
+                api.get('/subscriptions/admin/packages')
+            ]);
             if (res.data.success) {
                 setInstitutions(res.data.data);
             }
             if (reqRes.data.success) {
                 setPendingRequests(reqRes.data.data);
+            }
+            if (pkgRes.data.success) {
+                setPackages(pkgRes.data.data || []);
             }
         } catch (error) {
             console.error("Error fetching institutions", error);
@@ -89,11 +96,12 @@ const InstitutionManagement = () => {
         try {
             const res = await api.put(`/institutions/${subModal.inst._id}/subscription`, {
                 plan: subModal.plan,
-                durationDays: parseInt(subModal.days) || 30
+                durationDays: parseInt(subModal.days) || 30,
+                maxUsers: Math.max(0, parseInt(subModal.maxUsers, 10) || 0)
             });
             if (res.data.success) {
                 fetchInstitutions();
-                setSubModal({ isOpen: false, inst: null, plan: 'business', days: 30 });
+                setSubModal({ isOpen: false, inst: null, plan: 'business', days: 30, maxUsers: 0 });
             }
         } catch (error) {
             console.error(error);
@@ -243,6 +251,9 @@ const InstitutionManagement = () => {
                                             <div style={{ fontWeight: 600, color: subStatus.color }}>
                                                 {subStatus.label} ({inst.subscription?.plan?.toUpperCase() || 'FREE'})
                                             </div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                Utilizadores: {inst.subscription?.maxUsers > 0 ? `Máx. ${inst.subscription.maxUsers}` : 'Ilimitado'}
+                                            </div>
                                         </td>
                                         <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>
                                             {formatDate(inst.subscription?.expiresAt)}
@@ -251,7 +262,13 @@ const InstitutionManagement = () => {
                                             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
                                                 <button 
                                                     className="btn-outline" 
-                                                    onClick={() => setSubModal({ isOpen: true, inst, plan: inst.subscription?.plan || 'standard', days: 30 })}
+                                                    onClick={() => setSubModal({
+                                                        isOpen: true,
+                                                        inst,
+                                                        plan: inst.subscription?.plan || 'standard',
+                                                        days: inst.subscription?.plan === 'trial' ? 7 : 30,
+                                                        maxUsers: inst.subscription?.maxUsers ?? 0
+                                                    })}
                                                     style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                                                 >
                                                     <FiClock /> Renovar
@@ -378,23 +395,32 @@ const InstitutionManagement = () => {
             </Modal>
 
             {/* Subscription Modal */}
-            <Modal isOpen={subModal.isOpen} onClose={() => !actionLoading && setSubModal({ isOpen: false, inst: null, plan: 'standard', days: 30 })} title="Renovar Subscrição">
+            <Modal isOpen={subModal.isOpen} onClose={() => !actionLoading && setSubModal({ isOpen: false, inst: null, plan: 'standard', days: 30, maxUsers: 0 })} title="Renovar Subscrição">
                 {subModal.inst && (
                     <div>
                         <p style={{ marginBottom: '1rem' }}>Gerir subscrição para <strong>{subModal.inst.name}</strong>.</p>
                         <div className="form-group" style={{ marginBottom: '1rem' }}>
-                            <label>Plano</label>
+                            <label>Pacote / Plano</label>
                             <select 
                                 className="form-input"
                                 value={subModal.plan} 
-                                onChange={(e) => setSubModal({...subModal, plan: e.target.value})}
+                                onChange={(e) => {
+                                    const chosenSlug = e.target.value;
+                                    const pkgObj = packages.find(p => p.slug === chosenSlug);
+                                    const defaultDays = chosenSlug === 'trial' ? 7 : (pkgObj?.durationDays || subModal.days);
+                                    const defaultMaxUsers = chosenSlug === 'trial' ? 0 : (pkgObj?.limits?.maxUsers ?? 0);
+                                    setSubModal({...subModal, plan: chosenSlug, days: defaultDays, maxUsers: defaultMaxUsers});
+                                }}
                             >
-                                <option value="trial">Trial (Grátis - 3 Dias)</option>
-                                <option value="standard">Standard (Web - 3200 MT)</option>
-                                <option value="premium">Premium (Web + Mobile - 5000 MT)</option>
+                                <option value="trial">Trial (Grátis - 7 Dias)</option>
+                                {packages.map(pkg => (
+                                    <option key={pkg._id} value={pkg.slug}>
+                                        {pkg.name} ({Number(pkg.price).toLocaleString()} {pkg.currency || 'MT'} • {pkg.durationDays}d • {pkg.limits?.maxUsers > 0 ? `${pkg.limits.maxUsers} util.` : 'Ilimitado'})
+                                    </option>
+                                ))}
                             </select>
                         </div>
-                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                        <div className="form-group" style={{ marginBottom: '1rem' }}>
                             <label>Adicionar Dias</label>
                             <input 
                                 type="number" 
@@ -404,8 +430,41 @@ const InstitutionManagement = () => {
                                 min="1"
                             />
                         </div>
+                        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                            <label>Limite de Utilizadores Activos (0 = Ilimitado)</label>
+                            <input
+                                type="number"
+                                className="form-input"
+                                value={subModal.maxUsers}
+                                onChange={(e) => setSubModal({ ...subModal, maxUsers: e.target.value })}
+                                min="0"
+                            />
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '6px' }}>
+                                {[
+                                    { label: '1 Utilizador', value: 1 },
+                                    { label: '3 Utilizadores', value: 3 },
+                                    { label: '5 Utilizadores', value: 5 },
+                                    { label: 'Ilimitado (0)', value: 0 },
+                                ].map((preset) => (
+                                    <button
+                                        key={preset.value}
+                                        type="button"
+                                        className="btn-outline"
+                                        onClick={() => setSubModal({ ...subModal, maxUsers: preset.value })}
+                                        style={{
+                                            padding: '0.25rem 0.6rem',
+                                            fontSize: '0.75rem',
+                                            borderColor: Number(subModal.maxUsers) === preset.value ? 'var(--primary)' : 'var(--border-light)',
+                                            fontWeight: Number(subModal.maxUsers) === preset.value ? 700 : 500,
+                                        }}
+                                    >
+                                        {preset.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                            <button className="btn-outline" onClick={() => setSubModal({ isOpen: false, inst: null, plan: 'standard', days: 30 })} disabled={actionLoading}>Cancelar</button>
+                            <button className="btn-outline" onClick={() => setSubModal({ isOpen: false, inst: null, plan: 'standard', days: 30, maxUsers: 0 })} disabled={actionLoading}>Cancelar</button>
                             <button className="btn-primary" onClick={handleRenewSub} disabled={actionLoading}>
                                 {actionLoading ? 'A renovar...' : 'Confirmar Subscrição'}
                             </button>
