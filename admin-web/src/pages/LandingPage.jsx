@@ -151,7 +151,7 @@ export default function LandingPage() {
           <div className="hero-content">
             <div className="hero-tag">
               <span className="hero-tag-pulse"></span>
-              A Nova Era do Microcrédito Digital em Moçambique
+              Microcrédito Digital
             </div>
 
             <h1 className="hero-title">
@@ -631,50 +631,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* TARGET AUDIENCE / PARA QUEM É */}
-      <section id="instituicoes" className="section-wrapper">
-        <div className="section-header">
-          <span className="section-badge">Para Instituições Financeiras</span>
-          <h2 className="section-title">Soluções Adaptadas ao Seu Negócio</h2>
-          <p className="section-subtitle">
-            Seja uma pequena cooperativa ou uma instituição financeira consolidada, o CrediSmart+ adapta-se à sua escala.
-          </p>
-        </div>
-
-        <div className="audience-grid">
-          <div className="audience-card">
-            <div className="audience-icon"><FiBriefcase /></div>
-            <h3 className="audience-title">Microfinanças & Bancos</h3>
-            <p className="audience-desc">
-              Digitalize o seu portfólio tradicional, reduza custos operacionais e alcance novos clientes em todo o país.
-            </p>
-          </div>
-
-          <div className="audience-card">
-            <div className="audience-icon"><FiUsers /></div>
-            <h3 className="audience-title">Cooperativas & PCR</h3>
-            <p className="audience-desc">
-              Gestão simplificada de associados, cálculo automático de cotas, juros comunitários e relatórios claros.
-            </p>
-          </div>
-
-          <div className="audience-card">
-            <div className="audience-icon"><FiZap /></div>
-            <h3 className="audience-title">Fintechs Lenders</h3>
-            <p className="audience-desc">
-              Arquitetura robusta via API RESTful para escalar rapidamente solicitações e liquidações automáticas.
-            </p>
-          </div>
-
-          <div className="audience-card">
-            <div className="audience-icon"><FiAward /></div>
-            <h3 className="audience-title">ONGs & Programas</h3>
-            <p className="audience-desc">
-              Fomento ao empreendedorismo social com acompanhamento de impacto e métricas de inclusão financeira.
-            </p>
-          </div>
-        </div>
-      </section>
 
       {/* HOW IT WORKS TIMELINE */}
       <section className="section-wrapper">
@@ -721,104 +677,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRICING & PLANS */}
-      <section id="planos" className="section-wrapper">
-        <div className="section-header">
-          <span className="section-badge">Planos de Subscrição</span>
-          <h2 className="section-title">Investimento Transparente</h2>
-          <p className="section-subtitle">
-            Escolha o plano ideal para a sua escala operacional. Sem custos ocultos.
-          </p>
-        </div>
-
-        <div className="pricing-toggle-wrapper">
-          <button
-            className={`pricing-toggle-btn ${billingPeriod === 'monthly' ? 'active' : ''}`}
-            onClick={() => setBillingPeriod('monthly')}
-          >
-            Facturação Mensal
-          </button>
-          <button
-            className={`pricing-toggle-btn ${billingPeriod === 'annual' ? 'active' : ''}`}
-            onClick={() => setBillingPeriod('annual')}
-          >
-            Facturação Anual
-          </button>
-          <span className="pricing-save-badge">Economize 20% no Anual</span>
-        </div>
-
-        <div className="pricing-grid">
-          {/* Starter Plan */}
-          <div className="pricing-card">
-            <div className="plan-name">Starter Micro</div>
-            <div className="plan-desc">Ideal para pequenas cooperativas e iniciantes no microcrédito.</div>
-            <div className="plan-price-row">
-              <span className="plan-price">
-                {billingPeriod === 'annual' ? '12.000' : '15.000'}
-              </span>
-              <span className="plan-period">MT / mês</span>
-            </div>
-            <ul className="plan-features">
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Até 250 Clientes Ativos</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Painel Gestão Web</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Notificações SMS de Vencimento</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Suporte via Email & WhatsApp</li>
-            </ul>
-            <button className="btn-secondary-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowDemoModal(true)}>
-              Começar com Starter
-            </button>
-          </div>
-
-          {/* Pro / Featured Plan */}
-          <div className="pricing-card featured">
-            <span className="pricing-badge">Mais Popular</span>
-            <div className="plan-name">Pro Institucional</div>
-            <div className="plan-desc">Para instituições financeiras em expansão que exigem automação total.</div>
-            <div className="plan-price-row">
-              <span className="plan-price">
-                {billingPeriod === 'annual' ? '32.000' : '39.000'}
-              </span>
-              <span className="plan-period">MT / mês</span>
-            </div>
-            <ul className="plan-features">
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Clientes Ativos Ilimitados</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> App Mobile Personalizável</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Integração Direta M-Pesa & e-Mola</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Motor de Score IA & Risco</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Relatórios Exportáveis em PDF/Excel</li>
-            </ul>
-            <button className="btn-primary-gradient" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowDemoModal(true)}>
-              Subscrever Plano Pro <FiArrowRight />
-            </button>
-          </div>
-
-          {/* Enterprise / White-Label Plan */}
-          <div className="pricing-card">
-            <div className="plan-name">Enterprise White-Label</div>
-            <div className="plan-desc">Solução 100% dedicada com a sua marca, servidor exclusivo e API completa.</div>
-            <div className="plan-price-row">
-              <span className="plan-price">Personalizado</span>
-            </div>
-            <ul className="plan-features">
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Domínio & Marca Própria (White-Label)</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Instalação em Servidor Dedicado</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Integração com Bancos Nacionais</li>
-              <li className="plan-feature-item"><FiCheck className="check-icon" /> Gestor de Conta Dedicado 24/7</li>
-            </ul>
-            <button className="btn-secondary-outline" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowDemoModal(true)}>
-              Falar com Consultor
-            </button>
-          </div>
-        </div>
-      </section>
 
       {/* TESTIMONIALS */}
       <section className="section-wrapper">
         <div className="section-header">
           <span className="section-badge">Casos de Sucesso</span>
-          <h2 className="section-title">O que Dizem os Nossos Parceiros</h2>
+          <h2 className="section-title">O que Dizem os Nossos Clientes</h2>
           <p className="section-subtitle">
-            Instituições e clientes que transformaram a sua gestão financeira com o CrediSmart+.
+            Instituições e clientes que transformaram a sua gestão financeira.
           </p>
         </div>
 
@@ -836,7 +702,7 @@ export default function LandingPage() {
               <div className="author-avatar">AM</div>
               <div>
                 <div className="author-name">Alberto Macamo</div>
-                <div className="author-role">Director Operacional, Microcred Maputo</div>
+                <div className="author-role">Director Operacional</div>
               </div>
             </div>
           </div>
@@ -847,14 +713,14 @@ export default function LandingPage() {
                 <FiStar /><FiStar /><FiStar /><FiStar /><FiStar />
               </div>
               <p className="testimonial-text">
-                "O aplicativo mobile permitiu que os nossos associados solicitem e paguem empréstimos sem precisar viajar horas até à vila central. Inclusão real!"
+                "O aplicativo mobile permitiu que os nossos associados solicitem e paguem empréstimos"
               </p>
             </div>
             <div className="testimonial-author">
               <div className="author-avatar">SL</div>
               <div>
                 <div className="author-name">Sofia Langa</div>
-                <div className="author-role">Presidente da Cooperativa Sol Nascente</div>
+                <div className="author-role">Presidente da Cooperativa</div>
               </div>
             </div>
           </div>
@@ -865,14 +731,14 @@ export default function LandingPage() {
                 <FiStar /><FiStar /><FiStar /><FiStar /><FiStar />
               </div>
               <p className="testimonial-text">
-                "Conseguimos aprovar créditos com segurança graças ao score interno. Os relatórios financeiros simplificam imenso as nossas auditorias."
+                "Conseguimos aprovar créditos com segurança. Os relatórios financeiros simplificam imenso as nossas auditorias."
               </p>
             </div>
             <div className="testimonial-author">
               <div className="author-avatar">TC</div>
               <div>
                 <div className="author-name">Tomás Cossa</div>
-                <div className="author-role">Gerente de Risco, Fintech CrediXpress</div>
+                <div className="author-role">Gerente de Risco</div>
               </div>
             </div>
           </div>
@@ -893,15 +759,15 @@ export default function LandingPage() {
           {[
             {
               q: "Quanto tempo demora a ativação do CrediSmart+ para a minha instituição?",
-              a: "A ativação do painel web pode ser feita no próprio dia. Para soluções personalizadas ou White-Label, o processo de homologação e configuração de marca demora entre 3 a 7 dias úteis."
+              a: "A ativação do painel web pode ser feita no próprio dia. Para soluções personalizadas, o processo de homologação e configuração de marca demora entre 3 a 7 dias úteis."
             },
             {
-              q: "Como funciona a integração com M-Pesa e e-Mola?",
-              a: "A plataforma liga-se via API oficial aos gateways de Mobile Money em Moçambique, permitindo desembolsos diretos para a carteira móvel do cliente e liquidação automática das parcelas com envio de comprovativo instantâneo."
+              q: "Como funciona a integração com Pagamentos?",
+              a: "A plataforma apresenta formas de pagamentos usadas pela microcredito."
             },
             {
               q: "Os dados e contratos dos clientes estão seguros?",
-              a: "Sim. Toda a comunicação é encriptada via SSL 256-bit com backups diários automatizados. Cumprimos com as directivas de protecção de dados pessoais e regulamentos financeiros."
+              a: "Sim. Toda a comunicação é encriptada com backups diários automatizados. Cumprimos com as directivas de protecção de dados pessoais e regulamentos financeiros."
             },
             {
               q: "É possível personalizar a taxa de juros e termos de contrato?",
