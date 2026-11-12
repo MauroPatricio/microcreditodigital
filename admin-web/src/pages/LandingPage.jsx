@@ -854,10 +854,10 @@ export default function LandingPage() {
             <h4 className="footer-col-title">Contactos & Suporte</h4>
             <ul className="footer-links">
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FiMail style={{ color: '#3b82f6' }} /> suporte@credismart.co.mz
+                <FiMail style={{ color: '#3b82f6' }} /> nhiquelaservicos@gmail.com
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <FiPhone style={{ color: '#10b981' }} /> +258 84 000 0000 / +258 85 000 0000
+                <FiPhone style={{ color: '#10b981' }} /> +258 85 360 0036
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <FiMapPin style={{ color: '#f59e0b' }} /> Av. Julius Nyerere, Maputo - Moçambique
@@ -885,7 +885,7 @@ export default function LandingPage() {
             </button>
             <h3 className="modal-title">Descarregar App Cliente</h3>
             <p className="modal-subtitle">
-              Disponível para iOS e Android. Aceda ao seu microcrédito e pagamentos no telemóvel.
+              Disponível para Android. Aceda ao seu microcrédito e pagamentos no telemóvel.
             </p>
 
             <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-light)', padding: '1.5rem', borderRadius: '16px', textCenter: 'center', marginBottom: '1.5rem' }}>
@@ -894,7 +894,7 @@ export default function LandingPage() {
                 CrediSmart+ Mobile APK
               </div>
               <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                Versão 2.4.0 · M-Pesa & e-Mola Integrados
+                Versão 2.4.0 · M-Pesa
               </div>
             </div>
 

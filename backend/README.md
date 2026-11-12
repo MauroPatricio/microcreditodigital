@@ -164,4 +164,4 @@ ISC
 
 ## 👥 Suporte
 
-Para suporte, entre em contato através do email: suporte@credismart.co.mz
+Para suporte, entre em contato através do email: nhiquelaservicos@gmail.com
