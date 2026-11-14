@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
 import {
     View,
@@ -7,13 +7,27 @@ import {
     TouchableOpacity,
     StyleSheet,
     ActivityIndicator,
-    RefreshControl
+    RefreshControl,
+    ScrollView
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { creditService } from '../../services';
 import api from '../../services/api';
 import { useAlert } from '../../context/AlertContext';
-import { FileText, Clock, CheckCircle, XCircle, AlertTriangle, ArrowRight, Wallet, Timer, AlertCircle } from 'lucide-react-native';
+import {
+    FileText,
+    Clock,
+    CheckCircle,
+    XCircle,
+    AlertTriangle,
+    ArrowRight,
+    Wallet,
+    Timer,
+    AlertCircle,
+    Receipt,
+    History,
+    CreditCard
+} from 'lucide-react-native';
 
 const CountdownTimer = ({ credit, onInsist }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -79,6 +93,7 @@ export default function MyCreditsScreen({ navigation }) {
     const [credits, setCredits] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [statusFilter, setStatusFilter] = useState('all');
     const { showAlert } = useAlert();
 
     const handleInsist = async (creditId) => {
@@ -126,20 +141,39 @@ export default function MyCreditsScreen({ navigation }) {
         return configs[status] || { color: '#64748b', bg: '#f1f5f9', text: status, icon: <Clock size={16} color="#64748b" /> };
     };
 
+    // Filtros de estado
+    const filteredCredits = useMemo(() => {
+        if (statusFilter === 'all') return credits;
+        return credits.filter(c => c.status === statusFilter);
+    }, [credits, statusFilter]);
+
+    // Totais acumulados
+    const summary = useMemo(() => {
+        const totalRequested = credits.reduce((acc, c) => acc + (c.amount || 0), 0);
+        const totalPaid = credits.reduce((acc, c) => acc + (c.totalPaid || 0), 0);
+        const activeCount = credits.filter(c => c.status === 'active').length;
+        const paidCount = credits.filter(c => c.status === 'paid').length;
+        return {
+            totalRequested,
+            totalPaid,
+            activeCount,
+            paidCount,
+            count: credits.length
+        };
+    }, [credits]);
+
     const renderCreditItem = ({ item }) => {
         const config = getStatusConfig(item.status);
         const progress = item.status === 'active' || item.status === 'paid'
             ? Math.min(((item.totalPaid || 0) / (item.totalPayable || 1)) * 100, 100)
             : 0;
+        const loanLabel = item.loanNumber || `EMP-${item._id.slice(-6).toUpperCase()}`;
 
         return (
-            <TouchableOpacity
-                style={[styles.creditCard, { borderColor: config.bg, borderWidth: 1.5 }]}
-                activeOpacity={0.8}
-                onPress={() => navigation.navigate('CreditDetails', { creditId: item._id })}
-            >
+            <View style={[styles.creditCard, { borderColor: config.bg, borderWidth: 1.5 }]}>
                 <View style={styles.cardHeader}>
                     <View>
+                        <Text style={styles.cardLoanCode}>{loanLabel}</Text>
                         <Text style={styles.cardAmount}>{(item.amount || 0).toLocaleString('pt-MZ')} MT</Text>
                         <Text style={styles.cardDate}>Solicitado em {new Date(item.createdAt).toLocaleDateString('pt-MZ')}</Text>
                     </View>
@@ -155,25 +189,25 @@ export default function MyCreditsScreen({ navigation }) {
                         <Text style={styles.detailValue}>{item.term} meses</Text>
                     </View>
 
-                    {item.status === 'active' && (
+                    {(item.status === 'active' || item.status === 'paid') && (
                         <>
                             <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>Pago</Text>
+                                <Text style={styles.detailLabel}>Total Pago</Text>
                                 <Text style={[styles.detailValue, { color: '#10b981' }]}>
                                     {(item.totalPaid || 0).toLocaleString('pt-MZ')} MT
                                 </Text>
                             </View>
                             <View style={styles.detailItem}>
-                                <Text style={styles.detailLabel}>Falta</Text>
-                                <Text style={styles.detailValue}>
-                                    {((item.totalPayable || 0) - (item.totalPaid || 0)).toLocaleString('pt-MZ')} MT
+                                <Text style={styles.detailLabel}>Falta Pagar</Text>
+                                <Text style={[styles.detailValue, { color: (item.totalPayable - (item.totalPaid || 0)) > 0 ? '#ef4444' : '#10b981' }]}>
+                                    {Math.max(0, (item.totalPayable || 0) - (item.totalPaid || 0)).toLocaleString('pt-MZ')} MT
                                 </Text>
                             </View>
                         </>
                     )}
                 </View>
 
-                {item.status === 'active' && (
+                {(item.status === 'active' || item.status === 'paid') && (
                     <View style={styles.progressContainer}>
                         <View style={styles.progressBar}>
                             <View style={[styles.progressFill, { width: `${progress}%` }]} />
@@ -199,11 +233,25 @@ export default function MyCreditsScreen({ navigation }) {
                     </View>
                 )}
 
-                <View style={styles.cardFooter}>
-                    <Text style={styles.footerText}>Ver detalhes</Text>
-                    <ArrowRight size={16} color="#3b82f6" />
+                {/* Ações do Empréstimo */}
+                <View style={styles.cardActionsRow}>
+                    <TouchableOpacity
+                        style={styles.paymentHistoryBtn}
+                        onPress={() => navigation.navigate('PaymentHistoryScreen', { creditId: item._id })}
+                    >
+                        <Receipt size={16} color="#059669" style={{ marginRight: 6 }} />
+                        <Text style={styles.paymentHistoryBtnText}>Ver Pagamentos</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        style={styles.detailsBtn}
+                        onPress={() => navigation.navigate('CreditDetails', { creditId: item._id })}
+                    >
+                        <Text style={styles.detailsBtnText}>Detalhes</Text>
+                        <ArrowRight size={14} color="#3b82f6" style={{ marginLeft: 4 }} />
+                    </TouchableOpacity>
                 </View>
-            </TouchableOpacity>
+            </View>
         );
     };
 
@@ -221,7 +269,7 @@ export default function MyCreditsScreen({ navigation }) {
                 <View style={styles.emptyIconBox}>
                     <FileText size={48} color="#94a3b8" />
                 </View>
-                <Text style={styles.emptyTitle}>Sem Histórico</Text>
+                <Text style={styles.emptyTitle}>Sem Histórico de Empréstimos</Text>
                 <Text style={styles.emptyText}>
                     Ainda não efetuou nenhuma solicitação de crédito connosco.
                 </Text>
@@ -239,11 +287,83 @@ export default function MyCreditsScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={styles.pageHeader}>
-                <Text style={styles.pageTitle}>Meus Créditos</Text>
-                <Text style={styles.pageSubtitle}>Acompanhe o estado de todos os seus pedidos.</Text>
+                <View>
+                    <Text style={styles.pageTitle}>Meus Empréstimos</Text>
+                    <Text style={styles.pageSubtitle}>Histórico de créditos solicitados e pagamentos efetuados.</Text>
+                </View>
+
+                {/* Botão para Histórico Geral de Pagamentos */}
+                <TouchableOpacity
+                    style={styles.globalHistoryBtn}
+                    onPress={() => navigation.navigate('PaymentHistoryScreen')}
+                >
+                    <Receipt size={16} color="#fff" style={{ marginRight: 6 }} />
+                    <Text style={styles.globalHistoryBtnText}>Extrato Geral</Text>
+                </TouchableOpacity>
             </View>
+
+            {/* Banner de Sumário de Créditos */}
+            <View style={styles.summaryCard}>
+                <View style={styles.summaryItem}>
+                    <Text style={styles.summaryItemLabel}>Total Solicitado</Text>
+                    <Text style={styles.summaryItemValue}>
+                        {(summary.totalRequested || 0).toLocaleString('pt-MZ')} MT
+                    </Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryItem}>
+                    <Text style={styles.summaryItemLabel}>Total Já Pago</Text>
+                    <Text style={[styles.summaryItemValue, { color: '#10b981' }]}>
+                        {(summary.totalPaid || 0).toLocaleString('pt-MZ')} MT
+                    </Text>
+                </View>
+                <View style={styles.summaryDivider} />
+                <View style={styles.summaryItem}>
+                    <Text style={styles.summaryItemLabel}>Ativos</Text>
+                    <Text style={styles.summaryItemValue}>{summary.activeCount}</Text>
+                </View>
+            </View>
+
+            {/* Filtros rápidos por estado */}
+            <View style={styles.filterBar}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+                    <TouchableOpacity
+                        style={[styles.filterPill, statusFilter === 'all' && styles.filterPillActive]}
+                        onPress={() => setStatusFilter('all')}
+                    >
+                        <Text style={[styles.filterPillText, statusFilter === 'all' && styles.filterPillTextActive]}>
+                            Todos ({credits.length})
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.filterPill, statusFilter === 'active' && styles.filterPillActive]}
+                        onPress={() => setStatusFilter('active')}
+                    >
+                        <Text style={[styles.filterPillText, statusFilter === 'active' && styles.filterPillTextActive]}>
+                            Ativos ({credits.filter(c => c.status === 'active').length})
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.filterPill, statusFilter === 'pending' && styles.filterPillActive]}
+                        onPress={() => setStatusFilter('pending')}
+                    >
+                        <Text style={[styles.filterPillText, statusFilter === 'pending' && styles.filterPillTextActive]}>
+                            Em Análise ({credits.filter(c => c.status === 'pending').length})
+                        </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.filterPill, statusFilter === 'paid' && styles.filterPillActive]}
+                        onPress={() => setStatusFilter('paid')}
+                    >
+                        <Text style={[styles.filterPillText, statusFilter === 'paid' && styles.filterPillTextActive]}>
+                            Liquidados ({credits.filter(c => c.status === 'paid').length})
+                        </Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            </View>
+
             <FlatList
-                data={credits}
+                data={filteredCredits}
                 renderItem={renderCreditItem}
                 keyExtractor={(item) => item._id}
                 contentContainerStyle={styles.listContent}
@@ -257,31 +377,97 @@ export default function MyCreditsScreen({ navigation }) {
 const styles = StyleSheet.create({
     safeArea: { flex: 1, backgroundColor: '#f4f7fb' },
     
-    pageHeader: { marginBottom: 16, marginTop: 10, paddingHorizontal: 20 },
-    pageTitle: { fontSize: 28, fontWeight: '800', color: '#1e293b', letterSpacing: -0.5 },
-    pageSubtitle: { fontSize: 14, color: '#64748b', marginTop: 4 },
-    
-    imageCard: {
-        backgroundColor: '#2563eb',
-        borderRadius: 24,
-        padding: 30,
+    pageHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 24,
-        shadowColor: '#2563eb',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.3,
-        shadowRadius: 16,
-        elevation: 6,
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        paddingBottom: 10,
+        backgroundColor: '#fff',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f1f5f9'
     },
-    iconBox: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255,255,255,0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
+    pageTitle: { fontSize: 24, fontWeight: '800', color: '#1e293b', letterSpacing: -0.5 },
+    pageSubtitle: { fontSize: 13, color: '#64748b', marginTop: 2 },
     
+    globalHistoryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#0f172a',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12
+    },
+    globalHistoryBtnText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '700'
+    },
+
+    summaryCard: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        marginHorizontal: 16,
+        marginTop: 12,
+        padding: 14,
+        borderRadius: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        borderWidth: 1,
+        borderColor: '#e2e8f0'
+    },
+    summaryItem: {
+        flex: 1,
+        alignItems: 'center'
+    },
+    summaryItemLabel: {
+        fontSize: 11,
+        color: '#64748b',
+        fontWeight: '500',
+        marginBottom: 2
+    },
+    summaryItemValue: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#0f172a'
+    },
+    summaryDivider: {
+        width: 1,
+        height: 28,
+        backgroundColor: '#e2e8f0'
+    },
+
+    filterBar: {
+        paddingVertical: 10,
+        paddingHorizontal: 16
+    },
+    filterScroll: {
+        gap: 8
+    },
+    filterPill: {
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 16,
+        backgroundColor: '#e2e8f0'
+    },
+    filterPillActive: {
+        backgroundColor: '#3b82f6'
+    },
+    filterPillText: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#475569'
+    },
+    filterPillTextActive: {
+        color: '#fff'
+    },
+
     loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f4f7fb' },
     
     emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, backgroundColor: '#f4f7fb' },
@@ -291,51 +477,85 @@ const styles = StyleSheet.create({
     emptyButton: { backgroundColor: '#3b82f6', paddingHorizontal: 28, paddingVertical: 16, borderRadius: 16, shadowColor: '#3b82f6', shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.3, shadowRadius: 16, elevation: 6 },
     emptyButtonText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
     
-    listContent: { padding: 20, paddingBottom: 100 },
+    listContent: { paddingHorizontal: 16, paddingBottom: 100 },
     
     creditCard: {
         backgroundColor: '#ffffff',
-        borderRadius: 24,
-        padding: 24,
-        marginBottom: 20,
+        borderRadius: 20,
+        padding: 18,
+        marginBottom: 16,
         shadowColor: '#3b82f6',
-        shadowOffset: { width: 0, height: 12 },
-        shadowOpacity: 0.08,
-        shadowRadius: 30,
-        elevation: 8,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.06,
+        shadowRadius: 20,
+        elevation: 4,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
-    cardAmount: { fontSize: 26, fontWeight: '900', color: '#0f172a', letterSpacing: -0.5 },
-    cardDate: { fontSize: 13, color: '#64748b', marginTop: 4, fontWeight: '500' },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+    cardLoanCode: { fontSize: 11, fontWeight: '700', color: '#3b82f6', textTransform: 'uppercase', marginBottom: 2 },
+    cardAmount: { fontSize: 22, fontWeight: '900', color: '#0f172a', letterSpacing: -0.5 },
+    cardDate: { fontSize: 12, color: '#64748b', marginTop: 2, fontWeight: '500' },
     
-    statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, gap: 6 },
-    statusText: { fontSize: 13, fontWeight: '800' },
+    statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 12, gap: 5 },
+    statusText: { fontSize: 12, fontWeight: '800' },
     
-    cardDetails: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f8fafc', padding: 20, borderRadius: 20, marginBottom: 20, borderWidth: 1, borderColor: '#f1f5f9' },
+    cardDetails: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#f8fafc', padding: 14, borderRadius: 14, marginBottom: 14, borderWidth: 1, borderColor: '#f1f5f9' },
     detailItem: { flex: 1 },
-    detailLabel: { fontSize: 13, color: '#64748b', marginBottom: 6, fontWeight: '600' },
-    detailValue: { fontSize: 17, fontWeight: '800', color: '#1e293b' },
+    detailLabel: { fontSize: 11, color: '#64748b', marginBottom: 4, fontWeight: '600' },
+    detailValue: { fontSize: 15, fontWeight: '800', color: '#1e293b' },
     
-    progressContainer: { marginBottom: 20 },
-    progressBar: { height: 10, backgroundColor: '#e2e8f0', borderRadius: 5, overflow: 'hidden', marginBottom: 6 },
-    progressFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 5 },
-    progressText: { fontSize: 12, color: '#64748b', textAlign: 'right', fontWeight: '600' },
+    progressContainer: { marginBottom: 14 },
+    progressBar: { height: 8, backgroundColor: '#e2e8f0', borderRadius: 4, overflow: 'hidden', marginBottom: 4 },
+    progressFill: { height: '100%', backgroundColor: '#10b981', borderRadius: 4 },
+    progressText: { fontSize: 11, color: '#64748b', textAlign: 'right', fontWeight: '600' },
     
-    infoBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#fffbeb', padding: 14, borderRadius: 12, marginBottom: 16 },
-    infoText: { flex: 1, fontSize: 13, color: '#b45309', fontWeight: '500', lineHeight: 18 },
+    infoBox: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#fffbeb', padding: 12, borderRadius: 12, marginBottom: 14 },
+    infoText: { flex: 1, fontSize: 12, color: '#b45309', fontWeight: '500', lineHeight: 16 },
     
     countdownWrapper: {
         flexDirection: 'row', 
         alignItems: 'center', 
         backgroundColor: '#dcfce7', 
         paddingHorizontal: 10, 
-        paddingVertical: 6, 
+        paddingVertical: 5, 
         borderRadius: 8, 
         alignSelf: 'flex-start', 
-        marginTop: 10
+        marginTop: 8
     },
-    countdownText: { color: '#059669', fontWeight: '800', fontSize: 13 },
+    countdownText: { color: '#059669', fontWeight: '800', fontSize: 12 },
     
-    cardFooter: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 6, paddingTop: 18, borderTopWidth: 1, borderTopColor: '#f1f5f9' },
-    footerText: { fontSize: 14, fontWeight: '700', color: '#3b82f6' }
+    cardActionsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingTop: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#f1f5f9',
+        gap: 10
+    },
+    paymentHistoryBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ecfdf5',
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 10,
+        borderWidth: 1,
+        borderColor: '#a7f3d0'
+    },
+    paymentHistoryBtnText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#059669'
+    },
+    detailsBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 8
+    },
+    detailsBtnText: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: '#3b82f6'
+    }
 });

@@ -77,8 +77,18 @@ export const paymentService = {
         return response.data;
     },
 
-    getPaymentHistory: async () => {
-        const response = await api.get('/payments');
+    submitPayment: async (paymentData) => {
+        const isFormData = typeof FormData !== 'undefined' && paymentData instanceof FormData;
+        const response = await api.post('/payments', paymentData, isFormData ? {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        } : {});
+        return response.data;
+    },
+
+    getPaymentHistory: async (params = {}) => {
+        const response = await api.get('/payments', { params });
         return response.data;
     },
 

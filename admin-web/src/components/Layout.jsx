@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
-import { FiMoon, FiSun, FiAlertTriangle, FiLock } from 'react-icons/fi';
+import { FiMoon, FiSun, FiAlertTriangle, FiLock, FiMenu } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import NotificationBell from './NotificationBell';
 
@@ -11,7 +11,13 @@ const Layout = ({ children }) => {
     const { theme, toggleTheme } = useTheme();
     const location = useLocation();
     const navigate = useNavigate();
+    const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const primaryColor = user?.institution?.settings?.appearance?.primaryColor || '#00FF00';
+
+    // Fechar sidebar mobile ao navegar entre rotas
+    useEffect(() => {
+        setMobileSidebarOpen(false);
+    }, [location.pathname]);
 
     // Função para escurecer a cor (para hover states)
     const darkenColor = (hex, percent) => {
@@ -34,7 +40,7 @@ const Layout = ({ children }) => {
     const isMySubscriptionPage = location.pathname === '/my-subscription';
 
     return (
-        <div style={{ display: 'flex' }}>
+        <div className="layout-root" style={{ display: 'flex', minHeight: '100vh', width: '100%', overflowX: 'hidden' }}>
             <style>{`
                 :root {
                     --accent: ${primaryColor};
@@ -42,84 +48,98 @@ const Layout = ({ children }) => {
                     --primary: ${primaryColor};
                 }
             `}</style>
-            <Sidebar />
-            <main style={{
+            <Sidebar mobileOpen={mobileSidebarOpen} onCloseMobile={() => setMobileSidebarOpen(false)} />
+            <main className="layout-main" style={{
                 flex: 1,
-                marginLeft: 'var(--sidebar-width)',
-                padding: '2rem',
                 minHeight: '100vh',
                 background: 'var(--bg-main)',
                 transition: 'margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease'
             }}>
-                <header style={{
+                <header className="layout-header" style={{
                     display: 'flex',
-                    justifyContent: 'flex-end',
-                    marginBottom: '2rem',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '1rem' // Added gap
+                    marginBottom: '1.75rem',
+                    gap: '0.75rem',
+                    flexWrap: 'wrap'
                 }}>
-                    <button
-                        onClick={toggleTheme}
-                        style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '50%',
-                            background: 'var(--bg-card)',
-                            border: '1px solid var(--border-light)',
-                            color: theme === 'dark' ? '#FBBF24' : '#6B7280', // Yellow for dark mode to indicate sun
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            boxShadow: theme === 'dark' ? '0 0 10px rgba(251, 191, 36, 0.2)' : '0 2px 5px rgba(0,0,0,0.05)'
-                        }}
-                        title={theme === 'dark' ? 'Mudar para Light Mode' : 'Mudar para Dark Mode'}
-                        onMouseOver={(e) => {
-                            e.currentTarget.style.transform = 'scale(1.05)';
-                            if (theme === 'light') e.currentTarget.style.color = '#111827';
-                        }}
-                        onMouseOut={(e) => {
-                            e.currentTarget.style.transform = 'scale(1)';
-                            if (theme === 'light') e.currentTarget.style.color = '#6B7280';
-                        }}
-                    >
-                        {theme === 'dark' ? <FiSun size={20} /> : <FiMoon size={20} />}
-                    </button>
+                    {/* Botão Hambúrguer Mobile + Logo/Marca */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <button
+                            type="button"
+                            className="mobile-hamburger-btn"
+                            onClick={() => setMobileSidebarOpen(prev => !prev)}
+                            aria-label="Menu de Navegação"
+                            title="Abrir Menu"
+                        >
+                            <FiMenu size={22} />
+                        </button>
+                        <div className="mobile-header-brand">
+                            <span style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--primary)', letterSpacing: '-0.02em' }}>
+                                {user?.role === 'super_admin' ? 'Nhiquela Central' : (user?.activeInstitution?.name || 'Microcrédito')}
+                            </span>
+                        </div>
+                    </div>
 
-                    {/* Notificações Web */}
-                    <NotificationBell />
-                    
-                    {/* Subscription Badge */}
-                    {subscription && !isExpired && (
-                        <div style={{
-                            padding: '0.5rem 1rem',
-                            background: remainingDays <= 7 ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-card)',
+                    {/* Ações da Direita */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginLeft: 'auto' }}>
+                        <button
+                            onClick={toggleTheme}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '38px',
+                                height: '38px',
+                                borderRadius: '50%',
+                                background: 'var(--bg-card)',
+                                border: '1px solid var(--border-light)',
+                                color: theme === 'dark' ? '#FBBF24' : '#6B7280',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s ease',
+                                boxShadow: theme === 'dark' ? '0 0 10px rgba(251, 191, 36, 0.2)' : '0 2px 5px rgba(0,0,0,0.05)'
+                            }}
+                            title={theme === 'dark' ? 'Mudar para Light Mode' : 'Mudar para Dark Mode'}
+                        >
+                            {theme === 'dark' ? <FiSun size={18} /> : <FiMoon size={18} />}
+                        </button>
+
+                        {/* Notificações Web */}
+                        <NotificationBell />
+
+                        {/* Subscription Badge */}
+                        {subscription && !isExpired && (
+                            <div className="subscription-badge-header" style={{
+                                padding: '0.4rem 0.75rem',
+                                background: remainingDays <= 7 ? 'rgba(239, 68, 68, 0.1)' : 'var(--bg-card)',
+                                borderRadius: '8px',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                color: remainingDays <= 7 ? 'var(--danger)' : 'var(--text-main)',
+                                border: `1px solid ${remainingDays <= 7 ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-light)'}`,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.4rem'
+                            }}>
+                                {remainingDays <= 7 && <FiAlertTriangle />}
+                                <span>{remainingDays}d</span>
+                                <span className="desktop-only">restantes</span>
+                            </div>
+                        )}
+
+                        {/* Data Atual (oculta em mobile para evitar quebras) */}
+                        <div className="desktop-date-display" style={{
+                            padding: '0.45rem 0.85rem',
+                            background: 'var(--bg-card)',
                             borderRadius: '8px',
                             fontSize: '0.8rem',
-                            fontWeight: 700,
-                            color: remainingDays <= 7 ? 'var(--danger)' : 'var(--text-main)',
-                            border: `1px solid ${remainingDays <= 7 ? 'rgba(239, 68, 68, 0.2)' : 'var(--border-light)'}`,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem'
+                            color: 'var(--text-muted)',
+                            border: '1px solid var(--border-light)',
+                            transition: 'var(--theme-transition)',
+                            whiteSpace: 'nowrap'
                         }}>
-                            {remainingDays <= 7 && <FiAlertTriangle />}
-                            {remainingDays} dias restantes
+                            {new Date().toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })}
                         </div>
-                    )}
-
-                    {/* Data Atual */}
-                    <div style={{
-                        padding: '0.5rem 1rem',
-                        background: 'var(--bg-card)',
-                        borderRadius: '8px',
-                        fontSize: '0.8rem',
-                        color: 'var(--text-muted)',
-                        border: '1px solid var(--border-light)',
-                        transition: 'var(--theme-transition)'
-                    }}>
-                        {new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </div>
                 </header>
 

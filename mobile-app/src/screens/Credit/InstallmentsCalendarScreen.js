@@ -48,6 +48,27 @@ export default function InstallmentsCalendarScreen({ route, navigation }) {
                 keyExtractor={(item) => item._id}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.listContent}
+                ListHeaderComponent={
+                    <TouchableOpacity
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            backgroundColor: '#fff',
+                            padding: 14,
+                            borderRadius: 14,
+                            marginBottom: 16,
+                            borderWidth: 1,
+                            borderColor: '#e2e8f0'
+                        }}
+                        onPress={() => navigation.navigate('PaymentHistoryScreen', { creditId })}
+                    >
+                        <Text style={{ fontSize: 13, fontWeight: '700', color: '#1e293b' }}>
+                            Ver Extrato & Histórico de Pagamentos
+                        </Text>
+                        <ArrowRight size={16} color="#3b82f6" />
+                    </TouchableOpacity>
+                }
                 renderItem={({ item }) => {
                     const config = getStatusConfig(item.status);
                     const isPayable = item.status === 'pending' || item.status === 'overdue' || item.status === 'partially_paid';
@@ -72,6 +93,21 @@ export default function InstallmentsCalendarScreen({ route, navigation }) {
                                     <Text style={styles.value}>{new Date(item.dueDate).toLocaleDateString('pt-MZ')}</Text>
                                 </View>
                             </View>
+
+                            {item.paidAmount > 0 && (
+                                <View style={[styles.detailsRow, { marginTop: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#f1f5f9' }]}>
+                                    <View style={styles.detailItem}>
+                                        <Text style={[styles.label, { color: '#059669' }]}>Valor Pago</Text>
+                                        <Text style={[styles.value, { color: '#059669' }]}>{(item.paidAmount || 0).toLocaleString('pt-MZ')} MT</Text>
+                                    </View>
+                                    {item.paidAt && (
+                                        <View style={styles.detailItem}>
+                                            <Text style={styles.label}>Pago Em</Text>
+                                            <Text style={styles.value}>{new Date(item.paidAt).toLocaleDateString('pt-MZ')}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                            )}
 
                             {isPayable && (
                                 <TouchableOpacity 

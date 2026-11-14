@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import fs from 'fs';
 import SubscriptionPackage, { seedDefaultPackages } from '../models/SubscriptionPackage.js';
 import PlatformConfig, { getOrInitPlatformConfig } from '../models/PlatformConfig.js';
@@ -100,9 +101,19 @@ export const handleSubmitSubscriptionRequest = async (req, res) => {
 
     let pkg = null;
     if (packageId) {
-      pkg = await SubscriptionPackage.findById(packageId);
-    } else if (planRequested) {
-      pkg = await SubscriptionPackage.findOne({ slug: String(planRequested).toLowerCase().trim() });
+      try {
+        pkg = await SubscriptionPackage.findById(packageId);
+      } catch (e) {
+        pkg = null;
+      }
+    }
+    if (!pkg && (packageId || planRequested)) {
+      const fallbackSlug = String(planRequested || packageId).toLowerCase().trim();
+      try {
+        pkg = await SubscriptionPackage.findOne({ slug: fallbackSlug });
+      } catch (e) {
+        pkg = null;
+      }
     }
 
     const planSlug = pkg?.slug || (planRequested ? String(planRequested).toLowerCase().trim() : 'standard');
@@ -113,7 +124,7 @@ export const handleSubmitSubscriptionRequest = async (req, res) => {
     const requestDoc = await SubscriptionRequest.create({
       institution: instId,
       requestedBy: req.user._id,
-      packageId: pkg?._id || null,
+      packageId: pkg?._id || (packageId && mongoose.Types.ObjectId.isValid(packageId) ? packageId : null),
       planRequested: planSlug,
       packageName: pkg?.name || planSlug,
       durationDays,

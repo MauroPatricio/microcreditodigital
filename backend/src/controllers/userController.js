@@ -95,10 +95,10 @@ export const getUser = async (req, res) => {
 // @access  Private (Admin/Owner)
 export const createUser = async (req, res) => {
     try {
-        const { name, email, phone, password, identityDocument, dateOfBirth, role, isActive, guarantor, professionalInfo, paymentNotificationEmail, receivePaymentEmails } = req.body;
+        const { name, email, phone, password, identityDocument, dateOfBirth, role, isActive, guarantor, professionalInfo, paymentNotificationEmail, receivePaymentEmails, approvalLimit, customRole } = req.body;
 
         // Validar role permitido
-        const allowedRoles = ['agent', 'manager', 'admin', 'representative', 'supervisor', 'client'];
+        const allowedRoles = ['agent', 'manager', 'admin', 'representative', 'supervisor', 'analyst', 'approver', 'financial', 'collector', 'support', 'auditor', 'client'];
         if (!allowedRoles.includes(role)) {
             return res.status(400).json({ success: false, message: 'Perfil inválido' });
         }
@@ -147,6 +147,8 @@ export const createUser = async (req, res) => {
             nuit: 'N/A-' + Date.now() + Math.floor(Math.random() * 1000),
             dateOfBirth: dateOfBirth || new Date('1990-01-01'),
             role,
+            approvalLimit: approvalLimit !== undefined ? Number(approvalLimit) : undefined,
+            customRole: customRole || undefined,
             isBlocked: isActive === false,
             isVerified: true,
             institution: req.institutionId,
@@ -186,9 +188,10 @@ export const updateUser = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Sem permissão' });
         }
 
-        const { name, email, phone, role, isBlocked, password, guarantor, professionalInfo, identityDocument, paymentNotificationEmail, receivePaymentEmails } = req.body;
+        const { name, email, phone, role, isBlocked, password, guarantor, professionalInfo, identityDocument, paymentNotificationEmail, receivePaymentEmails, approvalLimit, customRole } = req.body;
 
-        const nextRole = (role && ['agent', 'manager', 'admin', 'representative', 'supervisor', 'client'].includes(role))
+        const allValidRoles = ['agent', 'manager', 'admin', 'representative', 'supervisor', 'analyst', 'approver', 'financial', 'collector', 'support', 'auditor', 'client'];
+        const nextRole = (role && allValidRoles.includes(role))
             ? role
             : user.role;
         const nextIsBlocked = isBlocked !== undefined ? isBlocked : user.isBlocked;
@@ -226,8 +229,14 @@ export const updateUser = async (req, res) => {
         if (receivePaymentEmails !== undefined) {
             user.receivePaymentEmails = Boolean(receivePaymentEmails);
         }
+        if (approvalLimit !== undefined) {
+            user.approvalLimit = Number(approvalLimit);
+        }
+        if (customRole !== undefined) {
+            user.customRole = customRole || null;
+        }
 
-        if (role && ['agent', 'manager', 'admin', 'representative', 'supervisor', 'client'].includes(role)) {
+        if (role && allValidRoles.includes(role)) {
             user.role = role;
         }
         
@@ -288,6 +297,54 @@ export const deleteUser = async (req, res) => {
         res.status(500).json({
             success: false,
             message: 'Erro ao eliminar utilizador',
+            error: error.message
+        });
+    }
+};
+
+// @desc    Eliminar múltiplos utilizadores (Batch delete)
+// @route   POST /api/users/batch-delete
+// @access  Private (Admin/Owner/SuperAdmin)
+export const deleteUsersBatch = async (req, res) => {
+    try {
+        const { userIds } = req.body;
+        if (!Array.isArray(userIds) || userIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'Nenhum utilizador selecionado para eliminação.' });
+        }
+
+        // Não permitir que o próprio utilizador logado seja eliminado
+        const currentUserIdStr = req.user._id.toString();
+        const validIds = userIds.filter(id => String(id) !== currentUserIdStr);
+
+        if (validIds.length === 0) {
+            return res.status(400).json({ success: false, message: 'Não pode eliminar o seu próprio utilizador.' });
+        }
+
+        // Construir query de segurança de acordo com o papel e instituição
+        const query = { _id: { $in: validIds } };
+        if (req.user.role !== 'super_admin') {
+            query.institution = req.institutionId;
+            query.role = { $nin: ['super_admin'] }; // Admins normais não podem apagar super_admin
+        }
+
+        const usersToDelete = await User.find(query).select('_id name email role');
+        if (usersToDelete.length === 0) {
+            return res.status(404).json({ success: false, message: 'Nenhum utilizador elegível para eliminação foi encontrado.' });
+        }
+
+        const idsToDelete = usersToDelete.map(u => u._id);
+        const result = await User.deleteMany({ _id: { $in: idsToDelete } });
+
+        res.json({
+            success: true,
+            message: `${result.deletedCount} utilizador(es) eliminado(s) com sucesso.`,
+            deletedCount: result.deletedCount,
+            deletedUsers: usersToDelete
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao eliminar utilizadores em lote.',
             error: error.message
         });
     }

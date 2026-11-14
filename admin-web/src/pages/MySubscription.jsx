@@ -602,7 +602,7 @@ const MySubscription = () => {
                                             {Number(pkg.price).toLocaleString()} {pkg.currency || 'MT'}
                                         </div>
                                         <div style={{ fontSize: '0.75rem', color: isSel ? '#92400e' : 'var(--text-muted)', marginTop: '2px' }}>
-                                            {pkg.durationDays} dias • {pkg.features?.length || 0} funcionalidades
+                                            {pkg.durationDays} dias • {pkg.features?.length || 0} funcionalidades • {usersLabel}
                                         </div>
                                         <div style={{
                                             display: 'inline-block',

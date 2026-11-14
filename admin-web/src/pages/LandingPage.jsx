@@ -53,9 +53,6 @@ export default function LandingPage() {
   const totalRepayment = simAmount + totalInterest;
   const monthlyInstallment = totalRepayment / simMonths;
 
-  // Active Feature Tab
-  const [activeTab, setActiveTab] = useState('app'); // 'app', 'admin', 'risk', 'payments'
-
   // Pricing Toggle (Monthly vs Annual)
   const [billingPeriod, setBillingPeriod] = useState('monthly'); // 'monthly' | 'annual'
 
@@ -115,7 +112,7 @@ export default function LandingPage() {
 
           <ul className={`nav-menu ${mobileMenuOpen ? 'active' : ''}`}>
             <li><a href="#simulador" className="nav-link">Simulador</a></li>
-            <li><a href="#recursos" className="nav-link">Recursos</a></li>
+            <li><a href="#como-funciona" className="nav-link">Como Funciona</a></li>
             <li><a href="#instituicoes" className="nav-link">Para Instituições</a></li>
             <li><a href="#planos" className="nav-link">Planos</a></li>
             <li><a href="#faq" className="nav-link">FAQ</a></li>
@@ -253,28 +250,6 @@ export default function LandingPage() {
           </div>
         </div>
       </header>
-
-      {/* STATS BANNER SECTION */}
-      <section className="stats-banner-section">
-        <div className="stats-grid">
-          <div className="stat-item">
-            <div className="stat-item-number">99.8%</div>
-            <div className="stat-item-label">Disponibilidade do Sistema</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-item-number">150M+ MT</div>
-            <div className="stat-item-label">Créditos Processados</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-item-number">-42%</div>
-            <div className="stat-item-label">Redução no Incumprimento</div>
-          </div>
-          <div className="stat-item">
-            <div className="stat-item-number">&lt; 3 min</div>
-            <div className="stat-item-label">Tempo Médio de Análise</div>
-          </div>
-        </div>
-      </section>
 
       {/* CREDIT SIMULATOR SECTION */}
       <section id="simulador" className="section-wrapper">
@@ -416,224 +391,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CORE PLATFORM FEATURES TABS */}
-      <section id="recursos" className="section-wrapper">
-        <div className="section-header">
-          <span className="section-badge">Ecossistema Completo</span>
-          <h2 className="section-title">Tudo o que Precisa num Só Lugar</h2>
-          <p className="section-subtitle">
-            Tecnologia de ponta pensada para otimizar operações financeiras e encantar clientes.
-          </p>
-        </div>
-
-        <div className="features-tabs-header">
-          <button
-            className={`tab-btn ${activeTab === 'app' ? 'active' : ''}`}
-            onClick={() => setActiveTab('app')}
-          >
-            <FiSmartphone /> App Mobile Cliente
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'admin' ? 'active' : ''}`}
-            onClick={() => setActiveTab('admin')}
-          >
-            <FiPieChart /> Painel de Gestão Web
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'risk' ? 'active' : ''}`}
-            onClick={() => setActiveTab('risk')}
-          >
-            <FiCpu /> Motor de Risco & IA
-          </button>
-          <button
-            className={`tab-btn ${activeTab === 'payments' ? 'active' : ''}`}
-            onClick={() => setActiveTab('payments')}
-          >
-            <FiCreditCard /> M-Pesa & e-Mola
-          </button>
-        </div>
-
-        <div className="feature-tab-content">
-          {activeTab === 'app' && (
-            <>
-              <div className="feature-list">
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiCheckCircle /></div>
-                  <div>
-                    <h4 className="feature-item-title">Onboarding e Validação BI</h4>
-                    <p className="feature-item-desc">
-                      Submissão de documentos, foto de perfil e assinatura digital diretamente pelo smartphone em 2 minutos.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiZap /></div>
-                  <div>
-                    <h4 className="feature-item-title">Solicitação & Desembolso Instantâneo</h4>
-                    <p className="feature-item-desc">
-                      Simulação personalizada com visualização clara de datas de pagamento e recebimento via Mobile Money.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiBell /></div>
-                  <div>
-                    <h4 className="feature-item-title">Alertas Inteligentes & Score</h4>
-                    <p className="feature-item-desc">
-                      Notificações push antes do vencimento e acompanhamento do Score de Crédito do próprio cliente.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="feature-visual-box">
-                <div style={{ padding: '1rem', background: 'var(--bg-card-solid)', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                    <FiSmartphone style={{ color: '#3b82f6', fontSize: '1.4rem' }} />
-                    <span style={{ fontWeight: 700, color: 'var(--text-heading)' }}>Experiência Mobile Intuitiva</span>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', lineHeight: '1.6' }}>
-                    Interface nativa desenvolvida com React Native, garantindo alta performance mesmo em ligações 3G lentas.
-                  </div>
-                  <div style={{ marginTop: '1.2rem', padding: '0.8rem', background: 'rgba(16,185,129,0.1)', borderRadius: '10px', color: '#10b981', fontSize: '0.85rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <FiCheck /> Compatível com iOS e Android
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'admin' && (
-            <>
-              <div className="feature-list">
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiPieChart /></div>
-                  <div>
-                    <h4 className="feature-item-title">Dashboard Financeiro Global</h4>
-                    <p className="feature-item-desc">
-                      Acompanhamento em tempo real da carteira ativa, taxa de inadimplência, juros a receber e liquidez.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiUsers /></div>
-                  <div>
-                    <h4 className="feature-item-title">Gestão Multiusuário e Permissões</h4>
-                    <p className="feature-item-desc">
-                      Níveis de acesso para Supervisores, Agentes de Crédito, Gerentes de Cobrança e Administradores.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiFileText /></div>
-                  <div>
-                    <h4 className="feature-item-title">Relatórios Automatizados em PDF e Excel</h4>
-                    <p className="feature-item-desc">
-                      Geração imediata de relatórios mensais, trimestrais e mapa de provisão bancária.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="feature-visual-box">
-                <div style={{ padding: '1rem', background: 'var(--bg-card-solid)', borderRadius: '16px', border: '1px solid var(--border-light)' }}>
-                  <div style={{ fontWeight: 700, color: 'var(--text-heading)', marginBottom: '0.5rem' }}>
-                    Painel Administrativo Web
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
-                    Controle operacional completo com ferramentas avançadas de decisão e modelos de contrato customizados.
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'risk' && (
-            <>
-              <div className="feature-list">
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiCpu /></div>
-                  <div>
-                    <h4 className="feature-item-title">Análise Comportamental & Score Interno</h4>
-                    <p className="feature-item-desc">
-                      Algoritmos inteligentes calculam o risco de inadimplência baseados no histórico e capacidade de pagamento.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiShield /></div>
-                  <div>
-                    <h4 className="feature-item-title">Proteção Antifraude</h4>
-                    <p className="feature-item-desc">
-                      Detecção de duplicidade de documentos, cruzamento de dados e bloqueio automático de contas suspeitas.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="feature-visual-box">
-                <div style={{ padding: '1.5rem', background: 'rgba(99, 102, 241, 0.1)', borderRadius: '16px', border: '1px solid rgba(99, 102, 241, 0.3)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#818cf8', fontWeight: 700, marginBottom: '0.5rem' }}>
-                    <FiAward /> Score Inteligente CrediSmart+
-                  </div>
-                  <div style={{ fontSize: '2.2rem', fontWeight: 800, color: 'var(--text-heading)' }}>
-                    845 <span style={{ fontSize: '1rem', color: '#10b981', fontWeight: 600 }}>/ 1000 (Risco Baixo)</span>
-                  </div>
-                  <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-                    Recomendação: Aprovação Automática de até 100.000 MT com taxa preferencial.
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-
-          {activeTab === 'payments' && (
-            <>
-              <div className="feature-list">
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiCreditCard /></div>
-                  <div>
-                    <h4 className="feature-item-title">Integração Directa M-Pesa & e-Mola</h4>
-                    <p className="feature-item-desc">
-                      Processamento automático de despesas e recebimento de reembolsos com reconciliação imediata na conta.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="feature-item-row">
-                  <div className="feature-item-icon"><FiClock /></div>
-                  <div>
-                    <h4 className="feature-item-title">Lembretes & Cobrança por SMS/WhatsApp</h4>
-                    <p className="feature-item-desc">
-                      Disparo automático de mensagens pré-vencimento com links directos de pagamento Mobile Money.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="feature-visual-box">
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <div style={{ padding: '1rem', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', borderRadius: '12px', color: '#f87171', fontWeight: 600, fontSize: '0.9rem' }}>
-                    🔴 Integrado com Vodacom M-Pesa API
-                  </div>
-                  <div style={{ padding: '1rem', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: '12px', color: '#fbbf24', fontWeight: 600, fontSize: '0.9rem' }}>
-                    🟡 Integrado com Movitel e-Mola API
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-      </section>
-
-
       {/* HOW IT WORKS TIMELINE */}
-      <section className="section-wrapper">
+      <section id="como-funciona" className="section-wrapper">
         <div className="section-header">
           <span className="section-badge">Passo a Passo</span>
           <h2 className="section-title">Como Funciona a Plataforma</h2>
@@ -834,7 +593,7 @@ export default function LandingPage() {
             <h4 className="footer-col-title">Plataforma</h4>
             <ul className="footer-links">
               <li><a href="#simulador" className="footer-link">Simulador de Crédito</a></li>
-              <li><a href="#recursos" className="footer-link">Recursos & App Mobile</a></li>
+              <li><a href="#como-funciona" className="footer-link">Como Funciona</a></li>
               <li><a href="#instituicoes" className="footer-link">Para Instituições</a></li>
               <li><a href="#planos" className="footer-link">Planos de Subscrição</a></li>
             </ul>

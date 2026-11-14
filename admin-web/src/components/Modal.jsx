@@ -17,27 +17,28 @@ const Modal = ({ isOpen, onClose, title, message, type = 'error', children, maxW
     };
 
     return (
-        <div style={{
+        <div className="modal-overlay" style={{
             position: 'fixed',
             inset: 0,
             zIndex: 9999,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '1.5rem',
-            background: 'rgba(2, 6, 23, 0.95)',
-            animation: 'modalFadeIn 0.3s ease-out'
+            padding: '1rem',
+            background: 'rgba(2, 6, 23, 0.85)',
+            backdropFilter: 'blur(3px)',
+            animation: 'modalFadeIn 0.25s ease-out'
         }}>
-            <div className="glass" style={{
+            <div className="glass modal-dialog-box" style={{
                 width: '100%',
                 maxWidth: maxWidth,
-                maxHeight: '90vh',
+                maxHeight: '92vh',
                 overflowY: 'auto',
-                padding: '2.5rem',
-                borderRadius: '32px',
+                padding: '2rem 1.75rem',
+                borderRadius: '24px',
                 textAlign: 'center',
                 position: 'relative',
-                animation: 'modalScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                animation: 'modalScaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)',
                 border: '1px solid var(--border-light)',
                 boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
             }}>

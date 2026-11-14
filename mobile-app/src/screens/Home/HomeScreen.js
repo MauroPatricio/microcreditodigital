@@ -17,7 +17,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { useAlert } from '../../context/AlertContext';
-import { Bell, UserPlus, Receipt, AlertCircle, FileSignature, Wallet, CheckCircle2, ShieldCheck, ChevronRight, Activity, Timer, X, Check } from 'lucide-react-native';
+import { Bell, UserPlus, Receipt, AlertCircle, FileSignature, Wallet, CheckCircle2, ShieldCheck, ChevronRight, Activity, Timer, X, Check, CreditCard, FileText } from 'lucide-react-native';
 
 const CountdownTimer = ({ credit, onInsist }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -344,9 +344,22 @@ export default function HomeScreen({ navigation }) {
                             <View style={styles.cardTextBox}>
                                 <Text style={[styles.statusTitle, { color: '#047857' }]}>Crédito Ativo</Text>
                                 <Text style={styles.creditAmountText}>{(activeCredit.amount || 0).toLocaleString()} MT</Text>
-                                <TouchableOpacity style={styles.detailsBtn} activeOpacity={0.8}>
-                                    <Text style={styles.detailsBtnText}>Ver Parcelas</Text>
-                                </TouchableOpacity>
+                                <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+                                    <TouchableOpacity
+                                        style={styles.detailsBtn}
+                                        activeOpacity={0.8}
+                                        onPress={() => navigation.navigate('CreditDetails', { creditId: activeCredit._id })}
+                                    >
+                                        <Text style={styles.detailsBtnText}>Ver Parcelas</Text>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={[styles.detailsBtn, { backgroundColor: '#0f172a' }]}
+                                        activeOpacity={0.8}
+                                        onPress={() => navigation.navigate('PaymentHistoryScreen', { creditId: activeCredit._id })}
+                                    >
+                                        <Text style={styles.detailsBtnText}>Histórico</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
                         </View>
                     ) : pendingCredit ? (
@@ -378,6 +391,56 @@ export default function HomeScreen({ navigation }) {
                             </View>
                         </View>
                     )}
+
+                    {/* Atalhos Rápidos para o Cliente */}
+                    <View style={styles.clientActionsContainer}>
+                        <Text style={styles.clientActionsTitle}>Acesso Rápido</Text>
+                        <View style={styles.clientActionsGrid}>
+                            <TouchableOpacity
+                                style={styles.clientActionBtn}
+                                onPress={() => navigation.navigate('MyCredits')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.clientActionIconBox, { backgroundColor: '#eff6ff' }]}>
+                                    <CreditCard size={22} color="#3b82f6" />
+                                </View>
+                                <Text style={styles.clientActionLabel}>Meus Empréstimos</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.clientActionBtn}
+                                onPress={() => navigation.navigate('PaymentHistoryScreen')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.clientActionIconBox, { backgroundColor: '#ecfdf5' }]}>
+                                    <Receipt size={22} color="#10b981" />
+                                </View>
+                                <Text style={styles.clientActionLabel}>Histórico de Pagamentos</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.clientActionBtn}
+                                onPress={() => navigation.navigate('CreditSimulator')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.clientActionIconBox, { backgroundColor: '#fef3c7' }]}>
+                                    <Wallet size={22} color="#f59e0b" />
+                                </View>
+                                <Text style={styles.clientActionLabel}>Simulador</Text>
+                            </TouchableOpacity>
+
+                            <TouchableOpacity
+                                style={styles.clientActionBtn}
+                                onPress={() => navigation.navigate('DocumentCenter')}
+                                activeOpacity={0.7}
+                            >
+                                <View style={[styles.clientActionIconBox, { backgroundColor: '#f1f5f9' }]}>
+                                    <FileText size={22} color="#64748b" />
+                                </View>
+                                <Text style={styles.clientActionLabel}>Documentos</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
                 </View>
             </>
         );
@@ -571,8 +634,52 @@ const styles = StyleSheet.create({
     primaryBtn: { backgroundColor: '#3b82f6', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignSelf: 'flex-start' },
     primaryBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
     
-    detailsBtn: { backgroundColor: '#10b981', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 12, alignSelf: 'flex-start', shadowColor: '#10b981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
-    detailsBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 14 },
+    detailsBtn: { backgroundColor: '#10b981', paddingVertical: 10, paddingHorizontal: 16, borderRadius: 12, shadowColor: '#10b981', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    detailsBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 13 },
+    
+    clientActionsContainer: {
+        marginTop: 10,
+        marginBottom: 20
+    },
+    clientActionsTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#1e293b',
+        marginBottom: 12
+    },
+    clientActionsGrid: {
+        flexDirection: 'row',
+        gap: 12
+    },
+    clientActionBtn: {
+        flex: 1,
+        backgroundColor: '#ffffff',
+        borderRadius: 16,
+        paddingVertical: 14,
+        paddingHorizontal: 6,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.04,
+        shadowRadius: 10,
+        elevation: 2,
+        borderWidth: 1,
+        borderColor: '#f1f5f9'
+    },
+    clientActionIconBox: {
+        width: 44,
+        height: 44,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: 8
+    },
+    clientActionLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#334155',
+        textAlign: 'center'
+    },
     
     quickActions: { flexDirection: 'row', gap: 16, paddingHorizontal: 20, marginTop: 10 },
     actionCard: {

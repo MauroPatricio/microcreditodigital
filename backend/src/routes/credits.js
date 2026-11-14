@@ -8,7 +8,7 @@ import contractService from '../services/contractService.js';
 import smsService from '../services/sms.js';
 import { mpesaService } from '../services/mpesaService.js';
 import { protect, authorize } from '../middleware/auth.js';
-import { requirePermission, enforceSegregationOfDuties, requireApprovalLimit, requireFeature } from '../middleware/rbac.js';
+import { requirePermission, enforceSegregationOfDuties, requireApprovalLimit, requireFeature, checkUserPermission } from '../middleware/rbac.js';
 import { auditAction } from '../middleware/auditMiddleware.js';
 import { creditRequestValidation, validate } from '../middleware/validation.js';
 import { addMonths } from 'date-fns';
@@ -104,6 +104,18 @@ router.post('/simulate/pdf', protect, async (req, res) => {
 // @access  Private (Agent/Client)
 router.post('/request', protect, auditAction('Credit', 'request', 'medium'), creditRequestValidation, validate, async (req, res) => {
     try {
+        // Validar permissão para criar crédito (cliente solicitando para si ou staff com 'creditos.create')
+        const canCreate = req.user.role === 'client' ||
+            req.user.role === 'super_admin' ||
+            await checkUserPermission(req.user, 'creditos.create');
+
+        if (!canCreate) {
+            return res.status(403).json({
+                success: false,
+                message: 'Acesso negado. O seu perfil não tem permissão para submeter solicitações de crédito.'
+            });
+        }
+
         const { amount, term, purpose, collateral, clientId, periodicity, interestRate, amortizationType } = req.body;
 
         // Se um clientId for passado (por um agente), usamos ele. Caso contrário, usamos o req.user._id
@@ -175,12 +187,12 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
 
         const credit = await Credit.create({
             client: effectiveClientId,
-            institution: req.institution._id,
+            institution: req.institutionId || req.institution?._id || req.institution,
             amount,
             term,
             periodicity: periodicity || 'monthly',
             amortizationType: amortizationType || 'price',
-            interestRate: interestRate || req.institution.settings?.interestRates?.default || 15,
+            interestRate: interestRate || req.institution?.settings?.interestRates?.default || 15,
             purpose,
             collateral,
             status: 'pending',
@@ -210,7 +222,7 @@ router.post('/request', protect, auditAction('Credit', 'request', 'medium'), cre
 
             // Obter os proprietários/gestores da instituição
             const managers = await User.find({
-                institution: req.institution._id,
+                institution: req.institutionId || req.institution?._id || req.institution,
                 role: { $in: ['owner', 'manager'] }
             });
 
@@ -312,7 +324,7 @@ router.get('/overdue', protect, async (req, res) => {
         endOfToday.setHours(23, 59, 59, 999);
 
         const installments = await Installment.find({
-            institution: req.institution._id,
+            institution: req.institutionId || req.institution?._id || req.institution,
             status: { $in: ['pending', 'overdue', 'partially_paid'] },
             dueDate: { $lte: endOfToday }
         }).sort({ dueDate: 1 });
@@ -339,7 +351,7 @@ router.get('/overdue', protect, async (req, res) => {
 
         const creditQuery = {
             _id: { $in: [...byCredit.keys()] },
-            institution: req.institution._id,
+            institution: req.institutionId || req.institution?._id || req.institution,
             status: { $in: ['disbursed', 'active', 'overdue', 'restructured'] }
         };
         if (['agent', 'representative'].includes(req.user.role)) {
@@ -390,7 +402,9 @@ router.get('/:id', protect, async (req, res) => {
         }
 
         // Verificar permissão
-        const isSameInstitution = req.user.role === 'super_admin' || (credit.institution && (req.institution?._id || req.institutionId) && credit.institution.toString() === (req.institution._id || req.institutionId).toString());
+        const currentInstId = (req.institutionId || req.institution?._id || req.institution || '').toString();
+        const creditInstId = (credit.institution?._id || credit.institution || '').toString();
+        const isSameInstitution = req.user.role === 'super_admin' || (creditInstId && currentInstId && creditInstId === currentInstId);
         const isOwnCredit = req.user.role === 'client' && credit.client._id.toString() === req.user._id.toString();
         const isAdminOrStaff = ['owner', 'manager', 'agent'].includes(req.user.role);
 
@@ -517,7 +531,7 @@ router.put('/:id/approve', protect, requirePermission('creditos.approve'), enfor
             });
         }
 
-        if (credit.status !== 'pending') {
+        if (!['pending', 'under_analysis'].includes(credit.status)) {
             if (credit.status === 'approved' || credit.status === 'active') {
                 return res.json({
                     success: true,
@@ -672,7 +686,7 @@ router.put('/:id/approve', protect, requirePermission('creditos.approve'), enfor
 // @route   PUT /api/credits/:id/reject
 // @desc    Rejeitar crédito
 // @access  Private (Manager/Owner)
-router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'), async (req, res) => {
+router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin', 'approver', 'admin', 'supervisor'), async (req, res) => {
     try {
         const { reason } = req.body;
 
@@ -685,7 +699,7 @@ router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'),
             });
         }
 
-        if (credit.status !== 'pending') {
+        if (!['pending', 'under_analysis'].includes(credit.status)) {
             return res.status(400).json({
                 success: false,
                 message: 'Apenas créditos pendentes podem ser rejeitados'
@@ -736,7 +750,7 @@ router.put('/:id/reject', protect, authorize('manager', 'owner', 'super_admin'),
 // @route   PUT /api/credits/:id/disburse
 // @desc    Desembolsar crédito
 // @access  Private (Manager/Owner)
-router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Credit', 'disburse', 'high'), async (req, res) => {
+router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin', 'financial', 'admin'), auditAction('Credit', 'disburse', 'high'), async (req, res) => {
     try {
         const { disbursementMethod } = req.body;
 
@@ -796,7 +810,7 @@ router.put('/:id/disburse', protect, authorize('manager', 'owner', 'super_admin'
 // @route   PUT /api/credits/:id/approve-disbursement
 // @desc    Aprovar o desembolso do crédito (Checker Action)
 // @access  Private (Manager/Owner/Super Admin)
-router.put('/:id/approve-disbursement', protect, authorize('manager', 'owner', 'super_admin'), auditAction('Credit', 'approve_disbursement', 'high'), async (req, res) => {
+router.put('/:id/approve-disbursement', protect, authorize('manager', 'owner', 'super_admin', 'financial', 'admin'), auditAction('Credit', 'approve_disbursement', 'high'), async (req, res) => {
     try {
         const credit = await Credit.findById(req.params.id);
 
@@ -918,7 +932,7 @@ router.post('/request/:id/insist', protect, async (req, res) => {
 // @route   POST /api/credits/:id/generate-contract
 // @desc    Gerar PDF do contrato via template
 // @access  Private (Owner/Manager/Admin)
-router.post('/:id/generate-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), auditAction('Credit', 'generate_contract', 'medium'), async (req, res) => {
+router.post('/:id/generate-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor', 'approver'), auditAction('Credit', 'generate_contract', 'medium'), async (req, res) => {
     try {
         const { templateName } = req.body;
         const credit = await Credit.findById(req.params.id);
@@ -992,7 +1006,7 @@ router.post('/:id/sign-contract', protect, auditAction('Credit', 'sign_contract'
 // @route   POST /api/credits/:id/approve-contract
 // @desc    Aprovar contrato manualmente (Admin/Manager)
 // @access  Private
-router.post('/:id/approve-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), auditAction('Credit', 'approve_contract', 'high'), async (req, res) => {
+router.post('/:id/approve-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor', 'approver'), auditAction('Credit', 'approve_contract', 'high'), async (req, res) => {
     try {
         const credit = await Credit.findById(req.params.id);
 
@@ -1023,7 +1037,7 @@ router.post('/:id/approve-contract', protect, authorize('owner', 'manager', 'adm
 // @route   POST /api/credits/:id/reject-contract
 // @desc    Rejeitar/Cancelar contrato (Admin/Manager)
 // @access  Private
-router.post('/:id/reject-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor'), auditAction('Credit', 'reject_contract', 'medium'), async (req, res) => {
+router.post('/:id/reject-contract', protect, authorize('owner', 'manager', 'admin', 'super_admin', 'supervisor', 'approver'), auditAction('Credit', 'reject-contract', 'medium'), async (req, res) => {
     try {
         const credit = await Credit.findById(req.params.id);
 

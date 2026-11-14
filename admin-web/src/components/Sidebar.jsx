@@ -6,11 +6,11 @@ import {
     FiHome, FiUsers, FiDollarSign, FiBarChart2, FiActivity,
     FiSettings, FiLogOut, FiBriefcase, FiTrendingUp,
     FiSmartphone, FiFileText, FiMessageCircle, FiChevronLeft, FiMenu, FiServer, FiCreditCard,
-    FiSend, FiCalendar, FiMail, FiBarChart, FiShield, FiPackage, FiLock
+    FiSend, FiCalendar, FiMail, FiBarChart, FiShield, FiPackage, FiLock, FiX
 } from 'react-icons/fi';
 import InstitutionSwitcher from './InstitutionSwitcher';
 
-const Sidebar = () => {
+const Sidebar = ({ mobileOpen = false, onCloseMobile = () => {} }) => {
     const { user, logout, hasPermission, hasFeature } = useAuth();
     const [isCollapsed, setIsCollapsed] = React.useState(false);
     const [pendingSubsCount, setPendingSubsCount] = React.useState(0);
@@ -29,7 +29,7 @@ const Sidebar = () => {
     React.useEffect(() => {
         const handleResize = () => {
             if (window.innerWidth < 1024) {
-                setIsCollapsed(true);
+                setIsCollapsed(false);
             } else {
                 setIsCollapsed(false);
             }
@@ -71,7 +71,11 @@ const Sidebar = () => {
 
     React.useEffect(() => {
         const root = document.documentElement;
-        root.style.setProperty('--sidebar-width', isCollapsed ? 'var(--sidebar-collapsed-width)' : '260px');
+        if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
+            root.style.setProperty('--sidebar-width', isCollapsed ? 'var(--sidebar-collapsed-width)' : '260px');
+        } else {
+            root.style.setProperty('--sidebar-width', '0px');
+        }
     }, [isCollapsed]);
 
     const sections = [
@@ -126,7 +130,8 @@ const Sidebar = () => {
             title: 'Super Admin Nhiquela',
             items: [
                 { name: 'Gestão de Subscrições', icon: <FiCreditCard />, path: '/superadmin-subscriptions', roles: ['super_admin'], badge: pendingSubsCount },
-                { name: 'Pacotes & Contas Nhiquela', icon: <FiPackage />, path: '/superadmin-packages', roles: ['super_admin'], badge: pendingSubsCount },
+                { name: 'Pacotes & Contas Nhiquela', icon: <FiPackage />, path: '/superadmin-packages', roles: ['super_admin'] },
+                { name: 'Perfis de Acesso (RBAC)', icon: <FiShield />, path: '/roles', roles: ['super_admin'] },
                 { name: 'Emails de Pagamento', icon: <FiMail />, path: '/superadmin-emails', roles: ['super_admin'] },
                 { name: 'Dashboard Global', icon: <FiBarChart2 />, path: '/global-dashboard', roles: ['super_admin'] },
                 { name: 'Instituições', icon: <FiServer />, path: '/institution-management', roles: ['super_admin'] },
@@ -140,82 +145,108 @@ const Sidebar = () => {
     const daysColor = isExpired ? '#f87171' : remainingDays <= 5 ? '#fbbf24' : '#4ade80';
 
     return (
-        <aside className="sidebar" style={{
-            width: isCollapsed ? 'var(--sidebar-collapsed-width)' : 'var(--sidebar-width)',
-            height: '100vh',
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            display: 'flex',
-            flexDirection: 'column',
-            background: 'var(--sidebar-bg)',
-            borderRight: '1px solid var(--sidebar-border)',
-            transition: 'width 0.2s ease',
-            zIndex: 1000,
-            overflowX: 'hidden'
-        }}>
-            {/* Header / Logo */}
-            <div style={{
-                padding: isCollapsed ? '1.25rem 0.5rem' : '1.25rem',
+        <>
+            {/* Backdrop escuro no mobile ao abrir o menu */}
+            {mobileOpen && (
+                <div
+                    className="sidebar-backdrop"
+                    onClick={onCloseMobile}
+                    aria-hidden="true"
+                />
+            )}
+            <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''} ${isCollapsed ? 'collapsed' : ''}`} style={{
+                height: '100vh',
+                position: 'fixed',
+                left: 0,
+                top: 0,
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: isCollapsed ? 'center' : 'space-between',
-                borderBottom: '1px solid var(--sidebar-border)',
-                minHeight: '68px'
+                flexDirection: 'column',
+                background: 'var(--sidebar-bg)',
+                borderRight: '1px solid var(--sidebar-border)',
+                transition: 'transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), width 0.2s ease',
+                zIndex: 1500,
+                overflowX: 'hidden'
             }}>
-                {!isCollapsed && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                        <div style={{
-                            width: '36px',
-                            height: '36px',
-                            borderRadius: '8px',
-                            overflow: 'hidden',
-                            flexShrink: 0,
-                            background: 'linear-gradient(135deg, #0284c7, #0369a1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}>
-                            {activeInst?.settings?.appearance?.logoUrl ? (
-                                <img
-                                    src={`${api.defaults.baseURL.replace('/api', '')}${activeInst.settings.appearance.logoUrl}`}
-                                    alt="Logo"
-                                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
-                                />
-                            ) : (
-                                <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.95rem' }}>
-                                    {(activeInst?.name || 'NH').substring(0, 2).toUpperCase()}
-                                </span>
-                            )}
-                        </div>
-                        <div style={{ overflow: 'hidden' }}>
-                            <div style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap', color: '#ffffff', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                                {user?.role === 'super_admin' ? 'NHIQUELA CENTRAL' : (activeInst?.name || 'Microcrédito')}
+                {/* Header / Logo */}
+                <div style={{
+                    padding: isCollapsed ? '1.25rem 0.5rem' : '1.25rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: isCollapsed ? 'center' : 'space-between',
+                    borderBottom: '1px solid var(--sidebar-border)',
+                    minHeight: '68px'
+                }}>
+                    {!isCollapsed && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                            <div style={{
+                                width: '36px',
+                                height: '36px',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
+                                flexShrink: 0,
+                                background: 'linear-gradient(135deg, #0284c7, #0369a1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}>
+                                {activeInst?.settings?.appearance?.logoUrl ? (
+                                    <img
+                                        src={`${api.defaults.baseURL.replace('/api', '')}${activeInst.settings.appearance.logoUrl}`}
+                                        alt="Logo"
+                                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                                    />
+                                ) : (
+                                    <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.95rem' }}>
+                                        {(activeInst?.name || 'NH').substring(0, 2).toUpperCase()}
+                                    </span>
+                                )}
                             </div>
-                            <span style={{ fontSize: '0.7rem', color: '#38bdf8', letterSpacing: '0.04em' }}>
-                                {user?.role === 'super_admin' ? 'SUPER ADMIN' : (subscription?.packageName || subscription?.plan || 'MICROCRÉDITO').toUpperCase()}
-                            </span>
+                            <div style={{ overflow: 'hidden' }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.95rem', whiteSpace: 'nowrap', color: '#ffffff', textOverflow: 'ellipsis', overflow: 'hidden' }}>
+                                    {user?.role === 'super_admin' ? 'NHIQUELA CENTRAL' : (activeInst?.name || 'Microcrédito')}
+                                </div>
+                                <span style={{ fontSize: '0.7rem', color: '#38bdf8', letterSpacing: '0.04em' }}>
+                                    {user?.role === 'super_admin' ? 'SUPER ADMIN' : (subscription?.packageName || subscription?.plan || 'MICROCRÉDITO').toUpperCase()}
+                                </span>
+                            </div>
                         </div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <button
+                            onClick={toggleSidebar}
+                            style={{
+                                background: 'transparent',
+                                color: 'var(--sidebar-text)',
+                                padding: '0.45rem',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}
+                            className="sidebar-toggle"
+                            title={isCollapsed ? "Expandir Menu" : "Recolher Menu"}
+                        >
+                            {isCollapsed ? <FiMenu size={18} /> : <FiChevronLeft size={18} />}
+                        </button>
+                        {/* Botão Fechar visível apenas em Mobile */}
+                        <button
+                            onClick={onCloseMobile}
+                            className="mobile-sidebar-close"
+                            title="Fechar Menu"
+                            style={{
+                                background: 'transparent',
+                                color: '#94a3b8',
+                                padding: '0.45rem',
+                                borderRadius: '6px',
+                                border: 'none',
+                                cursor: 'pointer'
+                            }}
+                        >
+                            <FiX size={20} />
+                        </button>
                     </div>
-                )}
-                <button
-                    onClick={toggleSidebar}
-                    style={{
-                        background: 'transparent',
-                        color: 'var(--sidebar-text)',
-                        padding: '0.45rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        borderRadius: '6px',
-                        border: 'none',
-                        cursor: 'pointer'
-                    }}
-                    className="sidebar-toggle"
-                >
-                    {isCollapsed ? <FiMenu size={18} /> : <FiChevronLeft size={18} />}
-                </button>
-            </div>
+                </div>
 
             {/* Institution Switcher */}
             {!isCollapsed && user?.role !== 'super_admin' && (
@@ -300,7 +331,9 @@ const Sidebar = () => {
                                             onClick={(e) => {
                                                 if (isExpired && item.path !== '/my-subscription') {
                                                     e.preventDefault();
+                                                    return;
                                                 }
+                                                if (onCloseMobile) onCloseMobile();
                                             }}
                                             title={featureLocked ? 'Funcionalidade não incluída no pacote actual. Clique para fazer upgrade.' : item.name}
                                             style={({ isActive }) => ({
@@ -402,7 +435,10 @@ const Sidebar = () => {
 
                 {!isCollapsed ? (
                     <button
-                        onClick={logout}
+                        onClick={() => {
+                            if (onCloseMobile) onCloseMobile();
+                            logout();
+                        }}
                         className="btn-danger"
                         style={{ width: '100%', padding: '0.55rem' }}
                     >
@@ -410,7 +446,10 @@ const Sidebar = () => {
                     </button>
                 ) : (
                     <button
-                        onClick={logout}
+                        onClick={() => {
+                            if (onCloseMobile) onCloseMobile();
+                            logout();
+                        }}
                         className="btn-danger"
                         style={{ width: '36px', height: '36px', padding: 0, margin: '0.5rem auto 0' }}
                     >
@@ -426,11 +465,9 @@ const Sidebar = () => {
                     background: rgba(255, 255, 255, 0.08) !important;
                     color: #ffffff !important;
                 }
-                @media (max-width: 1024px) {
-                    .sidebar { width: var(--sidebar-collapsed-width) !important; }
-                }
             `}</style>
         </aside>
+        </>
     );
 };
 

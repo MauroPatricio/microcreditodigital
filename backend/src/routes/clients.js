@@ -45,7 +45,7 @@ const upload = multer({
 // @route   POST /api/clients
 // @desc    Registar novo cliente (pelo Agente/Manager)
 // @access  Private (Agent, Manager, Owner)
-router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), auditAction('User', 'create_client', 'medium'), clientValidation, validate, async (req, res) => {
+router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin', 'admin', 'representative'), auditAction('User', 'create_client', 'medium'), clientValidation, validate, async (req, res) => {
     try {
         const {
             name, email, phone, password, identityDocument,
@@ -126,7 +126,7 @@ router.post('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'),
 // @route   GET /api/clients
 // @desc    Listar clientes
 // @access  Private (Agent, Manager, Owner)
-router.get('/', protect, authorize('agent', 'manager', 'owner', 'super_admin'), async (req, res) => {
+router.get('/', protect, authorize('agent', 'manager', 'owner', 'super_admin', 'admin', 'analyst', 'approver', 'financial', 'collector', 'support', 'auditor', 'supervisor', 'representative'), async (req, res) => {
     try {
         const { search, isVerified, isBlocked, page = 1, limit = 20 } = req.query;
 

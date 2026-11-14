@@ -1348,6 +1348,20 @@ const SuperAdminPackages = ({ initialTab = 'packages' }) => {
                     {/* ABA 4: MATRIZ RBAC INSPIRADA NO DDJLAW */}
                     {activeTab === 'rbac' && (
                         <div className="card">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem', background: 'rgba(2, 132, 199, 0.08)', padding: '1rem', borderRadius: 'var(--radius-sm)', border: '1px solid #bae6fd' }}>
+                                <div>
+                                    <h4 style={{ margin: 0, color: '#0369a1', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <FiShield /> Painel Soberano de Governança de Perfis (RBAC)
+                                    </h4>
+                                    <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                        Como Super Admin, pode personalizar <strong>o que cada perfil faz</strong>, adicionar novos perfis e remover perfis obsoletos.
+                                    </p>
+                                </div>
+                                <a href="/roles" className="btn-primary" style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '0.55rem 1rem', fontSize: '0.85rem' }}>
+                                    <FiShield /> Gerir, Descrever & Criar Perfis →
+                                </a>
+                            </div>
+
                             <h3 style={{ marginBottom: '0.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <FiShield color="#10b981" /> Matriz de Controlo de Acesso (RBAC + Pacotes)
                             </h3>

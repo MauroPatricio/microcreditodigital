@@ -31,7 +31,7 @@ const CashTransactionSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['dinheiro', 'mpesa', 'emola', 'transferencia', 'outro'],
+        enum: ['dinheiro', 'mpesa', 'emola', 'transferencia', 'outro', 'bank_transfer', 'cash', 'other'],
         default: 'dinheiro'
     },
     date: {

@@ -120,10 +120,14 @@ router.post('/', protect, uploadPaymentReceipt.single('receipt'), async (req, re
 
 // @route   GET /api/payments/pending
 // @desc    Listar pagamentos pendentes
-// @access  Private (Admin/Manager)
-router.get('/pending', protect, authorize('admin', 'manager', 'owner'), async (req, res) => {
+// @access  Private (Admin/Manager/Financial/Super Admin)
+router.get('/pending', protect, authorize('admin', 'manager', 'owner', 'financial', 'super_admin'), async (req, res) => {
     try {
-        const payments = await Payment.find({ institution: req.institution._id, status: 'pending' })
+        const query = req.user?.role === 'super_admin' && !req.institution
+            ? { status: 'pending' }
+            : { institution: req.institution?._id || req.institutionId, status: 'pending' };
+
+        const payments = await Payment.find(query)
             .populate('client', 'name email phone')
             .populate('credit', 'loanNumber amount status')
             .populate('installment', 'installmentNumber dueDate')
@@ -137,10 +141,14 @@ router.get('/pending', protect, authorize('admin', 'manager', 'owner'), async (r
 
 // @route   PUT /api/payments/:id/confirm
 // @desc    Confirmar pagamento
-// @access  Private (Admin/Manager)
-router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner'), auditAction('Payment', 'confirm', 'high'), async (req, res) => {
+// @access  Private (Admin/Manager/Financial/Super Admin)
+router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner', 'financial', 'super_admin'), auditAction('Payment', 'confirm', 'high'), async (req, res) => {
     try {
-        const payment = await Payment.findOne({ _id: req.params.id, institution: req.institution._id });
+        const query = req.user?.role === 'super_admin' && !req.institution
+            ? { _id: req.params.id }
+            : { _id: req.params.id, institution: req.institution?._id || req.institutionId };
+
+        const payment = await Payment.findOne(query);
 
         if (!payment) return res.status(404).json({ success: false, message: 'Pagamento não encontrado' });
         if (payment.status !== 'pending') return res.status(400).json({ success: false, message: 'Pagamento não está pendente' });
@@ -210,6 +218,14 @@ router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner'), audi
             principalPaid = payment.amount - interestPaid;
         }
 
+        const cashMethodMap = {
+            'bank_transfer': 'transferencia',
+            'cash': 'dinheiro',
+            'mpesa': 'mpesa',
+            'emola': 'emola',
+        };
+        const cashMethod = cashMethodMap[payment.paymentMethod] || payment.paymentMethod || 'outro';
+
         if (principalPaid > 0) {
             await CashTransaction.create({
                 institution: req.institution._id,
@@ -218,7 +234,7 @@ router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner'), audi
                 amount: principalPaid,
                 description: txDescription + ' (Capital)',
                 reference: credit.loanNumber || credit._id.toString(),
-                paymentMethod: payment.paymentMethod,
+                paymentMethod: cashMethod,
                 date: new Date(),
                 createdBy: req.user._id
             });
@@ -232,7 +248,7 @@ router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner'), audi
                 amount: interestPaid,
                 description: txDescription + ' (Juros/Lucro)',
                 reference: credit.loanNumber || credit._id.toString(),
-                paymentMethod: payment.paymentMethod,
+                paymentMethod: cashMethod,
                 date: new Date(),
                 createdBy: req.user._id
             });
@@ -246,13 +262,17 @@ router.put('/:id/confirm', protect, authorize('admin', 'manager', 'owner'), audi
 
 // @route   PUT /api/payments/:id/reject
 // @desc    Rejeitar pagamento
-// @access  Private (Admin/Manager)
-router.put('/:id/reject', protect, authorize('admin', 'manager', 'owner'), auditAction('Payment', 'reject', 'high'), async (req, res) => {
+// @access  Private (Admin/Manager/Financial/Super Admin)
+router.put('/:id/reject', protect, authorize('admin', 'manager', 'owner', 'financial', 'super_admin'), auditAction('Payment', 'reject', 'high'), async (req, res) => {
     try {
         const { reason } = req.body;
         if (!reason) return res.status(400).json({ success: false, message: 'Motivo da rejeição é obrigatório' });
 
-        const payment = await Payment.findOne({ _id: req.params.id, institution: req.institution._id });
+        const query = req.user?.role === 'super_admin' && !req.institution
+            ? { _id: req.params.id }
+            : { _id: req.params.id, institution: req.institution?._id || req.institutionId };
+
+        const payment = await Payment.findOne(query);
 
         if (!payment) return res.status(404).json({ success: false, message: 'Pagamento não encontrado' });
         if (payment.status !== 'pending') return res.status(400).json({ success: false, message: 'Pagamento não está pendente' });
